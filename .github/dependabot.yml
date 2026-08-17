@@ -1,0 +1,13 @@
+# Dependabot configuration — minimal security-focused mode.
+#
+# Routine version updates are kept enabled but rate-limited to one open PR
+# at a time (`open-pull-requests-limit: 1`) and only checked monthly.
+# Dependabot SECURITY-update PRs are NOT subject to this limit; they fire
+# automatically based on the repo's "Code security" settings.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1

@@ -1,0 +1,290 @@
+@use "base";
+@use "typography";
+@use "icons";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// ---------------------------------------------------------------------------
+// LAYER 2 of the token pipeline: semantics.
+//
+// This is the single source of truth for what a colour *means*. Primitives live
+// in `configs/tailwind-theme.js`; screens consume the semantic Tailwind classes
+// (`bg-surface`, `text-ink-muted`, `border-line`) declared in tailwind.config.js.
+//
+// Values are space-separated RGB channels so Tailwind's alpha modifiers work:
+// `bg-surface/60`, `border-line/40`, etc.
+//
+// The shadcn/ui variables (--background, --primary, ...) are *derived* from the
+// semantic set rather than defined alongside it. That is deliberate: before this,
+// the app had three disagreeing colour systems and the accent users actually saw
+// (blue-600) was defined in none of them.
+// ---------------------------------------------------------------------------
+
+@layer base {
+  :root {
+    // -- surfaces ------------------------------------------------------------
+    // Warm neutrals, not white. This is what makes photography sit *in* the page
+    // rather than float on it, and it is the single biggest visual difference
+    // between us and the buildcover.com reference.
+    --surface: 247 245 242; // #F7F5F2 — page ground
+    --surface-raised: 255 255 255; // cards lift by going *lighter*
+    --surface-sunken: 244 244 244; // #F4F4F4 — section bands
+    --surface-inset: 237 234 229; // wells, chips, inactive tabs
+
+    // -- ink -----------------------------------------------------------------
+    // Never pure black; #282828 reads as considered rather than harsh.
+    --ink: 40 40 40;
+    --ink-muted: 107 107 107;
+    --ink-subtle: 143 139 133;
+    --ink-inverse: 247 245 242;
+
+    // -- lines ---------------------------------------------------------------
+    --line: 227 225 222; // warm-tinted hairline, not a cool grey-200
+    --line-strong: 213 210 205;
+
+    // -- brand ---------------------------------------------------------------
+    // Blue is retired as a decorative colour. The primary action is near-black
+    // on warm grey — more mature, and higher contrast than blue-on-white.
+    // Colour that remains is functional: `verified`, `warn`, `alert`, `cat-*`.
+    --brand: 40 40 40;
+    --brand-hover: 26 26 26;
+    --brand-ink: 40 40 40;
+    --brand-surface: 237 234 229;
+    --brand-line: 220 216 209;
+
+    // -- status --------------------------------------------------------------
+    // `verified` is reserved for ledger proof. Do not reuse it as a brand green:
+    // that collision is what made the old palette unreadable. Desaturated to sit
+    // on the warm ground — a fluorescent green would be the loudest thing on
+    // the page, and it is a footnote, not the headline.
+    --verified: 47 107 69;
+    --verified-surface: 235 241 236;
+    --verified-line: 207 224 212;
+
+    --warn: 138 90 18;
+    --warn-surface: 246 240 226;
+    --warn-line: 231 216 184;
+
+    --alert: 158 47 40;
+    --alert-surface: 246 235 233;
+    --alert-line: 230 203 199;
+
+    // -- category accent (defaults to brand; overridden per [data-category]) --
+    --cat-solid: var(--brand);
+    --cat-ink: var(--brand-ink);
+    --cat-surface: var(--brand-surface);
+    --cat-line: var(--brand-line);
+
+    // -- shadcn/ui, derived ---------------------------------------------------
+    --background: var(--surface);
+    --foreground: var(--ink);
+    --card: var(--surface-raised);
+    --card-foreground: var(--ink);
+    --popover: var(--surface-raised);
+    --popover-foreground: var(--ink);
+    --primary: var(--brand);
+    --primary-foreground: var(--ink-inverse);
+    --secondary: var(--surface-inset);
+    --secondary-foreground: var(--ink);
+    --muted: var(--surface-inset);
+    --muted-foreground: var(--ink-muted);
+    --accent: var(--surface-inset);
+    --accent-foreground: var(--ink);
+    --destructive: var(--alert);
+    --destructive-foreground: var(--ink-inverse);
+    --border: var(--line);
+    --input: var(--line-strong);
+    --ring: var(--brand);
+
+    --chart-1: 67 56 202;
+    --chart-2: 15 118 110;
+    --chart-3: 180 83 9;
+    --chart-4: 109 40 217;
+    --chart-5: 71 85 105;
+
+    --radius: 0.75rem;
+  }
+
+  // Warm dark, so the two themes read as one family. A cool-grey dark mode under
+  // a warm light mode looks like two different products.
+  .dark {
+    --surface: 28 27 25;
+    --surface-raised: 36 35 31;
+    --surface-sunken: 23 22 20;
+    --surface-inset: 48 46 41;
+
+    --ink: 242 239 234;
+    --ink-muted: 168 162 154;
+    --ink-subtle: 138 133 125;
+    --ink-inverse: 28 27 25;
+
+    --line: 52 50 45;
+    --line-strong: 74 71 63;
+
+    // Inverted: on a dark ground the primary action is near-white.
+    --brand: 242 239 234;
+    --brand-hover: 255 255 255;
+    --brand-ink: 242 239 234;
+    --brand-surface: 48 46 41;
+    --brand-line: 74 71 63;
+
+    --verified: 126 178 143;
+    --verified-surface: 28 46 34;
+    --verified-line: 48 82 59;
+
+    --warn: 216 168 92;
+    --warn-surface: 55 43 20;
+    --warn-line: 104 76 30;
+
+    --alert: 217 128 118;
+    --alert-surface: 58 30 27;
+    --alert-line: 105 52 46;
+
+    --primary-foreground: 28 27 25;
+    --destructive-foreground: 242 239 234;
+  }
+
+  // -------------------------------------------------------------------------
+  // Category accents. One rule per stream in the five-section architecture.
+  //
+  // Setting `data-category` on a wrapper repaints every descendant that uses
+  // the `cat-*` classes, so StreamCard is a single component with five looks
+  // and zero conditional className logic. Add a section here, not in JSX.
+  // -------------------------------------------------------------------------
+  // Muted and slightly warmed. These identify the five sections — they are
+  // functional, not decoration — but they sit on #F7F5F2 alongside photography,
+  // so saturated hues would shout over the content they are labelling.
+  [data-category="home-profile"] {
+    --cat-solid: 64 85 110;
+    --cat-ink: 51 69 90;
+    --cat-surface: 236 238 242;
+    --cat-line: 214 219 227;
+  }
+
+  [data-category="maintenance-upgrades"] {
+    --cat-solid: 154 107 36;
+    --cat-ink: 125 86 28;
+    --cat-surface: 245 239 227;
+    --cat-line: 230 217 191;
+  }
+
+  [data-category="systems-warranties"] {
+    --cat-solid: 59 111 99;
+    --cat-ink: 47 89 79;
+    --cat-surface: 235 241 238;
+    --cat-line: 207 224 218;
+  }
+
+  [data-category="property-records"] {
+    --cat-solid: 106 81 117;
+    --cat-ink: 85 64 94;
+    --cat-surface: 241 236 243;
+    --cat-line: 223 212 227;
+  }
+
+  // Graphite rather than a hue: the Personal Vault is the one stream that does
+  // NOT transfer at sale, and it should visually recede from the property's
+  // permanent record instead of competing with it.
+  [data-category="personal-vault"] {
+    --cat-solid: 90 87 81;
+    --cat-ink: 69 66 61;
+    --cat-surface: 239 237 233;
+    --cat-line: 220 216 209;
+  }
+
+  .dark {
+    [data-category="home-profile"] {
+      --cat-solid: 148 170 196;
+      --cat-ink: 186 202 221;
+      --cat-surface: 32 41 52;
+      --cat-line: 56 70 88;
+    }
+    [data-category="maintenance-upgrades"] {
+      --cat-solid: 214 172 105;
+      --cat-ink: 231 199 148;
+      --cat-surface: 52 40 21;
+      --cat-line: 92 68 30;
+    }
+    [data-category="systems-warranties"] {
+      --cat-solid: 130 178 165;
+      --cat-ink: 172 206 196;
+      --cat-surface: 26 44 40;
+      --cat-line: 47 76 68;
+    }
+    [data-category="property-records"] {
+      --cat-solid: 175 152 186;
+      --cat-ink: 203 187 211;
+      --cat-surface: 44 35 49;
+      --cat-line: 74 58 82;
+    }
+    [data-category="personal-vault"] {
+      --cat-solid: 160 155 146;
+      --cat-ink: 195 190 181;
+      --cat-surface: 44 42 38;
+      --cat-line: 68 65 59;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Glass. The one place the design direction allows a moment of delight.
+//
+// Four layers, and the effect falls apart if any one is missing: blur, a
+// *semi-transparent* tint, a hairline plus top-edge highlight, and a wide soft
+// shadow so the bar hovers rather than sits.
+// ---------------------------------------------------------------------------
+@layer components {
+  .glass {
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    background: rgb(255 255 255 / 0.72);
+    border: 1px solid rgb(255 255 255 / 0.5);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.6),
+      0 1px 2px rgb(0 0 0 / 0.04),
+      0 8px 32px rgb(0 0 0 / 0.12);
+  }
+
+  .dark .glass {
+    background: rgb(36 35 31 / 0.72);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 8px 32px rgb(0 0 0 / 0.45);
+  }
+
+  // Without blur support translucency just reads as a rendering bug.
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background: rgb(255 255 255 / 0.96);
+    }
+    .dark .glass {
+      background: rgb(36 35 31 / 0.96);
+    }
+  }
+}
+
+// Third-party overrides. Not tokens — these reach into vendor markup.
+.w3a-modal {
+  background: rgba(0, 0, 0, 0.99);
+}
+
+.w3a-header__button {
+  display: none !important;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}

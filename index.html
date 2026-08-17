@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Runtime polyfills for older Android System WebViews (e.g. Lenovo/ZUI
+         devices, in-app/QR-scanner WebViews). pdf.js v5 and other modern libs
+         CALL these runtime APIs; our build transpiles syntax but does NOT shim
+         them, so without this pdf.js throws and PDFs render blank. Note: OS
+         version != WebView version — a new Android 16 device can still run an
+         old/frozen WebView. Promise.withResolvers gates on Chromium 119+/Safari
+         17.4+. Classic (non-module) script so it runs synchronously before any
+         module imports pdf.js. -->
+    <script>
+      (function () {
+        if (typeof Promise.withResolvers !== 'function') {
+          Promise.withResolvers = function () {
+            var resolve, reject;
+            var promise = new Promise(function (res, rej) {
+              resolve = res;
+              reject = rej;
+            });
+            return { promise: promise, resolve: resolve, reject: reject };
+          };
+        }
+        if (!Array.prototype.at) {
+          Object.defineProperty(Array.prototype, 'at', {
+            value: function (n) {
+              n = Math.trunc(n) || 0;
+              if (n < 0) n += this.length;
+              return n < 0 || n >= this.length ? undefined : this[n];
+            },
+            writable: true,
+            configurable: true,
+          });
+        }
+        if (!String.prototype.replaceAll) {
+          String.prototype.replaceAll = function (find, replace) {
+            if (Object.prototype.toString.call(find) === '[object RegExp]') {
+              return this.replace(find, replace);
+            }
+            return this.split(find).join(replace);
+          };
+        }
+        if (!Array.prototype.findLast) {
+          Object.defineProperty(Array.prototype, 'findLast', {
+            value: function (cb, thisArg) {
+              for (var i = this.length - 1; i >= 0; i--) {
+                if (cb.call(thisArg, this[i], i, this)) return this[i];
+              }
+              return undefined;
+            },
+            writable: true,
+            configurable: true,
+          });
+        }
+      })();
+    </script>
+    <script type="module">
+      import { Buffer } from "buffer";
+      import process from "process";
+      window.Buffer = Buffer;
+      window.process = process;
+      window.global = window;
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home Record</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

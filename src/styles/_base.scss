@@ -1,0 +1,38 @@
+@layer base {
+  *,
+  *::after,
+  *::before {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+  }
+
+  // Colours for `body` are set once in main.scss (`bg-background text-foreground`)
+  // so the semantic layer stays the single source of truth.
+  body {
+    @apply m-0 p-0;
+  }
+
+  button {
+    background-color: transparent;
+    background-image: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+
+  hr {
+    @apply w-full border-t border-line;
+  }
+
+  strong {
+    @apply font-semibold #{!important};
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}

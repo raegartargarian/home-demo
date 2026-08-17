@@ -1,0 +1,33 @@
+{
+  "property": {
+    "address": "4412 Maple Ridge Drive",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78704",
+    "yearBuilt": 1998,
+    "sqft": 2640
+  },
+  "record": {
+    "name": "Kitchen Remodel",
+    "type": "renovation",
+    "collection": "Kitchen Remodel – 2024",
+    "startedAt": "2024-03-04",
+    "completedAt": "2024-06-26",
+    "rooms": [
+      "Kitchen",
+      "Dining"
+    ],
+    "cost": {
+      "labor": 18400,
+      "materials": 23650,
+      "permitNo": "2024-KR-88412",
+      "total": 42360
+    },
+    "contractor": {
+      "name": "Hill Country Kitchens",
+      "license": "TX-RC-114872",
+      "warranty": "2 years workmanship"
+    }
+  },
+  "note": "GENERATED SAMPLE — demo content, not a genuine record."
+}

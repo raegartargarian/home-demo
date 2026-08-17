@@ -1,0 +1,178 @@
+{
+  "property": {
+    "address": "4412 Maple Ridge Drive",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78704",
+    "beds": 4,
+    "baths": 3,
+    "sqft": 2640,
+    "lotSqft": 8712,
+    "yearBuilt": 1998,
+    "propertyType": "Single Family"
+  },
+  "records": [
+    {
+      "file": "1-home-profile/041698 - Plan - Original Construction - Sheet A-101 floor plan.pdf",
+      "section": "Home Profile",
+      "type": "Plan",
+      "reason": "Original Construction",
+      "date": "1998-04-16"
+    },
+    {
+      "file": "1-home-profile/060298 - Spec - Original Construction - Interior paint schedule.pdf",
+      "section": "Home Profile",
+      "type": "Spec",
+      "reason": "Original Construction",
+      "date": "1998-06-02"
+    },
+    {
+      "file": "1-home-profile/091198 - Certificate - Original Construction - Certificate of Occupancy.pdf",
+      "section": "Home Profile",
+      "type": "Certificate",
+      "reason": "Original Construction",
+      "date": "1998-09-11"
+    },
+    {
+      "file": "1-home-profile/033098 - Survey - Original Construction - Boundary survey.pdf",
+      "section": "Home Profile",
+      "type": "Survey",
+      "reason": "Original Construction",
+      "date": "1998-03-30"
+    },
+    {
+      "file": "2-maintenance-upgrades/021924 - Estimate - Kitchen Remodel - Hill Country Kitchens estimate.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Estimate",
+      "reason": "Kitchen Remodel",
+      "date": "2024-02-19",
+      "event": "Kitchen Remodel – 2024"
+    },
+    {
+      "file": "2-maintenance-upgrades/062824 - Invoice - Kitchen Remodel - Hill Country Kitchens final invoice.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Invoice",
+      "reason": "Kitchen Remodel",
+      "date": "2024-06-28",
+      "event": "Kitchen Remodel – 2024"
+    },
+    {
+      "file": "2-maintenance-upgrades/030424 - Photo - Kitchen Remodel - Before demolition.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Photo",
+      "reason": "Kitchen Remodel",
+      "date": "2024-03-04",
+      "event": "Kitchen Remodel – 2024"
+    },
+    {
+      "file": "2-maintenance-upgrades/062624 - Photo - Kitchen Remodel - After completion.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Photo",
+      "reason": "Kitchen Remodel",
+      "date": "2024-06-26",
+      "event": "Kitchen Remodel – 2024"
+    },
+    {
+      "file": "2-maintenance-upgrades/100725 - Receipt - New Carpeting - HOME DEPOT carpeting.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Receipt",
+      "reason": "New Carpeting",
+      "date": "2025-10-07"
+    },
+    {
+      "file": "2-maintenance-upgrades/031226 - Report - Annual HVAC Service - Lone Star Air service report.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Report",
+      "reason": "Annual HVAC Service",
+      "date": "2026-03-12"
+    },
+    {
+      "file": "2-maintenance-upgrades/053026 - Invoice - Roof Replacement - Summit Roofing invoice.pdf",
+      "section": "Maintenance & Upgrades",
+      "type": "Invoice",
+      "reason": "Roof Replacement",
+      "date": "2026-05-30",
+      "event": "Storm Damage – May 2026"
+    },
+    {
+      "file": "3-systems-warranties/072219 - Manual - HVAC Installation - Trane XR14 owner manual.pdf",
+      "section": "Systems & Warranties",
+      "type": "Manual",
+      "reason": "HVAC Installation",
+      "date": "2019-07-22"
+    },
+    {
+      "file": "3-systems-warranties/072219 - Warranty - HVAC Installation - Trane 10-year parts warranty.pdf",
+      "section": "Systems & Warranties",
+      "type": "Warranty",
+      "reason": "HVAC Installation",
+      "date": "2019-07-22"
+    },
+    {
+      "file": "3-systems-warranties/040822 - Spec - Solar Installation - Panel array datasheet.pdf",
+      "section": "Systems & Warranties",
+      "type": "Spec",
+      "reason": "Solar Installation",
+      "date": "2022-04-08"
+    },
+    {
+      "file": "3-systems-warranties/053026 - Warranty - Roof Replacement - Summit Roofing 25-year warranty.pdf",
+      "section": "Systems & Warranties",
+      "type": "Warranty",
+      "reason": "Roof Replacement",
+      "date": "2026-05-30",
+      "event": "Storm Damage – May 2026"
+    },
+    {
+      "file": "4-property-records/081916 - Deed - Purchase - Warranty deed.pdf",
+      "section": "Property Records",
+      "type": "Deed",
+      "reason": "Purchase",
+      "date": "2016-08-19"
+    },
+    {
+      "file": "4-property-records/052126 - Permit - Roof Replacement - City of Austin permit.pdf",
+      "section": "Property Records",
+      "type": "Permit",
+      "reason": "Roof Replacement",
+      "date": "2026-05-21",
+      "event": "Storm Damage – May 2026"
+    },
+    {
+      "file": "4-property-records/011526 - HOA - Annual Compliance - Maple Ridge HOA covenants.pdf",
+      "section": "Property Records",
+      "type": "HOA",
+      "reason": "Annual Compliance",
+      "date": "2026-01-15"
+    },
+    {
+      "file": "5-personal-vault/010226 - Policy - Homeowners Insurance - State Farm HO-3 policy.pdf",
+      "section": "Personal Vault",
+      "type": "Policy",
+      "reason": "Homeowners Insurance",
+      "date": "2026-01-02"
+    },
+    {
+      "file": "5-personal-vault/051626 - Claim - Storm Damage - State Farm claim 4412-SD.pdf",
+      "section": "Personal Vault",
+      "type": "Claim",
+      "reason": "Storm Damage",
+      "date": "2026-05-16",
+      "event": "Storm Damage – May 2026"
+    },
+    {
+      "file": "5-personal-vault/081916 - Mortgage - Purchase - Closing disclosure.pdf",
+      "section": "Personal Vault",
+      "type": "Mortgage",
+      "reason": "Purchase",
+      "date": "2016-08-19"
+    },
+    {
+      "file": "5-personal-vault/043026 - Tax - Property Tax - Travis County assessment.pdf",
+      "section": "Personal Vault",
+      "type": "Tax",
+      "reason": "Property Tax",
+      "date": "2026-04-30"
+    }
+  ]
+}

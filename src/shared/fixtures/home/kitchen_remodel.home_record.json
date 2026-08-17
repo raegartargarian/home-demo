@@ -1,0 +1,60 @@
+{
+  "recordInfo": {
+    "name": "Kitchen Remodel 2026",
+    "type": "renovation",
+    "collection": "Kitchen Remodel 2026",
+    "rooms": ["Kitchen", "Dining"],
+    "systems": ["Electrical", "Plumbing"],
+    "trade": "General",
+    "date": "2026-05-10"
+  },
+  "contractor": {
+    "name": "Northside Remodeling LLC",
+    "license": "PA-HIC-104882",
+    "phone": "(412) 555-0143",
+    "warranty": "2 years workmanship"
+  },
+  "cost": {
+    "labor": 14200,
+    "materials": 19650,
+    "total": 33850,
+    "permitNo": "PIT-2026-0417"
+  },
+  "materials": [
+    {
+      "item": "Shaker cabinets (maple, painted)",
+      "sku": "KRAFT-SHK-MPL",
+      "quantity": 18,
+      "cost": 8600,
+      "warranty": "Limited lifetime"
+    },
+    {
+      "item": "Quartz countertop (Calacatta)",
+      "sku": "MSI-CALQ-3CM",
+      "quantity": 42,
+      "cost": 4830,
+      "warranty": "15 years"
+    },
+    {
+      "item": "Induction range",
+      "sku": "BOSCH-HII8047U",
+      "quantity": 1,
+      "cost": 2199,
+      "warranty": "1 year parts & labor"
+    }
+  ],
+  "photos": {
+    "before": ["kitchen_before_1.jpg", "kitchen_before_2.jpg"],
+    "after": ["kitchen_after_1.jpg", "kitchen_after_2.jpg"]
+  },
+  "inspection": {
+    "date": "2026-05-09",
+    "result": "pass",
+    "inspector": "City of Pittsburgh PLI"
+  },
+  "warranty": {
+    "provider": "Northside Remodeling LLC",
+    "term": "2 years workmanship",
+    "expires": "2028-05-10"
+  }
+}

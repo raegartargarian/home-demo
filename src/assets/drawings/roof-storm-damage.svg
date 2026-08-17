@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <rect width="1200" height="1200" fill="#F7F5F2"/>
+  <g transform="translate(0 200)">
+  <polygon points="140,560 600,180 600,220 140,600" fill="#EDEAE5" stroke="#282828" stroke-width="2"/>
+  <polygon points="1060,560 600,180 600,220 1060,600" fill="#F4F4F4" stroke="#282828" stroke-width="2"/>
+  <line x1="177" y1="530" x2="600" y2="530" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="1023" y1="530" x2="600" y2="530" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="218" y1="495" x2="600" y2="495" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="982" y1="495" x2="600" y2="495" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="260" y1="461" x2="600" y2="461" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="940" y1="461" x2="600" y2="461" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="301" y1="427" x2="600" y2="427" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="899" y1="427" x2="600" y2="427" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="342" y1="393" x2="600" y2="393" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="858" y1="393" x2="600" y2="393" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="384" y1="359" x2="600" y2="359" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="816" y1="359" x2="600" y2="359" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="425" y1="324" x2="600" y2="324" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="775" y1="324" x2="600" y2="324" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="467" y1="290" x2="600" y2="290" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="733" y1="290" x2="600" y2="290" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="508" y1="256" x2="600" y2="256" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="692" y1="256" x2="600" y2="256" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="549" y1="222" x2="600" y2="222" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="651" y1="222" x2="600" y2="222" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="591" y1="188" x2="600" y2="188" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="609" y1="188" x2="600" y2="188" stroke="#8F8B85" stroke-width="0.8"/>
+  <line x1="600" y1="180" x2="600" y2="220" stroke="#282828" stroke-width="2.4"/>
+  <path d="M 320 430 l 36 -8 l 27 10 l 27 -6 l -4 54 l -31.499999999999996 -6 l -27 8 Z" fill="#A3C1D5" fill-opacity="0.55" stroke="#282828" stroke-width="1.6"/>
+  <circle cx="450" cy="410" r="15" fill="#F7F5F2" stroke="#282828" stroke-width="1.6"/>
+  <text x="450" y="415" font-size="15" fill="#282828" font-weight="500" text-anchor="middle" letter-spacing="0">1</text>
+  <line x1="436" y1="418" x2="374" y2="440" stroke="#282828" stroke-width="1" stroke-dasharray="4 4"/>
+  <path d="M 470 330 l 28 -8 l 21 10 l 21 -6 l -4 44 l -24.5 -6 l -21 8 Z" fill="#A3C1D5" fill-opacity="0.55" stroke="#282828" stroke-width="1.6"/>
+  <circle cx="580" cy="310" r="15" fill="#F7F5F2" stroke="#282828" stroke-width="1.6"/>
+  <text x="580" y="315" font-size="15" fill="#282828" font-weight="500" text-anchor="middle" letter-spacing="0">2</text>
+  <line x1="566" y1="318" x2="512" y2="340" stroke="#282828" stroke-width="1" stroke-dasharray="4 4"/>
+  <path d="M 760 470 l 44 -8 l 33 10 l 33 -6 l -4 60 l -38.5 -6 l -33 8 Z" fill="#A3C1D5" fill-opacity="0.55" stroke="#282828" stroke-width="1.6"/>
+  <circle cx="910" cy="450" r="15" fill="#F7F5F2" stroke="#282828" stroke-width="1.6"/>
+  <text x="910" y="455" font-size="15" fill="#282828" font-weight="500" text-anchor="middle" letter-spacing="0">3</text>
+  <line x1="896" y1="458" x2="826" y2="480" stroke="#282828" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="140" y="90" font-size="30" fill="#282828" font-weight="500" text-anchor="start" letter-spacing="-0.6">Storm damage survey</text>
+  <text x="140" y="120" font-size="14" fill="#8F8B85" font-weight="400" text-anchor="start" letter-spacing="0">4412 Maple Ridge Drive · south elevation · 16 MAY 2026</text>
+  <text x="140" y="704" font-size="13" fill="#282828" font-weight="400" text-anchor="start" letter-spacing="0">1 — Missing shingles, ~14 SF</text>
+  <text x="140" y="726" font-size="13" fill="#282828" font-weight="400" text-anchor="start" letter-spacing="0">2 — Lifted ridge cap</text>
+  <text x="140" y="748" font-size="13" fill="#282828" font-weight="400" text-anchor="start" letter-spacing="0">3 — Exposed decking, ~22 SF</text>
+  <text x="140" y="778" font-size="10" fill="#8F8B85" font-weight="400" text-anchor="start" letter-spacing="0.4">GENERATED SAMPLE — illustration, not an adjuster's report</text>
+  </g>
+</svg>

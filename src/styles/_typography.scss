@@ -1,0 +1,128 @@
+// Define any additional fonts here
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NeueHaasDisplay-XXThin.ttf') format('truetype');
+  font-weight: 100; 
+  font-style: normal;
+}
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NeueHaasDisplay-Thin.ttf') format('truetype');
+  font-weight: 200; 
+  font-style: normal;
+}
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NeueHaasDisplay-Light.ttf') format('truetype');
+  font-weight: 300; 
+  font-style: normal;
+}
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NHaasGroteskTXPro-55Rg.ttf') format('truetype');
+  font-weight: 400; 
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NHaasGroteskTXPro-56It.ttf') format('truetype');
+  font-weight: 400; 
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NHaasGroteskTXPro-65Md.ttf') format('truetype');
+  font-weight: 500; /* Medium */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NHaasGroteskTXPro-66MdIt.ttf') format('truetype');
+  font-weight: 500; /* Medium */
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NHaasGroteskTXPro-75Bd.ttf') format('truetype');
+  font-weight: 700; /* Bold */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'grotesk';
+  src: url('../assets/fonts/NHaasGroteskTXPro-76BdIt.ttf') format('truetype');
+  font-weight: 700; /* Bold */
+  font-style: italic;
+}
+
+@layer base {
+  body {
+    @apply font-grotesk text-[14px] md:text-[16px] font-normal;
+  }
+
+  #root,
+  blockquote,
+  dl,
+  dd,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  hr,
+  figure,
+  p,
+  pre {
+    @apply m-0;
+    /* Colour is inherited from `body` (`text-foreground` in main.scss). This
+       used to be `@apply text-white`, which forced every screen to re-declare
+       an ink colour on every heading and paragraph just to stay legible — the
+       root cause of most of the hardcoded `text-gray-900` in the app. */
+    color: inherit;
+  }
+
+  /* Negative tracking on display type. Highest ratio of effect-to-effort in the
+     whole design direction: it is what separates "big text" from "typeset". */
+  h1 {
+    @apply text-3xl tracking-tight; /* 30px */
+  }
+
+  h2 {
+    @apply text-2xl tracking-tight; /* 24px */
+  }
+
+  h3 {
+    @apply text-xl font-medium tracking-tight; /* 20px with medium weight */
+  }
+
+  h4 {
+    @apply text-lg font-medium; /* 18px with medium weight */
+  }
+
+  h5 {
+    @apply text-base font-medium; /* 16px with medium weight */
+  }
+
+  h6 {
+    @apply text-sm font-medium; /* 14px with medium weight */
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+// Font family utility classes
+.grotesk {
+  font-family: 'grotesk', sans-serif;
+}
+
+.open-sans {
+  font-family: 'Open-sans', sans-serif;
+}
