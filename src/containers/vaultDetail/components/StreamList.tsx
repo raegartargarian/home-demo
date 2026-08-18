@@ -13,7 +13,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
-import RecordFileTile from "./RecordFileTile";
+import FileShelf from "./FileShelf";
 import { sectionTiles } from "./sectionTiles";
 
 // How many records to fetch per stream for the inline preview. Each one can
@@ -165,14 +165,7 @@ const StreamList: React.FC<StreamListProps> = ({
                 : undefined
             }
           >
-            {tiles.map((tile) => (
-              <RecordFileTile
-                key={tile.key}
-                attachment={tile.attachment}
-                file={tile.file}
-                label={tile.label}
-              />
-            ))}
+            <FileShelf tiles={tiles} />
           </StreamCard>
         );
       })}

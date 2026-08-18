@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { TransferBadge } from "@/shared/components/TransferBadge";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
-import { TILE_GRID_CLASS } from "@/shared/components/FileTile";
 import { SectionFileGrid } from "@/shared/components/SectionFileGrid";
 import { StreamCategory } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
@@ -123,13 +122,9 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             ) : null}
           </div>
         ) : (
-          // Records as files on a shelf, three across — the same grid, at the
-          // same size, as the landing page's promise of what belongs here.
-          <ul className={TILE_GRID_CLASS}>
-            {React.Children.map(children, (child, i) => (
-              <li key={i}>{child}</li>
-            ))}
-          </ul>
+          // Files on a shelf — see `FileShelf`, which the caller supplies so a
+          // click on a document does the same thing here as on the stream page.
+          children
         )}
 
         {(onAddRecord || onOpen) && (

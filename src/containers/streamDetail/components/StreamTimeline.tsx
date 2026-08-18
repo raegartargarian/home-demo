@@ -1,8 +1,6 @@
-import RecordFileTile from "@/containers/vaultDetail/components/RecordFileTile";
+import FileShelf from "@/containers/vaultDetail/components/FileShelf";
 import { sectionTiles } from "@/containers/vaultDetail/components/sectionTiles";
 import { Attachment } from "@/containers/vaultDetail/types";
-import { cn } from "@/lib/utils";
-import { TILE_GRID_CLASS } from "@/shared/components/FileTile";
 import { LoadingIndicator } from "@/shared/components/LoadingIndicator";
 import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll";
 import { groupByYear } from "@/shared/utils/recordLens";
@@ -45,6 +43,13 @@ export const StreamTimeline: React.FC<StreamTimelineProps> = ({
     [records],
   );
 
+  // The viewer pages through the whole section in reading order, which is the
+  // years already sorted newest-first and flattened back out.
+  const allTiles = useMemo(
+    () => years.flatMap((group) => group.tiles),
+    [years],
+  );
+
   const sentinelRef = useInfiniteScroll({ hasMore, isLoading, onLoadMore });
 
   return (
@@ -60,23 +65,16 @@ export const StreamTimeline: React.FC<StreamTimelineProps> = ({
 
           {/* The rail: one hairline per year, which is what the eye follows
               down the page. A dot per entry would mean a dot per file here, and
-              a hundred dots is texture rather than a timeline. */}
-          <ul
-            className={cn(
-              TILE_GRID_CLASS,
-              "ml-[7px] border-l border-line py-1 pl-6 sm:grid-cols-4 lg:grid-cols-6",
-            )}
-          >
-            {tiles.map((tile) => (
-              <li key={tile.key}>
-                <RecordFileTile
-                  attachment={tile.attachment}
-                  file={tile.file}
-                  label={tile.label}
-                />
-              </li>
-            ))}
-          </ul>
+              a hundred dots is texture rather than a timeline.
+
+              `scope` is every file in the section, not just this year's, so the
+              viewer's arrows carry on across a year boundary rather than
+              stopping at a heading the reader cannot see. */}
+          <FileShelf
+            tiles={tiles}
+            scope={allTiles}
+            className="ml-[7px] border-l border-line py-1 pl-6 sm:grid-cols-4 lg:grid-cols-6"
+          />
         </section>
       ))}
 

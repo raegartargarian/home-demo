@@ -13,10 +13,16 @@ import { type RecordFile } from "./recordFiles";
 import { formatOf } from "./useRecordPreview";
 
 interface RecordFileTileProps {
-  /** The record the file was filed as — what the tile opens. */
+  /** The record the file was filed as. */
   attachment: Attachment;
   file: RecordFile;
   label: string;
+  /**
+   * Opens the file itself, in the preview modal. Where it is omitted the tile
+   * falls back to opening the record that carries the file — the tile is always
+   * a way in to something, never inert.
+   */
+  onOpen?: () => void;
 }
 
 /**
@@ -28,13 +34,14 @@ interface RecordFileTileProps {
  * landing page uses to show what belongs in a section, so the promise and the
  * vault are one thing.
  *
- * A file is not addressable on its own, so the tile opens the record that
- * carries it. The full filename stays in the tooltip.
+ * Clicking opens the file in the preview modal, where the rest of the shelf is
+ * one arrow key away. The full filename stays in the tooltip.
  */
 export const RecordFileTile: React.FC<RecordFileTileProps> = ({
   attachment,
   file,
   label,
+  onOpen,
 }) => {
   const navigate = useNavigate();
   const resolver = useAttachmentResolver(attachment);
@@ -50,8 +57,9 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
     <button
       type="button"
       title={file.filename ?? attachment.name ?? label}
-      onClick={() =>
-        navigate(`${appRoutes.serviceRecord.name}${attachment.id}`)
+      onClick={
+        onOpen ??
+        (() => navigate(`${appRoutes.serviceRecord.name}${attachment.id}`))
       }
       className="group block w-full cursor-pointer text-left"
     >
