@@ -8,8 +8,6 @@ import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { CopyableHash } from "@/shared/components/CopyableHash";
 import { TransferBadge } from "@/shared/components/TransferBadge";
-import { LoadingIndicator } from "@/shared/components/LoadingIndicator";
-import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll";
 import { getStreamAttachments } from "@/shared/providers/api";
 import { formatDate } from "@/shared/utils/dateFormatter";
 import {
@@ -35,7 +33,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import ServiceRecordCard from "../vaultDetail/components/ServiceRecordCard";
+import StreamTimeline from "./components/StreamTimeline";
 import { vaultDetailSelectors } from "../vaultDetail/selectors";
 import { vaultDetailActions } from "../vaultDetail/slice";
 import { Attachment } from "../vaultDetail/types";
@@ -115,12 +113,6 @@ const StreamDetail = () => {
     }
   }, [code, page, hasMore, isFetching, totalPages]);
 
-  const sentinelRef = useInfiniteScroll({
-    hasMore,
-    isLoading: isFetching,
-    onLoadMore: loadMore,
-  });
-
   useUploadedInto([code], () => setReloadKey((key) => key + 1));
 
   const uploadTarget = useMemo(
@@ -145,7 +137,7 @@ const StreamDetail = () => {
     /* Repoints the --cat-* variables, same as the section cards on the vault
        page — without it every stream renders in the default grey. */
     <div data-category={category?.code} className="min-h-screen bg-surface">
-      <PageContainer>
+      <PageContainer measure="wide">
         <Link
           to={id ? vaultDetailPath(id) : "/"}
           className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-ink-subtle transition-colors hover:text-ink"
@@ -263,11 +255,11 @@ const StreamDetail = () => {
 
         {/* Records */}
         {isFirstLoad ? (
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">
+            {Array.from({ length: 12 }).map((_, i) => (
               <Skeleton
                 key={i}
-                className="h-16 w-full bg-surface-inset rounded-lg"
+                className="aspect-[4/3] w-full rounded-md bg-surface-inset"
               />
             ))}
           </div>
@@ -292,24 +284,12 @@ const StreamDetail = () => {
             )}
           </div>
         ) : (
-          <>
-            <div className="space-y-2">
-              {attachments.map((attachment) => (
-                <ServiceRecordCard
-                  key={attachment.id}
-                  attachment={attachment}
-                />
-              ))}
-            </div>
-            {hasMore && (
-              <div ref={sentinelRef} aria-hidden className="h-px w-full" />
-            )}
-            {isFetching && attachments.length > 0 && (
-              <div className="w-full flex items-center justify-center mt-6">
-                <LoadingIndicator />
-              </div>
-            )}
-          </>
+          <StreamTimeline
+            records={attachments}
+            hasMore={hasMore}
+            isLoading={isFetching && attachments.length > 0}
+            onLoadMore={loadMore}
+          />
         )}
       </PageContainer>
     </div>
