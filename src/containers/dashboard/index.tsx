@@ -7,6 +7,7 @@ import {
   BeforeAfterCarousel,
   type BeforeAfterItem,
 } from "@/shared/components/BeforeAfterCarousel";
+import { SectionFileGrid } from "@/shared/components/SectionFileGrid";
 import { appRoutes } from "@/shared/constants/routes";
 import {
   ALL_STREAM_CODES,
@@ -179,13 +180,7 @@ const Dashboard = () => {
                   <p className="mt-1 text-sm text-ink-muted">
                     {category.description}
                   </p>
-                  <ul className="mt-4 space-y-1">
-                    {category.contents.slice(0, 4).map((item) => (
-                      <li key={item} className="text-sm text-ink-subtle">
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                  <SectionFileGrid code={code} className="mt-4" />
                   {!category.transfersOnSale && (
                     <p className="mt-4 border-t border-line pt-3 text-xs text-ink-subtle">
                       Private — detached at sale
