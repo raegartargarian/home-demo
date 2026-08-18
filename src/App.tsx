@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { VaultDetailPage } from "./containers/vaultDetail/loadable";
+import { ProjectDetailPage } from "./containers/projectDetail/loadable";
 import { StreamDetailPage } from "./containers/streamDetail/loadable";
 import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
@@ -58,6 +59,15 @@ function App() {
           element={
             <PageLayout>
               <StreamDetailPage />
+            </PageLayout>
+          }
+        />
+
+        <Route
+          path={appRoutes.projectDetail.path}
+          element={
+            <PageLayout>
+              <ProjectDetailPage />
             </PageLayout>
           }
         />

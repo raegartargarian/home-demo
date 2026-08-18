@@ -56,6 +56,25 @@ export const getSingleVault = (id: string) => {
   return apiClient.get(`/vaults/${id}`);
 };
 
+/**
+ * Every record in the vault, newest first, across all five sections.
+ *
+ * The browsing lenses (see `utils/recordLens.ts`) need the whole vault in one
+ * ordering, which fanning out across `getStreamAttachments` cannot give without
+ * merging five independent paginations client-side. Each row carries its
+ * `stream_id` and an embedded `stream`, so a record can still be badged with the
+ * section it lives in.
+ */
+export const getVaultAttachments = (
+  vaultId: string,
+  page: number = 1,
+  pageSize: number = 15
+) => {
+  return apiClient.get(
+    `/vaults/${vaultId}/attachments?page_size=${pageSize}&page=${page}`
+  );
+};
+
 export const getStreamAttachments = (
   streamCode: string,
   page: number = 1,

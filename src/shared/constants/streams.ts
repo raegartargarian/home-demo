@@ -168,6 +168,13 @@ const LEGACY_CODE_ALIASES: Record<string, StreamCategoryCode> = {
  * substring pass so `home-profile-deed` cannot be caught by `home-profile`
  * with the deed context silently dropped.
  */
+/**
+ * Sort key for the five sections, in the taxonomy's own reading order. A stream
+ * outside the template sorts last, so it is still reachable rather than hidden.
+ */
+export const categoryOrder = (category: StreamCategory | null): number =>
+  category?.order ?? Number.MAX_SAFE_INTEGER;
+
 export const categoryForAssetCode = (
   assetCode?: string
 ): StreamCategory | null => {

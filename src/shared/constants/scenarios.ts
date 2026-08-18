@@ -110,3 +110,41 @@ export const SCENARIOS: Scenario[] = [
 
 export const scenarioById = (id: string): Scenario | undefined =>
   SCENARIOS.find((s) => s.id === id);
+
+/**
+ * The configured template id(s) per scenario, read once here.
+ *
+ * Static property access, not `import.meta.env[scenario.templateEnvKey]`: Vite
+ * only guarantees replacement for accesses it can analyse statically, so the
+ * dynamic form is empty in a production build. `templateEnvKey` stays on the
+ * interface as the documented name of the key; this map is what reads it.
+ * A value may hold several comma-separated ids — the same scenario is seeded
+ * under more than one template on some environments.
+ */
+const TEMPLATE_IDS: Record<Scenario["id"], string | undefined> = {
+  "new-construction": import.meta.env.VITE_TEMPLATE_NEW_CONSTRUCTION,
+  "whole-home-reno": import.meta.env.VITE_TEMPLATE_WHOLE_HOME_RENO,
+  "single-room": import.meta.env.VITE_TEMPLATE_SINGLE_ROOM,
+  "established-home": import.meta.env.VITE_TEMPLATE_ESTABLISHED_HOME,
+};
+
+const splitIds = (value?: string): string[] =>
+  (value || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+/** Every configured template id, for the vault list query. */
+export const ALL_TEMPLATE_IDS: string[] = SCENARIOS.flatMap((scenario) =>
+  splitIds(TEMPLATE_IDS[scenario.id])
+);
+
+/** Which scenario a vault belongs to, from the template it was seeded under. */
+export const scenarioForTemplateId = (
+  templateId?: string
+): Scenario | undefined =>
+  templateId
+    ? SCENARIOS.find((scenario) =>
+        splitIds(TEMPLATE_IDS[scenario.id]).includes(templateId)
+      )
+    : undefined;

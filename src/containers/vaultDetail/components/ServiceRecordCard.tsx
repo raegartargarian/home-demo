@@ -1,28 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { appRoutes } from "@/shared/constants/routes";
 import { formatDate } from "@/shared/utils/dateFormatter";
-import { parseRecordName } from "@/shared/utils/recordNaming";
+import { recordMeta } from "@/shared/utils/recordLens";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
-import {
-  ArrowRight,
-  Calendar,
-  FileText,
-  Image as ImageIcon,
-  Package,
-} from "lucide-react";
-import {
-  toPreviewSource,
-  useAttachmentResolver,
-} from "@/shared/hooks/usePreview";
+import { ArrowRight, Calendar, Package } from "lucide-react";
 import {
   categorize,
-  FileThumbnail,
   resolveMime,
   type PreviewCategory,
 } from "@filedgr/web-core/preview";
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
+import RecordThumbnail from "./RecordThumbnail";
 
 interface ServiceRecordCardProps {
   attachment: Attachment;
@@ -84,45 +74,9 @@ const ServiceRecordCard: React.FC<ServiceRecordCardProps> = ({
   const status = attachment.status ? getStatusConfig(attachment.status) : null;
   const fileTypeSummary = useMemo(() => summariseFiles(attachment), [attachment]);
 
-  const named = useMemo(
-    () => (attachment.name ? parseRecordName(attachment.name) : null),
-    [attachment.name]
-  );
-
-  const title = named?.reason ?? attachment.name ?? "Home Record";
-  // The document's own date beats the upload timestamp when we have it.
-  const date = named?.date ?? (attachment.created_at ? new Date(attachment.created_at) : null);
-
-  const files = attachment.files ?? [];
-  const hasZip = files.some((f) => /\.zip$/i.test(f.filename ?? ""));
-  const hasImage = files.some(
-    (f) =>
-      f.mimetype?.startsWith("image/") ||
-      /\.(jpg|jpeg|png|gif|webp)$/i.test(f.filename ?? "")
-  );
-  const Icon = hasImage && !hasZip ? ImageIcon : hasZip ? Package : FileText;
-
-  // Preview the first pinned file that isn't the zip bundle: for a photo or a
-  // walkthrough video that is the record's own image, which reads far better in
-  // a list than a category glyph. Falls back to the glyph when nothing is
-  // pinned yet.
-  const previewFile = useMemo(
-    () =>
-      attachment.files?.find((f) => f.cid && !/\.zip$/i.test(f.filename ?? "")),
-    [attachment.files]
-  );
-
-  const resolver = useAttachmentResolver(attachment);
-
-  // Memoised for the same reason as the resolver: web-core re-resolves whenever
-  // either prop changes identity, and an inline object changes on every render.
-  const previewSource = useMemo(
-    () =>
-      previewFile
-        ? toPreviewSource(previewFile, previewFile.cid ?? attachment.id)
-        : null,
-    [previewFile, attachment.id]
-  );
+  // The document's own date and reason beat the upload timestamp and the raw
+  // filename wherever the name follows the convention.
+  const meta = useMemo(() => recordMeta(attachment), [attachment]);
 
   return (
     <button
@@ -131,30 +85,20 @@ const ServiceRecordCard: React.FC<ServiceRecordCardProps> = ({
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          {previewSource ? (
-            <FileThumbnail
-              source={previewSource}
-              resolver={resolver}
-              className="size-9 shrink-0 overflow-hidden rounded-lg border border-cat-line"
-            />
-          ) : (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cat-line bg-cat-surface">
-              <Icon className="h-4 w-4 text-cat" aria-hidden />
-            </div>
-          )}
+          <RecordThumbnail attachment={attachment} className="size-9" />
 
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">{title}</p>
+            <p className="truncate text-sm font-medium text-ink">{meta.title}</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
-              {named && (
+              {meta.type && (
                 <span className="rounded border border-cat-line bg-cat-surface px-1.5 text-[11px] font-medium text-cat-ink">
-                  {named.type}
+                  {meta.type}
                 </span>
               )}
-              {date && (
+              {meta.date && (
                 <span className="flex items-center gap-1 text-xs text-ink-subtle">
                   <Calendar className="h-3 w-3" aria-hidden />
-                  {formatDate(date)}
+                  {formatDate(meta.date)}
                 </span>
               )}
               {fileTypeSummary && (

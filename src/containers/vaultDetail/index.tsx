@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyableHash } from "@/shared/components/CopyableHash";
 import { PropertyHeader } from "@/shared/components/PropertyHeader";
+import { scenarioForTemplateId } from "@/shared/constants/scenarios";
 import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import {
   getLedgerNameFromServerName,
@@ -13,9 +14,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { generateVaultProofPdf } from "./components/generateVaultProofPdf";
+import { useLens } from "./components/lens";
+import LensTabs from "./components/LensTabs";
+import ProjectList from "./components/ProjectList";
+import RecordTimeline from "./components/RecordTimeline";
+import { makeSectionResolver } from "./components/recordSection";
 import StreamList from "./components/StreamList";
 import { vaultDetailSelectors } from "./selectors";
 import { vaultDetailActions } from "./slice";
+import { useVaultRecords } from "./useVaultRecords";
 
 const VaultDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +33,26 @@ const VaultDetail = () => {
   const isLoading = useSelector(vaultDetailSelectors.isLoading);
 
   const facts = useMemo(() => (vault ? parseHomeFacts(vault) : null), [vault]);
+
+  // The lens is a display choice, not a different vault: sections, timeline and
+  // projects are three readings of the same records. The scenario picks the
+  // opening one (`defaultGroupBy`), the URL overrides it, and nothing about
+  // where a record is stored changes with it.
+  const scenario = useMemo(
+    () => scenarioForTemplateId(vault?.template_id),
+    [vault?.template_id]
+  );
+  const [lens, setLens] = useLens(scenario?.defaultGroupBy);
+
+  // Projects need the whole vault before the grouping is trustworthy; the
+  // timeline reads correctly a page at a time.
+  const { records, isLoading: isLoadingRecords, hasMore, loadMore } =
+    useVaultRecords(id, lens === "projects");
+
+  const sectionOf = useMemo(
+    () => makeSectionResolver(vault?.streams),
+    [vault?.streams]
+  );
 
   const handleDownloadProof = async () => {
     if (!vault || isGeneratingPdf) return;
@@ -116,7 +143,23 @@ const VaultDetail = () => {
             </p>
           </div>
 
-          {vault.streams && vault.streams.length > 0 ? (
+          <LensTabs value={lens} onChange={setLens} className="mb-5" />
+
+          {lens === "timeline" ? (
+            <RecordTimeline
+              records={records}
+              sectionOf={sectionOf}
+              hasMore={hasMore}
+              isLoading={isLoadingRecords}
+              onLoadMore={loadMore}
+            />
+          ) : lens === "projects" ? (
+            <ProjectList
+              vaultId={vault.id}
+              records={records}
+              isLoading={isLoadingRecords}
+            />
+          ) : vault.streams && vault.streams.length > 0 ? (
             <StreamList
               vaultId={vault.id}
               streams={vault.streams}

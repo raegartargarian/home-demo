@@ -16,6 +16,8 @@
  * the governing form and the example as shorthand.)
  */
 
+import { StreamCategoryCode } from "@/shared/constants/streams";
+
 export const RECORD_DOC_TYPES = [
   // Home Profile
   "Plan",
@@ -46,6 +48,31 @@ export const RECORD_DOC_TYPES = [
 ] as const;
 
 export type RecordDocType = (typeof RECORD_DOC_TYPES)[number];
+
+/**
+ * Which document types belong in which section.
+ *
+ * The list above is already grouped this way in reading order; this makes the
+ * grouping data, so the capture form can offer the four or five types that are
+ * plausible for the section being filed into rather than all twenty. Types
+ * appear in more than one section where they genuinely do (a Survey is both a
+ * Home Profile document and a Property Record).
+ */
+const DOC_TYPES_BY_SECTION: Record<StreamCategoryCode, RecordDocType[]> = {
+  "home-profile": ["Plan", "Spec", "Certificate", "Survey"],
+  "maintenance-upgrades": ["Estimate", "Invoice", "Receipt", "Report", "Photo"],
+  "systems-warranties": ["Manual", "Warranty", "Spec", "Report"],
+  "property-records": ["Deed", "Permit", "Zoning", "HOA", "Compliance", "Survey"],
+  "personal-vault": ["Policy", "Claim", "Statement", "Tax", "Mortgage"],
+};
+
+/** Falls back to every type for a stream outside the five-section template. */
+export const docTypesForSection = (
+  code?: string
+): readonly RecordDocType[] =>
+  code && code in DOC_TYPES_BY_SECTION
+    ? DOC_TYPES_BY_SECTION[code as StreamCategoryCode]
+    : RECORD_DOC_TYPES;
 
 export interface RecordNameParts {
   /** Date the document is *about*, not the upload date. */

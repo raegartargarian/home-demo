@@ -12,4 +12,5 @@ export const vaultDetailSelectors = {
     (state) => state.isLoading
   ),
   error: createSelector(selectVaultDetailState, (state) => state.error),
+  records: createSelector(selectVaultDetailState, (state) => state.records),
 };

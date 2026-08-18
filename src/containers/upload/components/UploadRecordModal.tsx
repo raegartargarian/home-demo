@@ -1,15 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { vaultDetailSelectors } from "@/containers/vaultDetail/selectors";
 import { categoryForAssetCode } from "@/shared/constants/streams";
 import { useWalletAddress } from "@/shared/hooks/useWalletAddr";
+import { recordMeta } from "@/shared/utils/recordLens";
+import {
+  buildRecordName,
+  docTypesForSection,
+  RecordDocType,
+} from "@/shared/utils/recordNaming";
 import { withFlatNames } from "@filedgr/web-core/browser";
 import { formatFileSize } from "@filedgr/web-core/format";
 import type { UploadPhase } from "@filedgr/web-core/upload";
 import { createDeterministicZip } from "@filedgr/web-core/zip";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AlertCircle, Loader2, Pause, Play, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { uploadSelectors } from "../selectors";
 import { uploadActions } from "../slice";
@@ -35,8 +42,26 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "record";
 
+const FIELD_CLASS =
+  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-cat";
+
 const totalSize = (files: File[]) =>
   files.reduce((sum, file) => sum + file.size, 0);
+
+/** `<input type="date">` wants yyyy-mm-dd in local time, not an ISO instant. */
+const toDateInput = (date: Date) =>
+  `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, "0")}-${`${date.getDate()}`.padStart(2, "0")}`;
+
+const fromDateInput = (value: string): Date | null => {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/** "Hill Country final invoice.pdf" → "Hill Country final invoice". */
+const stripExtension = (filename: string) =>
+  filename.replace(/\.[^./\\]+$/, "");
 
 /**
  * Files a new record into one stream.
@@ -56,7 +81,12 @@ export const UploadRecordModal: React.FC = () => {
   const walletAddress = useWalletAddress();
   const reduceMotion = useReducedMotion();
 
-  const [name, setName] = useState("");
+  // The four parts of the naming convention, captured as fields. Nobody types
+  // "062824 - Invoice - Kitchen Remodel - …"; it is derived below and shown back.
+  const [date, setDate] = useState(() => toDateInput(new Date()));
+  const [docType, setDocType] = useState<RecordDocType>("Invoice");
+  const [project, setProject] = useState("");
+  const [docName, setDocName] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
@@ -66,14 +96,52 @@ export const UploadRecordModal: React.FC = () => {
   const isRunning = status !== "idle";
   const isOpen = target !== null;
 
+  const section = target ? categoryForAssetCode(target.assetCode) : null;
+  const docTypes = useMemo(
+    () => docTypesForSection(section?.code),
+    [section?.code]
+  );
+
+  // Suggest the projects this vault already has, so "Kitchen Remodel" is picked
+  // rather than retyped into a near-miss that splits the project in two.
+  const { items: vaultRecords } = useSelector(vaultDetailSelectors.records);
+  const knownProjects = useMemo(
+    () => [
+      ...new Set(
+        vaultRecords
+          .map((record) => recordMeta(record).project)
+          .filter((name): name is string => !!name)
+      ),
+    ],
+    [vaultRecords]
+  );
+
+  const recordName = useMemo(() => {
+    const parsed = fromDateInput(date);
+    if (!parsed || !project.trim() || !docName.trim()) return "";
+    return buildRecordName({
+      date: parsed,
+      type: docType,
+      reason: project,
+      docName,
+    });
+  }, [date, docType, project, docName]);
+
   useEffect(() => {
     if (!isOpen) return;
-    setName("");
+    setDate(toDateInput(new Date()));
+    setProject("");
+    setDocName("");
     setDescription("");
     setFiles([]);
     setFileError("");
     setIsPacking(false);
   }, [isOpen, target?.streamId]);
+
+  // Default to the first type that fits the section being filed into.
+  useEffect(() => {
+    if (isOpen && docTypes.length > 0) setDocType(docTypes[0]);
+  }, [isOpen, docTypes]);
 
   const close = () => {
     if (isRunning) return;
@@ -109,6 +177,11 @@ export const UploadRecordModal: React.FC = () => {
 
     setFileError("");
     setFiles(next);
+
+    // The file the user picked already names itself; don't make them retype it.
+    if (!docName.trim() && next.length > 0) {
+      setDocName(stripExtension(next[0].name));
+    }
   };
 
   const removeFile = (index: number) => {
@@ -118,7 +191,7 @@ export const UploadRecordModal: React.FC = () => {
 
   const canSubmit =
     !!target &&
-    !!name.trim() &&
+    !!recordName &&
     files.length > 0 &&
     !!walletAddress &&
     !isRunning &&
@@ -137,12 +210,15 @@ export const UploadRecordModal: React.FC = () => {
         files.length === 1 && files[0].name.toLowerCase().endsWith(".zip")
           ? files[0]
           : await createDeterministicZip(withFlatNames(files), {
-              name: `${slugify(name)}.zip`,
+              name: `${slugify(docName)}.zip`,
             });
 
       dispatch(
         uploadActions.startUpload({
-          name: name.trim(),
+          // The canonical name is what the browsing lenses read back — see
+          // utils/recordLens.ts. A free-text name would file the record under
+          // "Unfiled" and leave it off every project.
+          name: recordName,
           description: description.trim() || undefined,
           file,
           filename: file.name,
@@ -260,20 +336,93 @@ export const UploadRecordModal: React.FC = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 p-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="record-date"
+                      className="text-sm font-medium text-ink"
+                    >
+                      Date
+                    </label>
+                    <input
+                      id="record-date"
+                      type="date"
+                      value={date}
+                      onChange={(event) => setDate(event.target.value)}
+                      className={FIELD_CLASS}
+                    />
+                    <p className="text-xs text-ink-subtle">
+                      When the work happened, not today.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="record-type"
+                      className="text-sm font-medium text-ink"
+                    >
+                      Type
+                    </label>
+                    <select
+                      id="record-type"
+                      value={docType}
+                      onChange={(event) =>
+                        setDocType(event.target.value as RecordDocType)
+                      }
+                      className={FIELD_CLASS}
+                    >
+                      {docTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="truncate text-xs text-ink-subtle">
+                      Types filed in {section?.label ?? "this section"}.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <label
-                    htmlFor="record-name"
+                    htmlFor="record-project"
                     className="text-sm font-medium text-ink"
                   >
-                    Record name
+                    Project
                   </label>
                   <input
-                    id="record-name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="e.g. Roof replacement invoice"
+                    id="record-project"
+                    list="known-projects"
+                    value={project}
+                    onChange={(event) => setProject(event.target.value)}
+                    placeholder="e.g. Roof Replacement"
                     autoFocus
-                    className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-cat"
+                    className={FIELD_CLASS}
+                  />
+                  <datalist id="known-projects">
+                    {knownProjects.map((known) => (
+                      <option key={known} value={known} />
+                    ))}
+                  </datalist>
+                  <p className="text-xs text-ink-subtle">
+                    The job this belongs to. Reuse the same wording and every
+                    section's paperwork gathers on one page.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="record-doc-name"
+                    className="text-sm font-medium text-ink"
+                  >
+                    Document
+                  </label>
+                  <input
+                    id="record-doc-name"
+                    value={docName}
+                    onChange={(event) => setDocName(event.target.value)}
+                    placeholder="e.g. Summit Roofing final invoice"
+                    className={FIELD_CLASS}
                   />
                 </div>
 
@@ -293,7 +442,7 @@ export const UploadRecordModal: React.FC = () => {
                     onChange={(event) => setDescription(event.target.value)}
                     rows={2}
                     placeholder="Who did the work, what was covered, anything worth remembering."
-                    className="w-full resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-cat"
+                    className={cn(FIELD_CLASS, "resize-none")}
                   />
                 </div>
 
@@ -350,6 +499,14 @@ export const UploadRecordModal: React.FC = () => {
                   </div>
                 )}
 
+                {recordName && (
+                  <div className="rounded-lg border border-line bg-surface-sunken px-3 py-2">
+                    <p className="text-xs text-ink-subtle">Filed as</p>
+                    <p className="mt-0.5 break-all font-mono text-xs text-ink-muted">
+                      {recordName}
+                    </p>
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-1">
                   <Button
                     type="button"

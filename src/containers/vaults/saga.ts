@@ -1,27 +1,19 @@
+import { ALL_TEMPLATE_IDS } from "@/shared/constants/scenarios";
 import { getVaults } from "@/shared/providers/api";
 import { VaultDto } from "@/shared/types/vault";
 import { call, put, takeLatest } from "redux-saga/effects";
 import { vaultsActions } from "./slice";
 
 // Each scenario's seeded vault(s) live under their own backend template_id
-// (see src/shared/constants/scenarios.ts). Fetch across all configured
-// scenarios so a signed-in user sees every home they have.
-const TEMPLATE_IDS: string[] = [
-  import.meta.env.VITE_TEMPLATE_NEW_CONSTRUCTION,
-  import.meta.env.VITE_TEMPLATE_WHOLE_HOME_RENO,
-  import.meta.env.VITE_TEMPLATE_SINGLE_ROOM,
-  import.meta.env.VITE_TEMPLATE_ESTABLISHED_HOME,
-]
-  .flatMap((v: string | undefined) => (v || "").split(","))
-  .map((id: string) => id.trim())
-  .filter(Boolean);
+// (see src/shared/constants/scenarios.ts, which owns the env reads). Fetch
+// across all configured scenarios so a signed-in user sees every home they have.
 
 function* fetchVaultsSaga(
   action: ReturnType<typeof vaultsActions.fetchVaultsStart>
 ): any {
   try {
     const { page } = action.payload;
-    const response = yield call(getVaults, TEMPLATE_IDS, page, 15);
+    const response = yield call(getVaults, ALL_TEMPLATE_IDS, page, 15);
     const data = response.data;
 
     const vaults: VaultDto[] = data.content;

@@ -7,6 +7,7 @@ import { StreamCard } from "@/shared/components/StreamCard";
 import { streamDetailPath } from "@/shared/constants/routes";
 import {
   categoryForAssetCode,
+  categoryOrder,
   StreamCategory,
 } from "@/shared/constants/streams";
 import { getStreamAttachments } from "@/shared/providers/api";
@@ -64,11 +65,7 @@ const withCategory = (streams: VaultStreamDto[]) =>
       stream,
       category: categoryForAssetCode(stream.asset_code),
     }))
-    .sort(
-      (a, b) =>
-        (a.category?.order ?? Number.MAX_SAFE_INTEGER) -
-        (b.category?.order ?? Number.MAX_SAFE_INTEGER)
-    );
+    .sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
 
 const StreamList: React.FC<StreamListProps> = ({
   vaultId,
