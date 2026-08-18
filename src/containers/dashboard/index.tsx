@@ -7,6 +7,8 @@ import {
   BeforeAfterCarousel,
   type BeforeAfterItem,
 } from "@/shared/components/BeforeAfterCarousel";
+import { cn } from "@/lib/utils";
+import { measureFor, PageContainer } from "@/shared/components/PageContainer";
 import { SectionFileGrid } from "@/shared/components/SectionFileGrid";
 import { appRoutes } from "@/shared/constants/routes";
 import {
@@ -83,7 +85,12 @@ const Dashboard = () => {
   return (
     <div className="bg-surface">
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 pt-10 md:pb-28 md:pt-16">
+      <PageContainer
+        as="section"
+        measure="wide"
+        padding="none"
+        className="pb-20 pt-10 md:pb-28 md:pt-16"
+      >
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -116,7 +123,11 @@ const Dashboard = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              duration: 0.7,
+              delay: 0.15,
+              ease: [0.22, 1, 0.36, 1],
+            }}
             className="overflow-hidden rounded-3xl"
           >
             <img
@@ -127,11 +138,11 @@ const Dashboard = () => {
             />
           </motion.div>
         </div>
-      </section>
+      </PageContainer>
 
       {/* The story, as drawings */}
       <section className="border-t border-line bg-surface-sunken py-16 md:py-24">
-        <div className="mx-auto max-w-6xl px-4">
+        <PageContainer measure="wide" padding="none">
           <motion.div {...fadeInUp} className="mb-10 max-w-xl">
             <h2 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">
               From the first sketch to the last receipt.
@@ -141,7 +152,7 @@ const Dashboard = () => {
               and each one leaves paper behind.
             </p>
           </motion.div>
-        </div>
+        </PageContainer>
         {/* Full-bleed: the next card stays partly visible, and that peek is
             what invites the drag. */}
         <BeforeAfterCarousel items={STORY} className="px-4" />
@@ -149,7 +160,7 @@ const Dashboard = () => {
 
       {/* What's on the record — driven by the real taxonomy, not a copy of it */}
       <section className="py-16 md:py-24">
-        <div className="mx-auto max-w-6xl px-4">
+        <PageContainer measure="wide" padding="none">
           <motion.div {...fadeInUp} className="mb-10 max-w-xl">
             <h2 className="text-3xl font-medium tracking-tight text-ink md:text-4xl">
               Five sections. One house.
@@ -190,12 +201,12 @@ const Dashboard = () => {
               );
             })}
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* How it works */}
       <section className="border-t border-line bg-surface-sunken py-16 md:py-24">
-        <div className="mx-auto max-w-5xl px-4">
+        <PageContainer measure="wide" padding="none">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
             {STEPS.map((step, index) => (
               <motion.div
@@ -215,12 +226,15 @@ const Dashboard = () => {
               </motion.div>
             ))}
           </div>
-        </div>
+        </PageContainer>
       </section>
 
       {/* Closing */}
       <section className="py-20 md:py-28">
-        <motion.div {...fadeInUp} className="mx-auto max-w-3xl px-4 text-center">
+        <motion.div
+          {...fadeInUp}
+          className={cn("mx-auto w-full px-4 text-center", measureFor("prose"))}
+        >
           <h2 className="text-3xl font-medium tracking-tight text-ink md:text-5xl">
             Hand over the keys.
             <br />

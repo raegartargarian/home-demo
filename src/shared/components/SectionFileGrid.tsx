@@ -4,6 +4,14 @@ import kitchenAfter from "@/assets/drawings/kitchen-after.svg";
 import kitchenBefore from "@/assets/drawings/kitchen-before.svg";
 import roofStormDamage from "@/assets/drawings/roof-storm-damage.svg";
 import { cn } from "@/lib/utils";
+import {
+  DocFace,
+  DrawingFace,
+  FileTile,
+  SwatchFace,
+  TILE_GRID_CLASS,
+  type FileTileSize,
+} from "@/shared/components/FileTile";
 import { StreamCategoryCode } from "@/shared/constants/streams";
 import React from "react";
 
@@ -110,88 +118,34 @@ const TILES: Record<StreamCategoryCode, PreviewTile[]> = {
   ],
 };
 
-const TILE_CLASS =
-  "relative flex aspect-[4/3] flex-col overflow-hidden rounded-md border border-line bg-surface-raised";
-
-/** Two lines at a fixed height, so every tile's face ends at the same place. */
-const LABEL_CLASS =
-  "line-clamp-2 h-[26px] border-t border-line px-1.5 py-1 text-[9px] leading-[1.25] text-ink-muted";
-
-/** A miniature document: header rule, ruled body, and the name it goes by. */
-const DocTile: React.FC<{ label: string; format: string }> = ({
-  label,
-  format,
-}) => (
-  <div className={TILE_CLASS}>
-    <div className="flex-1 p-2">
-      <div className="h-1 w-2/3 rounded-full bg-cat/50" />
-      <div className="mt-1.5 space-y-1">
-        <div className="h-[3px] w-full rounded-full bg-line" />
-        <div className="h-[3px] w-11/12 rounded-full bg-line" />
-        <div className="h-[3px] w-full rounded-full bg-line" />
-        <div className="h-[3px] w-3/4 rounded-full bg-line" />
-      </div>
-    </div>
-    <span className="absolute right-1 top-1 rounded bg-cat-surface px-1 text-[7px] font-medium leading-[1.4] text-cat-ink">
-      {format}
-    </span>
-    <p className={LABEL_CLASS}>{label}</p>
-  </div>
-);
-
-/** The paint schedule, which is a set of colours and reads best as one. */
-const SwatchTile: React.FC<{ label: string; colors: string[] }> = ({
-  label,
-  colors,
-}) => (
-  <div className={TILE_CLASS}>
-    <div className="flex flex-1">
-      {colors.map((color) => (
-        <div key={color} className="flex-1" style={{ backgroundColor: color }} />
-      ))}
-    </div>
-    <p className={LABEL_CLASS}>{label}</p>
-  </div>
-);
-
-/** One of the architectural drawings, zoomed past its margins to stay legible. */
-const DrawingTile: React.FC<{ src: string; label: string; alt: string }> = ({
-  src,
-  label,
-  alt,
-}) => (
-  <div className={TILE_CLASS}>
-    <div className="flex-1 overflow-hidden">
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        className="h-full w-full scale-[1.55] object-cover"
-      />
-    </div>
-    <p className={LABEL_CLASS}>{label}</p>
-  </div>
-);
-
 interface SectionFileGridProps {
   code: StreamCategoryCode;
+  /** `sm` for the landing-page cards, `md` for the wider vault sections. */
+  size?: FileTileSize;
   className?: string;
 }
 
 export const SectionFileGrid: React.FC<SectionFileGridProps> = ({
   code,
+  size,
   className,
 }) => (
-  <ul className={cn("grid list-none grid-cols-3 gap-1.5 pl-0", className)}>
+  <ul className={cn(TILE_GRID_CLASS, className)}>
     {TILES[code].map((tile) => (
       <li key={tile.label}>
-        {tile.kind === "drawing" ? (
-          <DrawingTile src={tile.src} label={tile.label} alt={tile.alt} />
-        ) : tile.kind === "swatch" ? (
-          <SwatchTile label={tile.label} colors={tile.colors} />
-        ) : (
-          <DocTile label={tile.label} format={tile.format} />
-        )}
+        <FileTile
+          label={tile.label}
+          format={tile.kind === "doc" ? tile.format : undefined}
+          size={size}
+        >
+          {tile.kind === "drawing" ? (
+            <DrawingFace src={tile.src} alt={tile.alt} />
+          ) : tile.kind === "swatch" ? (
+            <SwatchFace colors={tile.colors} />
+          ) : (
+            <DocFace />
+          )}
+        </FileTile>
       </li>
     ))}
   </ul>

@@ -27,6 +27,7 @@ import { useParams } from "react-router-dom";
 import FileViewer from "./components/FileViewer";
 import { serviceRecordSelectors } from "./selectors";
 import { serviceRecordActions } from "./slice";
+import { PageContainer } from "@/shared/components/PageContainer";
 
 const ServiceRecord = () => {
   const { attachmentId } = useParams<{ attachmentId: string }>();
@@ -57,7 +58,7 @@ const ServiceRecord = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-surface">
-        <div className="max-w-6xl mx-auto py-8 px-4">
+        <PageContainer measure="wide">
           <Skeleton className="h-8 w-48 mb-8 bg-surface-inset" />
           <Skeleton className="h-32 w-full mb-6 bg-surface-inset rounded-xl" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -66,7 +67,7 @@ const ServiceRecord = () => {
             ))}
           </div>
           <Skeleton className="h-96 w-full bg-surface-inset rounded-xl" />
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -74,7 +75,7 @@ const ServiceRecord = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-surface">
-        <div className="max-w-6xl mx-auto py-8 px-4">
+        <PageContainer measure="wide">
           <div className="flex flex-col items-center justify-center py-20">
             <AlertCircle className="w-12 h-12 text-alert mb-4" />
             <h2 className="text-xl font-medium tracking-tight text-ink mb-2">
@@ -82,14 +83,14 @@ const ServiceRecord = () => {
             </h2>
             <p className="text-ink-muted">{error}</p>
           </div>
-        </div>
+        </PageContainer>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="max-w-6xl mx-auto py-8 px-4">
+      <PageContainer measure="wide">
         {/* Attachment Header */}
         <div className="bg-surface-raised rounded-xl border border-line p-6 mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -152,7 +153,7 @@ const ServiceRecord = () => {
                   onClick={() =>
                     viewTXInExplorer(
                       attachment.tx_hash!,
-                      attachment.ledger as NETWORK_SERVER_NAMES
+                      attachment.ledger as NETWORK_SERVER_NAMES,
                     )
                   }
                   className="border-line text-ink-muted hover:bg-surface-inset"
@@ -180,9 +181,7 @@ const ServiceRecord = () => {
         {isProcessingZip && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-ink-muted mb-4" />
-            <p className="text-ink font-medium">
-              Processing home record...
-            </p>
+            <p className="text-ink font-medium">Processing home record...</p>
             <p className="text-sm text-ink-muted mt-1">
               Extracting project details, photos, and documents
             </p>
@@ -196,7 +195,7 @@ const ServiceRecord = () => {
         {!isProcessingZip && !recordData && attachment && (
           <FileViewer attachment={attachment} />
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 };

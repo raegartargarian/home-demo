@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { TransferBadge } from "@/shared/components/TransferBadge";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
+import { TILE_GRID_CLASS } from "@/shared/components/FileTile";
+import { SectionFileGrid } from "@/shared/components/SectionFileGrid";
 import { StreamCategory } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
 import { formatStreamName } from "@/shared/utils/streamHelpers";
@@ -15,7 +17,15 @@ interface StreamCardProps {
   total: number;
   /** Record previews. */
   children?: React.ReactNode;
-  onViewAll?: () => void;
+  /**
+   * Opens the section's own page. Always offered where the stream is
+   * addressable — a section is a place, not just a preview, and it was
+   * previously reachable only when it had more records than fitted on the card,
+   * which left a one-record section with no way in at all.
+   */
+  onOpen?: () => void;
+  /** True when the card is not showing everything the section holds. */
+  hasMore?: boolean;
   /** Omitted when the viewer cannot file records (e.g. signed out). */
   onAddRecord?: () => void;
   className?: string;
@@ -34,7 +44,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   category,
   total,
   children,
-  onViewAll,
+  onOpen,
+  hasMore,
   onAddRecord,
   className,
 }) => {
@@ -47,8 +58,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     <section
       data-category={category?.code}
       className={cn(
-        "overflow-hidden rounded-xl border border-line bg-surface-raised shadow-sm",
-        className
+        "flex flex-col overflow-hidden rounded-xl border border-line bg-surface-raised shadow-sm",
+        className,
       )}
     >
       {/* Accent rule: the fastest way to tell five sections apart while scrolling. */}
@@ -60,7 +71,19 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-ink">{label}</h3>
+          <h3 className="truncate text-sm font-semibold text-ink">
+            {onOpen ? (
+              <button
+                type="button"
+                onClick={onOpen}
+                className="rounded-sm text-left transition-colors hover:text-cat-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cat"
+              >
+                {label}
+              </button>
+            ) : (
+              label
+            )}
+          </h3>
           {description && (
             <p className="mt-0.5 text-xs leading-relaxed text-ink-subtle">
               {description}
@@ -81,31 +104,36 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         </div>
       </header>
 
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         {isEmpty ? (
-          // An empty section still teaches: listing what belongs here beats
+          // An empty section still teaches: showing what belongs here beats
           // "no records yet", which tells the homeowner nothing actionable.
+          // Same tiles the landing page uses, greyed back so a section you have
+          // not filled yet cannot be mistaken for one you have.
           <div className="rounded-lg border border-dashed border-line bg-surface-sunken p-4">
             <p className="text-xs font-medium text-ink-muted">
               Nothing filed here yet. This section holds:
             </p>
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {(category?.contents ?? []).map((item) => (
-                <li
-                  key={item}
-                  className="rounded border border-cat-line bg-cat-surface px-1.5 py-0.5 text-[11px] text-cat-ink"
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
+            {category ? (
+              <SectionFileGrid
+                code={category.code}
+                size="md"
+                className="mt-3 opacity-60"
+              />
+            ) : null}
           </div>
         ) : (
-          <div className="space-y-2">{children}</div>
+          // Records as files on a shelf, three across — the same grid, at the
+          // same size, as the landing page's promise of what belongs here.
+          <ul className={TILE_GRID_CLASS}>
+            {React.Children.map(children, (child, i) => (
+              <li key={i}>{child}</li>
+            ))}
+          </ul>
         )}
 
-        {(onAddRecord || onViewAll) && (
-          <div className="mt-3 flex items-center gap-2">
+        {(onAddRecord || onOpen) && (
+          <div className="mt-auto flex items-center gap-2 pt-3">
             {onAddRecord && (
               <button
                 onClick={onAddRecord}
@@ -115,12 +143,15 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 Add record
               </button>
             )}
-            {onViewAll && (
+            {onOpen && (
               <button
-                onClick={onViewAll}
+                onClick={onOpen}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium text-cat-ink transition-colors hover:bg-cat-surface"
               >
-                View all {total} records
+                {/* Only promise "all" when something is actually being held
+                    back; otherwise the card is already showing everything and
+                    the link is simply the way into the section. */}
+                {hasMore ? `View all ${total} records` : "Open section"}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </button>
             )}

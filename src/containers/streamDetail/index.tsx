@@ -7,6 +7,7 @@ import { uploadActions } from "@/containers/upload/slice";
 import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { CopyableHash } from "@/shared/components/CopyableHash";
+import { TransferBadge } from "@/shared/components/TransferBadge";
 import { LoadingIndicator } from "@/shared/components/LoadingIndicator";
 import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll";
 import { getStreamAttachments } from "@/shared/providers/api";
@@ -16,10 +17,15 @@ import {
   NETWORK_SERVER_NAMES,
 } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
-import { formatStreamName } from "@/shared/utils/streamHelpers";
+import {
+  categoryForStream,
+  formatStreamName,
+} from "@/shared/utils/streamHelpers";
+import { vaultDetailPath } from "@/shared/constants/routes";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import {
   Calendar,
+  ChevronLeft,
   ExternalLink,
   FileText,
   Layers,
@@ -28,11 +34,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import ServiceRecordCard from "../vaultDetail/components/ServiceRecordCard";
 import { vaultDetailSelectors } from "../vaultDetail/selectors";
 import { vaultDetailActions } from "../vaultDetail/slice";
 import { Attachment } from "../vaultDetail/types";
+import { PageContainer } from "@/shared/components/PageContainer";
 
 const PAGE_SIZE = 15;
 
@@ -121,31 +128,56 @@ const StreamDetail = () => {
       isAuthenticated && stream && id
         ? uploadTargetFor(id, stream, vault?.ledger)
         : null,
-    [isAuthenticated, stream, id, vault?.ledger]
+    [isAuthenticated, stream, id, vault?.ledger],
   );
   const openUpload = () =>
     uploadTarget && dispatch(uploadActions.openUpload(uploadTarget));
+
+  // The same resolution the vault page uses, so a section looks like itself
+  // here too: its own glyph, label and copy rather than the generic layers
+  // icon and the backend's "the stream mapped to …" description.
+  const category = stream ? categoryForStream(stream) : null;
 
   const isFirstLoad = isFetching && attachments.length === 0;
   const status = stream?.status ? getStatusConfig(stream.status) : null;
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="max-w-4xl mx-auto py-8 px-4">
+    /* Repoints the --cat-* variables, same as the section cards on the vault
+       page — without it every stream renders in the default grey. */
+    <div data-category={category?.code} className="min-h-screen bg-surface">
+      <PageContainer>
+        <Link
+          to={id ? vaultDetailPath(id) : "/"}
+          className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-ink-subtle transition-colors hover:text-ink"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+          Back to the vault
+        </Link>
+
         {/* Stream header */}
         <div className="bg-surface-raised rounded-xl border border-line p-6 mb-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-cat-surface border border-cat-line flex items-center justify-center flex-shrink-0">
-              <Layers className="w-6 h-6 text-cat" />
+              {category ? (
+                <category.icon className="w-6 h-6 text-cat" aria-hidden />
+              ) : (
+                <Layers className="w-6 h-6 text-cat" aria-hidden />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl md:text-2xl font-medium tracking-tight text-ink truncate">
-                {stream ? formatStreamName(stream) : "Record Stream"}
+                {category?.label ??
+                  (stream ? formatStreamName(stream) : "Record Stream")}
               </h1>
-              {stream?.description && (
-                <p className="text-sm text-ink-muted mt-1">{stream.description}</p>
+              {(category?.description || stream?.description) && (
+                <p className="text-sm text-ink-muted mt-1">
+                  {category?.description ?? stream?.description}
+                </p>
               )}
               <div className="flex flex-wrap items-center gap-3 mt-3">
+                {category && (
+                  <TransferBadge transfersOnSale={category.transfersOnSale} />
+                )}
                 {status && (
                   <Badge variant="secondary" className={status.className}>
                     {status.label}
@@ -156,7 +188,8 @@ const StreamDetail = () => {
                     variant="secondary"
                     className="bg-surface-inset text-ink-muted border-line"
                   >
-                    {getLedgerNameFromServerName(stream.ledger) || stream.ledger}
+                    {getLedgerNameFromServerName(stream.ledger) ||
+                      stream.ledger}
                   </Badge>
                 )}
                 {stream?.created_at && (
@@ -214,7 +247,7 @@ const StreamDetail = () => {
                     onClick={() =>
                       viewTXInExplorer(
                         stream.tx_hash!,
-                        stream.ledger as NETWORK_SERVER_NAMES
+                        stream.ledger as NETWORK_SERVER_NAMES,
                       )
                     }
                     className="border-line text-ink-muted hover:bg-surface-inset w-fit"
@@ -232,7 +265,10 @@ const StreamDetail = () => {
         {isFirstLoad ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full bg-surface-inset rounded-lg" />
+              <Skeleton
+                key={i}
+                className="h-16 w-full bg-surface-inset rounded-lg"
+              />
             ))}
           </div>
         ) : attachments.length === 0 ? (
@@ -259,7 +295,10 @@ const StreamDetail = () => {
           <>
             <div className="space-y-2">
               {attachments.map((attachment) => (
-                <ServiceRecordCard key={attachment.id} attachment={attachment} />
+                <ServiceRecordCard
+                  key={attachment.id}
+                  attachment={attachment}
+                />
               ))}
             </div>
             {hasMore && (
@@ -272,7 +311,7 @@ const StreamDetail = () => {
             )}
           </>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 };

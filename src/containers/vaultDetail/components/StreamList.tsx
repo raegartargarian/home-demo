@@ -5,21 +5,24 @@ import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { StreamCard } from "@/shared/components/StreamCard";
 import { streamDetailPath } from "@/shared/constants/routes";
-import {
-  categoryForAssetCode,
-  categoryOrder,
-  StreamCategory,
-} from "@/shared/constants/streams";
+import { categoryOrder, StreamCategory } from "@/shared/constants/streams";
 import { getStreamAttachments } from "@/shared/providers/api";
 import { VaultStreamDto } from "@/shared/types/vault";
+import { categoryForStream } from "@/shared/utils/streamHelpers";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
-import ServiceRecordCard from "./ServiceRecordCard";
+import RecordFileTile from "./RecordFileTile";
+import { sectionTiles } from "./sectionTiles";
 
-// How many records to show inline per stream before linking to the full page.
-const PREVIEW_COUNT = 3;
+// How many records to fetch per stream for the inline preview. Each one can
+// carry several files and each file gets its own tile, so this is an upper
+// bound on records, not on tiles.
+const PREVIEW_COUNT = 6;
+
+/** Tiles per section card: two rows of three, as on the landing page. */
+const TILE_COUNT = 6;
 
 interface StreamListProps {
   vaultId: string;
@@ -36,15 +39,11 @@ interface StreamPreview {
 const EMPTY_PREVIEW: StreamPreview = { previews: [], total: 0 };
 
 const fetchPreview = async (
-  stream: VaultStreamDto
+  stream: VaultStreamDto,
 ): Promise<[string, StreamPreview]> => {
   if (!stream.asset_code) return [stream.id, EMPTY_PREVIEW];
   try {
-    const res = await getStreamAttachments(
-      stream.asset_code,
-      1,
-      PREVIEW_COUNT
-    );
+    const res = await getStreamAttachments(stream.asset_code, 1, PREVIEW_COUNT);
     const previews: Attachment[] = res.data?.content || [];
     return [
       stream.id,
@@ -63,7 +62,7 @@ const withCategory = (streams: VaultStreamDto[]) =>
   streams
     .map((stream) => ({
       stream,
-      category: categoryForAssetCode(stream.asset_code),
+      category: categoryForStream(stream),
     }))
     .sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
 
@@ -109,28 +108,41 @@ const StreamList: React.FC<StreamListProps> = ({
       const [id, preview] = await fetchPreview(stream);
       setPreviewsByStream((prev) => ({ ...prev, [id]: preview }));
     },
-    [streams]
+    [streams],
   );
   useUploadedInto(
     streams.map((stream) => stream.asset_code),
-    refreshStream
+    refreshStream,
   );
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {Array.from({ length: Math.min(streams.length || 3, 5) }).map((_, i) => (
-          <Skeleton key={i} className="h-44 w-full rounded-xl bg-surface-inset" />
-        ))}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {Array.from({ length: Math.min(streams.length || 3, 5) }).map(
+          (_, i) => (
+            <Skeleton
+              key={i}
+              className="h-80 w-full rounded-xl bg-surface-inset"
+            />
+          ),
+        )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    // The same grid the landing page lays its five cards out in — a vault
+    // section and the promise of one are now literally the same card.
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {sections.map(({ stream, category }) => {
-        const { previews, total } = previewsByStream[stream.id] ?? EMPTY_PREVIEW;
-        const hasMore = total > previews.length;
+        const { previews, total } =
+          previewsByStream[stream.id] ?? EMPTY_PREVIEW;
+        const allTiles = sectionTiles(previews);
+        const tiles = allTiles.slice(0, TILE_COUNT);
+        // More to see if records were left unfetched, or if the records we did
+        // fetch carry more files than the shelf has room for.
+        const hasMore =
+          total > previews.length || allTiles.length > tiles.length;
         const uploadTarget = isAuthenticated
           ? uploadTargetFor(vaultId, stream, vaultLedger)
           : null;
@@ -141,8 +153,9 @@ const StreamList: React.FC<StreamListProps> = ({
             stream={stream}
             category={category as StreamCategory | null}
             total={total}
-            onViewAll={
-              hasMore && stream.asset_code
+            hasMore={hasMore}
+            onOpen={
+              stream.asset_code
                 ? () => navigate(streamDetailPath(vaultId, stream.asset_code!))
                 : undefined
             }
@@ -152,8 +165,13 @@ const StreamList: React.FC<StreamListProps> = ({
                 : undefined
             }
           >
-            {previews.map((attachment) => (
-              <ServiceRecordCard key={attachment.id} attachment={attachment} />
+            {tiles.map((tile) => (
+              <RecordFileTile
+                key={tile.key}
+                attachment={tile.attachment}
+                file={tile.file}
+                label={tile.label}
+              />
             ))}
           </StreamCard>
         );

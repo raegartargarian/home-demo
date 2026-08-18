@@ -1,17 +1,29 @@
+import type { StreamCategoryCode } from "@/shared/constants/streams";
 import type { UploadPhase } from "@filedgr/web-core/upload";
 
 /**
- * The stream a record is being filed into. Non-null means the modal is open.
+ * Where a record is being filed. Non-null means the modal is open.
+ *
+ * The stream fields are optional because there are two ways in. A section card
+ * knows its stream and fills them, so the modal opens with the destination
+ * settled. The vault's own "Add record" button does not — it opens the modal
+ * against the vault alone, and the section picker inside supplies the rest.
  *
  * `streamId` is what the backend attaches to; `assetCode` is what the vault and
  * stream pages page through, so both travel together.
  */
 export interface UploadTarget {
   vaultId: string;
-  streamId: string;
-  assetCode: string;
+  streamId?: string;
+  assetCode?: string;
   /** Section label ("Maintenance & Upgrades"), shown in the modal title. */
-  streamLabel: string;
+  streamLabel?: string;
+  /**
+   * Which of the five sections this is, resolved once where the stream is still
+   * in hand. `assetCode` is a ledger identity and cannot be resolved back to a
+   * section, so the modal cannot work this out for itself.
+   */
+  sectionCode?: StreamCategoryCode;
   ledger: string;
 }
 

@@ -1,6 +1,8 @@
-import { categoryForAssetCode } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
-import { formatStreamName } from "@/shared/utils/streamHelpers";
+import {
+  categoryForStream,
+  formatStreamName,
+} from "@/shared/utils/streamHelpers";
 import { UploadTarget } from "./types";
 
 /**
@@ -18,13 +20,14 @@ export const uploadTargetFor = (
 ): UploadTarget | null => {
   if (!stream.asset_code) return null;
 
+  const category = categoryForStream(stream);
+
   return {
     vaultId,
     streamId: stream.id,
     assetCode: stream.asset_code,
-    streamLabel:
-      categoryForAssetCode(stream.asset_code)?.label ??
-      formatStreamName(stream),
+    streamLabel: category?.label ?? formatStreamName(stream),
+    sectionCode: category?.code,
     ledger: stream.ledger || fallbackLedger || "",
   };
 };

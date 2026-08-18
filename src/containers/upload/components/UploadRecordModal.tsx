@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { vaultDetailSelectors } from "@/containers/vaultDetail/selectors";
-import { categoryForAssetCode } from "@/shared/constants/streams";
+import { STREAM_CATEGORIES } from "@/shared/constants/streams";
 import { useWalletAddress } from "@/shared/hooks/useWalletAddr";
 import { recordMeta } from "@/shared/utils/recordLens";
 import {
@@ -20,6 +20,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { uploadSelectors } from "../selectors";
 import { uploadActions } from "../slice";
+import { uploadTargetFor } from "../target";
+import type { UploadTarget } from "../types";
 import FileDropZone from "./FileDropZone";
 
 // One record is packed into a single deterministic zip, so cap what goes in it.
@@ -96,7 +98,45 @@ export const UploadRecordModal: React.FC = () => {
   const isRunning = status !== "idle";
   const isOpen = target !== null;
 
-  const section = target ? categoryForAssetCode(target.assetCode) : null;
+  // Where the record is going. A section card opens the modal with this
+  // settled; the vault's own button opens it unset, and the picker below fills
+  // it in. Either way the modal reads one resolved destination, so there is no
+  // second code path for the "chosen here" case.
+  const vault = useSelector(vaultDetailSelectors.vault);
+  const streams = useMemo(() => vault?.streams ?? [], [vault?.streams]);
+  const [streamId, setStreamId] = useState("");
+
+  const destination = useMemo(() => {
+    if (!target) return null;
+    const stream = streams.find((candidate) => candidate.id === streamId);
+    return stream
+      ? uploadTargetFor(target.vaultId, stream, target.ledger)
+      : target.streamId
+        ? target
+        : null;
+  }, [target, streams, streamId]);
+
+  // Only streams a record can actually be addressed to — `uploadTargetFor`
+  // returns null for a stream with no asset code, and offering one would give
+  // the homeowner a destination that silently cannot be filed into.
+  const sectionOptions = useMemo(
+    () =>
+      streams
+        .map((stream) => ({
+          id: stream.id,
+          target: target ? uploadTargetFor(target.vaultId, stream, target.ledger) : null,
+        }))
+        .filter(
+          (option): option is { id: string; target: UploadTarget } =>
+            option.target !== null
+        )
+        .map((option) => ({ id: option.id, label: option.target.streamLabel })),
+    [streams, target]
+  );
+
+  const section = destination?.sectionCode
+    ? STREAM_CATEGORIES[destination.sectionCode]
+    : null;
   const docTypes = useMemo(
     () => docTypesForSection(section?.code),
     [section?.code]
@@ -129,6 +169,7 @@ export const UploadRecordModal: React.FC = () => {
 
   useEffect(() => {
     if (!isOpen) return;
+    setStreamId(target?.streamId ?? "");
     setDate(toDateInput(new Date()));
     setProject("");
     setDocName("");
@@ -190,7 +231,8 @@ export const UploadRecordModal: React.FC = () => {
   };
 
   const canSubmit =
-    !!target &&
+    !!destination?.streamId &&
+    !!destination.assetCode &&
     !!recordName &&
     files.length > 0 &&
     !!walletAddress &&
@@ -199,7 +241,7 @@ export const UploadRecordModal: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canSubmit || !target) return;
+    if (!canSubmit || !destination?.streamId || !destination.assetCode) return;
 
     setIsPacking(true);
     try {
@@ -222,9 +264,9 @@ export const UploadRecordModal: React.FC = () => {
           description: description.trim() || undefined,
           file,
           filename: file.name,
-          streamId: target.streamId,
-          assetCode: target.assetCode,
-          ledger: target.ledger,
+          streamId: destination.streamId,
+          assetCode: destination.assetCode,
+          ledger: destination.ledger,
           networkOwner: walletAddress,
         })
       );
@@ -250,11 +292,11 @@ export const UploadRecordModal: React.FC = () => {
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label={`Add a record to ${target.streamLabel}`}
+            aria-label={`Add a record to ${destination?.streamLabel ?? "this vault"}`}
             // Repoints the --cat-* variables, same as the stream cards. The
             // canonical section code, not the raw asset code, which may carry a
             // per-vault prefix.
-            data-category={categoryForAssetCode(target.assetCode)?.code}
+            data-category={destination?.sectionCode}
             onClick={(event) => event.stopPropagation()}
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -272,7 +314,9 @@ export const UploadRecordModal: React.FC = () => {
                   Add a record
                 </h2>
                 <p className="mt-0.5 truncate text-sm text-ink-muted">
-                  Filed into {target.streamLabel}
+                  {destination
+                    ? `Filed into ${destination.streamLabel}`
+                    : "Choose a section to file it into"}
                 </p>
               </div>
               <button
@@ -353,6 +397,35 @@ export const UploadRecordModal: React.FC = () => {
                     />
                     <p className="text-xs text-ink-subtle">
                       When the work happened, not today.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="record-section"
+                      className="text-sm font-medium text-ink"
+                    >
+                      Section
+                    </label>
+                    <select
+                      id="record-section"
+                      value={destination?.streamId ?? ""}
+                      onChange={(event) => setStreamId(event.target.value)}
+                      className={FIELD_CLASS}
+                    >
+                      <option value="" disabled>
+                        Choose a section…
+                      </option>
+                      {sectionOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="truncate text-xs text-ink-subtle">
+                      {destination
+                        ? "Where this record is filed."
+                        : "Pick where this record belongs."}
                     </p>
                   </div>
 

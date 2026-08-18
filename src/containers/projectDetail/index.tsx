@@ -15,6 +15,7 @@ import { CalendarRange, Hammer, Layers } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { PageContainer } from "@/shared/components/PageContainer";
 
 interface SectionGroup {
   category: StreamCategory | null;
@@ -53,12 +54,12 @@ const ProjectDetail = () => {
 
   const inProject = useMemo(
     () => recordsInProject(records, project),
-    [records, project]
+    [records, project],
   );
 
   const sectionOf = useMemo(
     () => makeSectionResolver(vault?.streams),
-    [vault?.streams]
+    [vault?.streams],
   );
 
   // Grouped by section, in the taxonomy's own reading order.
@@ -74,7 +75,7 @@ const ProjectDetail = () => {
     }
 
     return [...groups.values()].sort(
-      (a, b) => categoryOrder(a.category) - categoryOrder(b.category)
+      (a, b) => categoryOrder(a.category) - categoryOrder(b.category),
     );
   }, [inProject, sectionOf]);
 
@@ -87,7 +88,7 @@ const ProjectDetail = () => {
 
   return (
     <div className="min-h-screen bg-surface-sunken">
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <PageContainer>
         <BackButton />
 
         <header className="mb-6 mt-6 rounded-xl border border-line bg-surface-raised p-6 shadow-sm">
@@ -183,7 +184,7 @@ const ProjectDetail = () => {
             )}
           </div>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 };

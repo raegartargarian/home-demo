@@ -9,6 +9,7 @@ import { GlobalSelectors } from "../global/selectors";
 import VaultItem from "./components/VaultItem";
 import { vaultsSelectors } from "./selectors";
 import { vaultsActions } from "./slice";
+import { PageContainer } from "@/shared/components/PageContainer";
 
 const Vaults = () => {
   const dispatch = useDispatch();
@@ -34,21 +35,21 @@ const Vaults = () => {
   if (!isFirstLoading && vaults.length === 0) {
     return (
       <div className="min-h-screen bg-surface">
-        <div className="max-w-5xl mx-auto py-8 px-4">
+        <PageContainer measure="wide">
           <div className="flex justify-center items-center mt-16">
             <NoActivity
               title="No Homes Found"
               description="No homes have been registered yet. Your properties will appear here once they are set up."
             />
           </div>
-        </div>
+        </PageContainer>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="max-w-5xl mx-auto py-8 px-4">
+      <PageContainer measure="wide">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -95,7 +96,7 @@ const Vaults = () => {
             )}
           </>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 };

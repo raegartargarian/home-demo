@@ -37,6 +37,10 @@ interface IRouteStructure {
   name?: string;
 }
 
+/** Build the URL for one vault's page. */
+export const vaultDetailPath = (vaultId: string): string =>
+  `/vaults/${vaultId}`;
+
 /** Build the URL for one project — the records of a single job, drawn from
  *  every section it touches. The project name is the key, since it is what the
  *  record-naming convention carries. */
