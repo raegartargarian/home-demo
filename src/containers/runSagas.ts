@@ -4,6 +4,7 @@ import { dashboardSaga } from "./dashboard/saga";
 import { vaultsSaga } from "./vaults/saga";
 import { vaultDetailSaga } from "./vaultDetail/saga";
 import { serviceRecordSaga } from "./serviceRecord/saga";
+import { uploadSaga } from "./upload/saga";
 
 export const runSagas = () => {
   runSaga(globalSaga);
@@ -11,4 +12,5 @@ export const runSagas = () => {
   runSaga(vaultsSaga);
   runSaga(vaultDetailSaga);
   runSaga(serviceRecordSaga);
+  runSaga(uploadSaga);
 };

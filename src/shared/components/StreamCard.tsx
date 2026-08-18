@@ -4,7 +4,7 @@ import { VerificationBadge } from "@/shared/components/VerificationBadge";
 import { StreamCategory } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
 import { formatStreamName } from "@/shared/utils/streamHelpers";
-import { ArrowRight, Layers } from "lucide-react";
+import { ArrowRight, Layers, Plus } from "lucide-react";
 import React from "react";
 
 interface StreamCardProps {
@@ -16,6 +16,8 @@ interface StreamCardProps {
   /** Record previews. */
   children?: React.ReactNode;
   onViewAll?: () => void;
+  /** Omitted when the viewer cannot file records (e.g. signed out). */
+  onAddRecord?: () => void;
   className?: string;
 }
 
@@ -33,6 +35,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   total,
   children,
   onViewAll,
+  onAddRecord,
   className,
 }) => {
   const Icon = category?.icon ?? Layers;
@@ -101,14 +104,27 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           <div className="space-y-2">{children}</div>
         )}
 
-        {onViewAll && (
-          <button
-            onClick={onViewAll}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium text-cat-ink transition-colors hover:bg-cat-surface"
-          >
-            View all {total} records
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
+        {(onAddRecord || onViewAll) && (
+          <div className="mt-3 flex items-center gap-2">
+            {onAddRecord && (
+              <button
+                onClick={onAddRecord}
+                className="flex items-center gap-1.5 rounded-lg border border-cat-line bg-cat-surface px-3 py-2 text-sm font-medium text-cat-ink transition-colors hover:brightness-95"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Add record
+              </button>
+            )}
+            {onViewAll && (
+              <button
+                onClick={onViewAll}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium text-cat-ink transition-colors hover:bg-cat-surface"
+              >
+                View all {total} records
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </button>
+            )}
+          </div>
         )}
       </div>
     </section>

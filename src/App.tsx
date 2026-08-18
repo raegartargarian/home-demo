@@ -5,6 +5,7 @@ import { StreamDetailPage } from "./containers/streamDetail/loadable";
 import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
 import { ServiceRecordPage } from "./containers/serviceRecord/loadable";
+import UploadRecordModal from "./containers/upload/components/UploadRecordModal";
 import AuthModal from "./shared/components/AuthModal";
 import PageLayout from "./shared/components/PageLayOut";
 import ScrollToTop from "./shared/components/ScrollToTop";
@@ -17,6 +18,10 @@ function App() {
   return (
     <HashRouter>
       <AuthModal />
+
+      {/* One upload modal for the whole app: the vault page and the stream
+          page both open it, and both learn it finished the same way. */}
+      <UploadRecordModal />
 
       <ScrollToTop />
 

@@ -2,6 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
+import { uploadActions } from "@/containers/upload/slice";
+import { uploadTargetFor } from "@/containers/upload/target";
+import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { CopyableHash } from "@/shared/components/CopyableHash";
 import { LoadingIndicator } from "@/shared/components/LoadingIndicator";
 import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll";
@@ -14,8 +18,15 @@ import {
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { formatStreamName } from "@/shared/utils/streamHelpers";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
-import { Calendar, ExternalLink, FileText, Layers, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  Calendar,
+  ExternalLink,
+  FileText,
+  Layers,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import ServiceRecordCard from "../vaultDetail/components/ServiceRecordCard";
@@ -29,6 +40,7 @@ const StreamDetail = () => {
   const { id, code } = useParams<{ id: string; code: string }>();
   const dispatch = useDispatch();
   const vault = useSelector(vaultDetailSelectors.vault);
+  const { isAuthenticated } = useWeb3Auth() || {};
 
   // Ensure the vault is loaded so the header can show stream metadata
   // (name, status, verification) — e.g. on a hard refresh / deep link.
@@ -45,6 +57,8 @@ const StreamDetail = () => {
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [totalRecords, setTotalRecords] = useState<number | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  // Bumped when a record is filed into this stream, to re-run the loader below.
+  const [reloadKey, setReloadKey] = useState(0);
 
   // null totalPages = not yet loaded; treat as "no more" until the first page
   // resolves so the sentinel doesn't fire before we know the page count.
@@ -76,7 +90,7 @@ const StreamDetail = () => {
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, reloadKey]);
 
   const loadMore = useCallback(async () => {
     if (isFetching || !hasMore || !code) return;
@@ -99,6 +113,18 @@ const StreamDetail = () => {
     isLoading: isFetching,
     onLoadMore: loadMore,
   });
+
+  useUploadedInto([code], () => setReloadKey((key) => key + 1));
+
+  const uploadTarget = useMemo(
+    () =>
+      isAuthenticated && stream && id
+        ? uploadTargetFor(id, stream, vault?.ledger)
+        : null,
+    [isAuthenticated, stream, id, vault?.ledger]
+  );
+  const openUpload = () =>
+    uploadTarget && dispatch(uploadActions.openUpload(uploadTarget));
 
   const isFirstLoad = isFetching && attachments.length === 0;
   const status = stream?.status ? getStatusConfig(stream.status) : null;
@@ -147,6 +173,17 @@ const StreamDetail = () => {
                 )}
               </div>
             </div>
+
+            {uploadTarget && (
+              <Button
+                size="sm"
+                onClick={openUpload}
+                className="shrink-0 bg-brand text-ink-inverse hover:bg-brand-hover"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add record
+              </Button>
+            )}
           </div>
 
           {(stream?.tx_hash || stream?.asset_code) && (
@@ -207,6 +244,16 @@ const StreamDetail = () => {
             <p className="text-sm text-ink-muted">
               Records will appear here once documentation is uploaded.
             </p>
+            {uploadTarget && (
+              <Button
+                size="sm"
+                onClick={openUpload}
+                className="mt-4 bg-brand text-ink-inverse hover:bg-brand-hover"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add the first record
+              </Button>
+            )}
           </div>
         ) : (
           <>

@@ -3,7 +3,7 @@ import { store } from "@/main";
 import axios from "axios";
 import { LocalStorageKeys } from "../utils/localStorageHelpers";
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
@@ -14,7 +14,12 @@ apiClient.interceptors.request.use((config) => {
     const isTokenExpired = Date.now() >= tokenData.exp * 1000;
     if (isTokenExpired) {
       store.dispatch(globalActions.logOut());
-      return Promise.reject("Token expired");
+      // A real Error carrying `status`, not a bare string: the upload flow in
+      // @filedgr/web-core classifies failures by status, and a string reaches
+      // it as an unknown failure rather than an auth one.
+      return Promise.reject(
+        Object.assign(new Error("Token expired"), { status: 401 })
+      );
     }
     config.headers.Authorization = `Bearer ${token.replace(/"/g, "")}`;
   }
@@ -24,7 +29,10 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    // 401 only. A 403 is "this account may not do that" — with writes in the
+    // app (filing a record into a stream), logging the homeowner out over a
+    // permission error would be a confusing way to say "not allowed".
+    if (error.response?.status === 401) {
       store.dispatch(globalActions.logOut());
     }
     return Promise.reject(error);

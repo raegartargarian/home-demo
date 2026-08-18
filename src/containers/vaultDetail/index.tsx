@@ -117,7 +117,11 @@ const VaultDetail = () => {
           </div>
 
           {vault.streams && vault.streams.length > 0 ? (
-            <StreamList vaultId={vault.id} streams={vault.streams} />
+            <StreamList
+              vaultId={vault.id}
+              streams={vault.streams}
+              vaultLedger={vault.ledger}
+            />
           ) : (
             <div className="rounded-xl border border-line bg-surface-raised p-12 text-center shadow-sm">
               <Layers className="mx-auto mb-3 h-10 w-10 text-ink-subtle" />
