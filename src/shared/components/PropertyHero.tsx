@@ -17,6 +17,8 @@ interface PropertyHeroProps {
   /** Where the way out goes, and what it is called. */
   backTo: string;
   backLabel: string;
+  /** Router state for the way out — see `BROWSE_ALL_HOMES`. */
+  backState?: unknown;
   /**
    * The home's beds/baths/size line. Passed only by the house's own page — on a
    * section the subject is the section, and the facts would be the house
@@ -65,6 +67,7 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
   icon: Icon,
   backTo,
   backLabel,
+  backState,
   facts,
   innerClassName,
   className,
@@ -103,6 +106,7 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
         >
           <Link
             to={backTo}
+            state={backState}
             className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-white"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden />

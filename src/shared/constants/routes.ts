@@ -33,6 +33,18 @@ interface IRouteStructure {
   name?: string;
 }
 
+/**
+ * Router state that says "I meant to see the list."
+ *
+ * A homeowner with a single property is normally sent straight to it — a page
+ * whose whole job is choosing between homes has nothing to choose. But the
+ * shortcut must not swallow the list: someone who clicks "My Homes" or "All
+ * homes" is asking for it, and bouncing them forward again would make the way
+ * back unusable. Those two links carry this; every other arrival gets the
+ * shortcut.
+ */
+export const BROWSE_ALL_HOMES = { browseAll: true } as const;
+
 /** Build the URL for one vault's page. */
 export const vaultDetailPath = (vaultId: string): string =>
   `/vaults/${vaultId}`;

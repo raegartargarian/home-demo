@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Home, Layers } from "lucide-react";
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import { appRoutes } from "../constants/routes";
+import { appRoutes, BROWSE_ALL_HOMES } from "../constants/routes";
 import { ProfileMenu } from "./ProfileMenu";
 
 /**
@@ -28,7 +28,15 @@ import { ProfileMenu } from "./ProfileMenu";
 
 const NAV_ITEMS = [
   { to: appRoutes.dashboard.path, label: "Home", icon: Home, end: true },
-  { to: appRoutes.vaults.path, label: "My Homes", icon: Layers, end: false },
+  {
+    to: appRoutes.vaults.path,
+    label: "My Homes",
+    icon: Layers,
+    end: false,
+    // Clicking the nav is asking for the list, so it is not shortcut past even
+    // when there is only one home. See `BROWSE_ALL_HOMES`.
+    state: BROWSE_ALL_HOMES,
+  },
 ];
 
 const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
@@ -36,9 +44,9 @@ const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
 
   return (
     <ul className="flex items-center gap-1">
-      {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+      {NAV_ITEMS.map(({ to, label, icon: Icon, end, state }) => (
         <li key={to}>
-          <NavLink to={to} end={end} className="block">
+          <NavLink to={to} end={end} state={state} className="block">
             {({ isActive }) => (
               <span
                 className={[

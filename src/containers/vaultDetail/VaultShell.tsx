@@ -12,7 +12,11 @@ import { PropertyHero } from "@/shared/components/PropertyHero";
 import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TransferBadge } from "@/shared/components/TransferBadge";
-import { appRoutes, vaultDetailPath } from "@/shared/constants/routes";
+import {
+  appRoutes,
+  BROWSE_ALL_HOMES,
+  vaultDetailPath,
+} from "@/shared/constants/routes";
 import { generateVaultProofPdf } from "./components/generateVaultProofPdf";
 import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import {
@@ -89,6 +93,7 @@ const VaultShell = () => {
         icon: category?.icon ?? Layers,
         backTo: id ? vaultDetailPath(id) : appRoutes.vaults.path,
         backLabel: facts?.address ?? vault?.name ?? "Back to the vault",
+        backState: undefined,
         // A section's facts are the house's, and repeating them under a
         // section's name reads as the house interrupting.
         facts: null,
@@ -104,6 +109,8 @@ const VaultShell = () => {
         icon: undefined,
         backTo: appRoutes.vaults.path,
         backLabel: "All homes",
+        // "All homes" means the list, even when there is one of them.
+        backState: BROWSE_ALL_HOMES,
         facts,
         txHash: vault?.tx_hash,
         ledger: vault?.ledger,
@@ -164,6 +171,7 @@ const VaultShell = () => {
         icon={subject.icon}
         backTo={subject.backTo}
         backLabel={subject.backLabel}
+        backState={subject.backState}
         facts={subject.facts}
         innerClassName={measureFor(measure)}
       />

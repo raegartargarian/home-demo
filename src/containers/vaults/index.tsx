@@ -5,18 +5,24 @@ import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll";
 import { Home } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { GlobalSelectors } from "../global/selectors";
 import VaultItem from "./components/VaultItem";
 import { vaultsSelectors } from "./selectors";
 import { vaultsActions } from "./slice";
 import { PageContainer } from "@/shared/components/PageContainer";
 import { PageHeader } from "@/shared/components/PageHeader";
-import { vaultDetailPath } from "@/shared/constants/routes";
+import {
+  BROWSE_ALL_HOMES,
+  vaultDetailPath,
+} from "@/shared/constants/routes";
 
 const Vaults = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const askedForTheList = !!(state as typeof BROWSE_ALL_HOMES | null)
+    ?.browseAll;
 
   const vaults = useSelector(vaultsSelectors.vaults);
   const isFirstLoading = useSelector(vaultsSelectors.isFirstLoading);
@@ -29,16 +35,16 @@ const Vaults = () => {
     dispatch(vaultsActions.fetchVaultsStart({ page: 1 }));
   }, [dispatch, authData]);
 
-  // One home is not a list. Someone with a single property is always going to
-  // that property, and a page whose whole job is choosing between homes has
-  // nothing to choose. Replace rather than push: pushing would make Back land
+  // One home is not a list, so a single-home owner is sent straight to it —
+  // unless they asked for the list, in which case it is theirs. See
+  // `BROWSE_ALL_HOMES`. Replace rather than push: pushing would make Back land
   // here and bounce straight forward again.
   useEffect(() => {
-    if (isFirstLoading || isFetching || hasMore) return;
+    if (askedForTheList || isFirstLoading || isFetching || hasMore) return;
     if (vaults.length === 1) {
       navigate(vaultDetailPath(vaults[0].id), { replace: true });
     }
-  }, [isFirstLoading, isFetching, hasMore, vaults, navigate]);
+  }, [askedForTheList, isFirstLoading, isFetching, hasMore, vaults, navigate]);
 
   const sentinelRef = useInfiniteScroll({
     hasMore,
