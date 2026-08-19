@@ -20,21 +20,6 @@ import { UploadRequest } from "./types";
  * state and the error copy a homeowner should read.
  */
 
-/**
- * This app's pause/resume/cancel actions, wired to the upload controller.
- *
- * Nothing dispatches them right now — the tray offers no pause or cancel,
- * because the controller only bites during the multipart PUT and a button that
- * does nothing through four of the five phases is worse than no button. This
- * stays because it is the seam: give the tray the controls back and they work,
- * with no change here.
- */
-const CONTROL = {
-  pause: uploadActions.pauseUpload.type,
-  resume: uploadActions.resumeUpload.type,
-  cancel: uploadActions.cancelUpload.type,
-};
-
 const FAILURE_MESSAGE: Partial<Record<UploadFailureKind, string>> = {
   "insufficient-balance":
     "This vault is out of credits, so the record could not be filed. Top up and try again.",
@@ -143,11 +128,25 @@ function* uploadRecordSaga(action: PayloadAction<UploadRequest>) {
   };
 
   try {
+    // No `control` map, and passing one without a web-core fix breaks uploading
+    // after the first record.
+    //
+    // `runWithChannel` does `yield fork(watchControls, …)` whenever it is given
+    // one, and `watchControls` is a `while (true) { yield take(…) }` that never
+    // returns. An attached fork keeps its parent alive, so the upload task never
+    // completes — not on success, not on failure. Under `takeLatest` (how
+    // filedgr-web-app runs it) the next dispatch cancels the stuck task and the
+    // leak is invisible. Under `takeLeading`, which is what an upload actually
+    // wants, every later `startUpload` is silently dropped: the reducer still
+    // raises the tray card, so it sits at "Preparing the record…" 0% and no
+    // request is ever made.
+    //
+    // Nothing dispatches pause/resume/cancel anyway — the tray offers neither.
+    // Restore both together: fix the fork, then hand the control map back.
     yield* runAttachmentUpload({
       transport: attachmentTransport,
       file: payload.file,
       request,
-      control: CONTROL,
       onEvent: makeEventHandler(payload.assetCode),
     });
   } catch (error) {

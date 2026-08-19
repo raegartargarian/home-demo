@@ -59,9 +59,14 @@ const uploadSlice = createSlice({
       }),
     },
 
-    // The three control actions carry no state of their own: the saga wires
-    // their *types* to the library's upload controller, which then reports back
+    // The three control actions carry no state of their own — their *types*
+    // are what the library's upload controller is wired to, and it reports back
     // as `uploadPaused` / `uploadResumed` / `uploadCancelled`.
+    //
+    // Nothing dispatches them today: the tray has no pause or cancel, and the
+    // saga deliberately does not hand the control map to web-core, because the
+    // watcher it forks never terminates and hangs the upload task. See the note
+    // at the `runAttachmentUpload` call.
     pauseUpload: (state) => state,
     resumeUpload: (state) => state,
     cancelUpload: (state) => state,
