@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import { filesFromDataTransfer } from "@filedgr/web-core/browser";
 import { useFolderPicker } from "@filedgr/web-core/react";
 import { formatFileSize } from "@filedgr/web-core/format";
-import { FolderOpen, UploadCloud } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import React, { useRef, useState } from "react";
+import DropHint from "./DropHint";
 
 interface FileDropZoneProps {
   /** Called with everything the user just added — never replaces the set. */
@@ -67,14 +68,14 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           onFiles(await filesFromDataTransfer(event.dataTransfer));
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center transition-colors",
+          "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center transition-colors",
           isDragActive
             ? "border-cat bg-cat-surface"
             : "border-line-strong bg-surface hover:border-cat-line hover:bg-cat-surface/40",
           disabled && "cursor-not-allowed opacity-60"
         )}
       >
-        <UploadCloud className="h-6 w-6 text-ink-subtle" aria-hidden />
+        <DropHint isDragActive={isDragActive} hasFiles={fileCount > 0} />
         <p className="text-sm font-medium text-ink">
           {isDragActive
             ? "Drop the files here"
