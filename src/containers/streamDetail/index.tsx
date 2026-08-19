@@ -5,21 +5,9 @@ import { uploadSelectors } from "@/containers/upload/selectors";
 import { uploadActions } from "@/containers/upload/slice";
 import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
-import { Chip } from "@/shared/components/Chip";
-import { PropertyHero } from "@/shared/components/PropertyHero";
-import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
-import { TransferBadge } from "@/shared/components/TransferBadge";
+import { PageContainer } from "@/shared/components/PageContainer";
 import { getStreamAttachments } from "@/shared/providers/api";
-import { parseHomeFacts } from "@/shared/utils/homeFacts";
-import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
-import { getStatusConfig } from "@/shared/utils/statusConfig";
-import {
-  categoryForStream,
-  formatStreamName,
-} from "@/shared/utils/streamHelpers";
-import { vaultDetailPath } from "@/shared/constants/routes";
-import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
-import { ExternalLink, FileText, Layers, Plus } from "lucide-react";
+import { FileText, Layers, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -27,34 +15,16 @@ import RecordFilterBar from "./components/RecordFilterBar";
 import { filterRecords, isFilterActive } from "./components/recordFilter";
 import StreamTimeline from "./components/StreamTimeline";
 import { useRecordFilter } from "./components/useRecordFilter";
-import { vaultDetailSelectors } from "../vaultDetail/selectors";
-import { vaultDetailActions } from "../vaultDetail/slice";
+import { useVaultContext } from "../vaultDetail/vaultContext";
 import { Attachment } from "../vaultDetail/types";
-import {
-  measureFor,
-  PageContainer,
-} from "@/shared/components/PageContainer";
 
 const PAGE_SIZE = 15;
 
 const StreamDetail = () => {
   const { id, code } = useParams<{ id: string; code: string }>();
   const dispatch = useDispatch();
-  const vault = useSelector(vaultDetailSelectors.vault);
+  const { vault, stream } = useVaultContext();
   const { isAuthenticated } = useWeb3Auth() || {};
-
-  // Ensure the vault is loaded so the header can show stream metadata
-  // (name, status, verification) — e.g. on a hard refresh / deep link.
-  useEffect(() => {
-    if (id && vault?.id !== id) {
-      dispatch(vaultDetailActions.fetchVaultDetailStart({ id }));
-    }
-  }, [id, vault?.id, dispatch]);
-
-  const stream = vault?.streams?.find((s) => s.asset_code === code);
-  // The same name the vault page gives the house, so the way back says where
-  // it goes rather than just "back".
-  const facts = useMemo(() => (vault ? parseHomeFacts(vault) : null), [vault]);
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [page, setPage] = useState(0);
@@ -117,18 +87,13 @@ const StreamDetail = () => {
   const uploadTarget = useMemo(
     () =>
       isAuthenticated && stream && id
-        ? uploadTargetFor(id, stream, vault?.ledger)
+        ? uploadTargetFor(id, stream, vault.ledger)
         : null,
-    [isAuthenticated, stream, id, vault?.ledger],
+    [isAuthenticated, stream, id, vault.ledger],
   );
   const isFiling = useSelector(uploadSelectors.isFiling);
   const openUpload = () =>
     uploadTarget && dispatch(uploadActions.openUpload(uploadTarget));
-
-  // The same resolution the vault page uses, so a section looks like itself
-  // here too: its own glyph, label and copy rather than the generic layers
-  // icon and the backend's "the stream mapped to …" description.
-  const category = stream ? categoryForStream(stream) : null;
 
   const [filter, setFilter] = useRecordFilter();
   const filtering = isFilterActive(filter);
@@ -147,162 +112,98 @@ const StreamDetail = () => {
   }, [filtering, hasMore, isFetching, loadMore]);
 
   const isFirstLoad = isFetching && attachments.length === 0;
-  const status = stream?.status ? getStatusConfig(stream.status) : null;
-
   return (
-    /* Repoints the --cat-* variables, same as the section cards on the vault
-       page — without it every stream renders in the default grey. */
-    <div data-category={category?.code} className="min-h-screen bg-surface">
-      {/* The same photograph the vault page opens on, dropped to a strip: the
-          house is the context here, and the section is the subject. Without it
-          a section page had no sense of place at all — five of them in a row
-          were five identical boxes of text. */}
-      {vault && (
-        <PropertyHero
-          variant="band"
-          vault={vault}
-          bandIcon={category?.icon ?? Layers}
-          bandTitle={
-            category?.label ??
-            (stream ? formatStreamName(stream) : "Record Stream")
-          }
-          bandDescription={category?.description ?? stream?.description}
-          backTo={id ? vaultDetailPath(id) : "/"}
-          backLabel={facts?.address ?? vault.name}
-          innerClassName={measureFor("wide")}
-        />
-      )}
+    <PageContainer measure="wide">
+      {/* The section's own heading line: what is in it, and how much. The
+          house, the way out, the provenance and the Add-record button all
+          belong to `VaultShell`, which stays mounted while you move between
+          sections. */}
+      <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <h2 className="text-lg font-medium tracking-tight text-ink">Records</h2>
+        {totalRecords != null && (
+          <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
+            <FileText className="h-3.5 w-3.5" aria-hidden />
+            {totalRecords} record{totalRecords !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
 
-      <PageContainer measure="wide">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-line pb-5">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {category && (
-              <TransferBadge transfersOnSale={category.transfersOnSale} />
-            )}
-            {status && <Chip label={status.label} tone={status.tone} />}
-            {totalRecords != null && (
-              <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
-                <FileText className="h-3.5 w-3.5" />
-                {totalRecords} record{totalRecords !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-
+      {/* Records */}
+      {isFirstLoad ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton
+              key={i}
+              className="aspect-[4/3] w-full rounded-lg bg-surface-inset"
+            />
+          ))}
+        </div>
+      ) : attachments.length === 0 ? (
+        <div className="bg-surface-raised rounded-xl border border-line p-12 text-center">
+          <Layers className="w-10 h-10 text-ink-subtle mx-auto mb-3" />
+          <h3 className="text-base font-medium tracking-tight text-ink mb-1">
+            No home records yet
+          </h3>
+          <p className="text-sm text-ink-muted">
+            Records will appear here once documentation is uploaded.
+          </p>
           {uploadTarget && (
-            <Button size="sm" disabled={isFiling} onClick={openUpload}>
-              <Plus />
-              Add record
+            <Button
+              size="sm"
+              disabled={isFiling}
+              onClick={openUpload}
+              className="mt-4"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add the first record
             </Button>
           )}
         </div>
+      ) : (
+        <>
+          <RecordFilterBar
+            records={attachments}
+            filter={filter}
+            onChange={setFilter}
+            isLoading={isFetching}
+            className="mb-5"
+          />
 
-        <ProvenanceDetails
-          className="mb-6"
-          txHash={stream?.tx_hash}
-          ledger={stream?.ledger}
-          createdAt={stream?.created_at}
-          createdLabel="Created"
-          rows={
-            stream?.asset_code
-              ? [{ label: "Stream", value: stream.asset_code, copyable: true }]
-              : []
-          }
-          detailActions={
-            stream?.tx_hash && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  viewTXInExplorer(
-                    stream.tx_hash!,
-                    stream.ledger as NETWORK_SERVER_NAMES,
-                  )
-                }
-              >
-                <ExternalLink />
-                Explorer
-              </Button>
-            )
-          }
-        />
-
-        {/* Records */}
-        {isFirstLoad ? (
-          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton
-                key={i}
-                className="aspect-[4/3] w-full rounded-lg bg-surface-inset"
-              />
-            ))}
-          </div>
-        ) : attachments.length === 0 ? (
-          <div className="bg-surface-raised rounded-xl border border-line p-12 text-center">
-            <Layers className="w-10 h-10 text-ink-subtle mx-auto mb-3" />
-            <h3 className="text-base font-medium tracking-tight text-ink mb-1">
-              No home records yet
-            </h3>
-            <p className="text-sm text-ink-muted">
-              Records will appear here once documentation is uploaded.
-            </p>
-            {uploadTarget && (
-              <Button
-                size="sm"
-                disabled={isFiling}
-                onClick={openUpload}
-                className="mt-4"
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add the first record
-              </Button>
-            )}
-          </div>
-        ) : (
-          <>
-            <RecordFilterBar
-              records={attachments}
-              filter={filter}
-              onChange={setFilter}
-              isLoading={isFetching}
-              className="mb-5"
-            />
-
-            {/* Only once the section has finished arriving. A filter pulls
+          {/* Only once the section has finished arriving. A filter pulls
                 the remaining pages in, and "nothing matches" announced over a
                 half-loaded section is a claim the next page can disprove. */}
-            {visible.length === 0 && !hasMore && !isFetching ? (
-              <div className="rounded-xl border border-line bg-surface-raised p-12 text-center">
-                <Layers className="mx-auto mb-3 h-10 w-10 text-ink-subtle" />
-                <h3 className="mb-1 text-base font-medium tracking-tight text-ink">
-                  Nothing matches this filter
-                </h3>
-                <p className="text-sm text-ink-muted">
-                  Every record in this section is still here — just none filed
-                  the way you asked for.
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setFilter({ facets: [], rooms: [] })}
-                  className="mt-4"
-                >
-                  Clear the filter
-                </Button>
-              </div>
-            ) : (
-              <StreamTimeline
-                records={visible}
-                /* A filter loads the whole section itself, so the sentinel
+          {visible.length === 0 && !hasMore && !isFetching ? (
+            <div className="rounded-xl border border-line bg-surface-raised p-12 text-center">
+              <Layers className="mx-auto mb-3 h-10 w-10 text-ink-subtle" />
+              <h3 className="mb-1 text-base font-medium tracking-tight text-ink">
+                Nothing matches this filter
+              </h3>
+              <p className="text-sm text-ink-muted">
+                Every record in this section is still here — just none filed the
+                way you asked for.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFilter({ facets: [], rooms: [] })}
+                className="mt-4"
+              >
+                Clear the filter
+              </Button>
+            </div>
+          ) : (
+            <StreamTimeline
+              records={visible}
+              /* A filter loads the whole section itself, so the sentinel
                    would only race it. */
-                hasMore={hasMore && !filtering}
-                isLoading={isFetching && attachments.length > 0}
-                onLoadMore={loadMore}
-              />
-            )}
-          </>
-        )}
-      </PageContainer>
-    </div>
+              hasMore={hasMore && !filtering}
+              isLoading={isFetching && attachments.length > 0}
+              onLoadMore={loadMore}
+            />
+          )}
+        </>
+      )}
+    </PageContainer>
   );
 };
 

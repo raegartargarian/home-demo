@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
-import { VaultDetailPage } from "./containers/vaultDetail/loadable";
+import {
+  VaultDetailPage,
+  VaultShellPage,
+} from "./containers/vaultDetail/loadable";
 import { StreamDetailPage } from "./containers/streamDetail/loadable";
 import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
@@ -49,26 +52,24 @@ function App() {
             </PageLayout>
           }
         />
+        {/* One layout route for the whole vault. The house, the way out and
+            the provenance are mounted once here, so opening a section swaps
+            only the records beneath them — the photograph is never unmounted
+            and never reloads. */}
         <Route
           path={appRoutes.vaultDetail.path}
           element={
-            // Opens on the property photograph, which runs to the top edge with
-            // the header floating on it.
             <PageLayout bleed>
-              <VaultDetailPage />
+              <VaultShellPage />
             </PageLayout>
           }
-        />
-
-        <Route
-          path={appRoutes.streamDetail.path}
-          element={
-            // Opens on the same photograph the vault does, so it bleeds too.
-            <PageLayout bleed>
-              <StreamDetailPage />
-            </PageLayout>
-          }
-        />
+        >
+          <Route index element={<VaultDetailPage />} />
+          <Route
+            path={appRoutes.streamDetail.path}
+            element={<StreamDetailPage />}
+          />
+        </Route>
 
         <Route
           path={appRoutes.serviceRecord.path}

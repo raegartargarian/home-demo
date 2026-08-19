@@ -6,3 +6,9 @@ export const VaultDetailPage = lazyLoad(
   (module) => module.default,
   { fallback: <LoadingIndicator fullPageHeight /> }
 );
+
+export const VaultShellPage = lazyLoad(
+  () => import("./VaultShell"),
+  (module) => module.default,
+  { fallback: <LoadingIndicator fullPageHeight /> }
+);

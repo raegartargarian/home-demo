@@ -80,7 +80,11 @@ export const StreamTimeline: React.FC<StreamTimelineProps> = ({
           <FileShelf
             tiles={tiles}
             scope={allTiles}
-            className="ml-[7px] border-l border-line py-1 pl-6 sm:grid-cols-4 lg:grid-cols-6"
+            /* Fewer, larger tiles than the vault page's section cards. There
+               a shelf is a preview squeezed beside four others; here the
+               section *is* the page, so a document is worth being able to
+               recognise without opening it. */
+            className="ml-[7px] gap-3 border-l border-line py-1 pl-6 sm:grid-cols-3 lg:grid-cols-4"
           />
         </section>
       ))}
