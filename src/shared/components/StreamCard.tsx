@@ -62,9 +62,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       )}
     >
       {/* The whole card, as one control. An overlay rather than a handler on
-          the section: a `<section role="button">` cannot legally contain the
-          file tiles, which are buttons themselves. The tiles lift above this
-          with their own stacking context below, so they still get their clicks. */}
+          the section, so the card can still contain real controls where it
+          needs them without nesting a button inside a button. */}
       {onOpen && (
         <button
           type="button"
@@ -122,10 +121,10 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             ) : null}
           </div>
         ) : (
-          // Files on a shelf — see `FileShelf`, which the caller supplies so a
-          // click on a document does the same thing here as on the stream page.
-          // Lifted above the card-wide overlay so those clicks still land.
-          <div className="relative z-20">{children}</div>
+          // Files on a shelf — see `FileShelf`. Deliberately *not* lifted above
+          // the card-wide overlay: the faces here are a preview of the section,
+          // and every click on the card opens it.
+          children
         )}
       </div>
     </section>

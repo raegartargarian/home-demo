@@ -17,19 +17,32 @@ interface FileShelfProps {
    * a year.
    */
   scope?: SectionTile[];
+  /**
+   * False renders the faces without their own click, and mounts no viewer —
+   * for a shelf inside a card that is itself one target.
+   */
+  interactive?: boolean;
   className?: string;
 }
 
 /**
  * A row of file faces, and the viewer behind them.
  *
- * Both places that show files — a section card on the vault page and a year on
- * the stream page — are this component, so clicking a document behaves the same
- * way in both, and the grid cannot drift into two grids.
+ * Both places that show files — a section card on the vault page and a period
+ * on the section page — are this component, so the grid cannot drift into two
+ * grids.
+ *
+ * What a click does differs, and deliberately. On the section page a file is
+ * the thing you came for, so it opens in the viewer. On a section card it is a
+ * preview of what is inside, and the card is one target that opens the section
+ * — so those faces are inert and the card takes the click. Opening a viewer
+ * from a card meant two destinations on one surface, and which you got
+ * depended on hitting a 90px tile.
  */
 export const FileShelf: React.FC<FileShelfProps> = ({
   tiles,
   scope,
+  interactive = true,
   className,
 }) => {
   const entries = scope ?? tiles;
@@ -44,6 +57,7 @@ export const FileShelf: React.FC<FileShelfProps> = ({
               attachment={tile.attachment}
               file={tile.file}
               label={tile.label}
+              interactive={interactive}
               onOpen={() =>
                 preview.openAt(
                   entries.findIndex((entry) => entry.key === tile.key),
@@ -54,12 +68,14 @@ export const FileShelf: React.FC<FileShelfProps> = ({
         ))}
       </ul>
 
-      <FilePreviewModal
-        entries={entries}
-        index={preview.index}
-        onNavigate={preview.navigate}
-        onClose={preview.close}
-      />
+      {interactive && (
+        <FilePreviewModal
+          entries={entries}
+          index={preview.index}
+          onNavigate={preview.navigate}
+          onClose={preview.close}
+        />
+      )}
     </>
   );
 };

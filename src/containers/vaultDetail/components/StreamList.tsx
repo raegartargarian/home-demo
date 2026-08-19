@@ -139,7 +139,7 @@ const StreamList: React.FC<StreamListProps> = ({ vaultId, streams }) => {
                 : undefined
             }
           >
-            <FileShelf tiles={tiles} />
+            <FileShelf tiles={tiles} interactive={false} />
           </StreamCard>
         );
       })}

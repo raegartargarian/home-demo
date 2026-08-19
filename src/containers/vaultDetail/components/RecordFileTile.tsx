@@ -19,10 +19,14 @@ interface RecordFileTileProps {
   label: string;
   /**
    * Opens the file itself, in the preview modal. Where it is omitted the tile
-   * falls back to opening the record that carries the file — the tile is always
-   * a way in to something, never inert.
+   * falls back to opening the record that carries the file.
    */
   onOpen?: () => void;
+  /**
+   * False renders the face alone, with no click of its own — for shelves that
+   * sit inside something that is already one target.
+   */
+  interactive?: boolean;
 }
 
 /**
@@ -42,6 +46,7 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
   file,
   label,
   onOpen,
+  interactive = true,
 }) => {
   const navigate = useNavigate();
   const resolver = useAttachmentResolver(attachment);
@@ -53,17 +58,8 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
     [file],
   );
 
-  return (
-    <button
-      type="button"
-      title={file.filename ?? attachment.name ?? label}
-      onClick={
-        onOpen ??
-        (() => navigate(`${appRoutes.serviceRecord.name}${attachment.id}`))
-      }
-      className="group block w-full cursor-pointer text-left"
-    >
-      <FileTile
+  const face = (
+    <FileTile
         label={label}
         format={formatOf(file) ?? undefined}
         size="md"
@@ -85,7 +81,31 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
             </div>
           </div>
         )}
-      </FileTile>
+    </FileTile>
+  );
+
+  // A shelf on a section card is a preview of what is inside, and the card is
+  // one target that opens the section — so the faces there are just faces, and
+  // a click anywhere on the card goes the same place.
+  if (!interactive) {
+    return (
+      <div title={file.filename ?? attachment.name ?? label} className="block">
+        {face}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title={file.filename ?? attachment.name ?? label}
+      onClick={
+        onOpen ??
+        (() => navigate(`${appRoutes.serviceRecord.name}${attachment.id}`))
+      }
+      className="group block w-full cursor-pointer text-left"
+    >
+      {face}
     </button>
   );
 };
