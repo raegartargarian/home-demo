@@ -21,13 +21,18 @@ export default defineConfig({
       },
     }),
   ],
-  // Pinned, not merely preferred: 5173 is the origin whitelisted for this
-  // Web3Auth client ID. Without strictPort, Vite moves to 5174/5175 when 5173
-  // is busy and login then fails its redirect check against an origin nobody
-  // whitelisted. Refusing to start is the easier failure to read.
+  // 5173 preferred, not pinned. It is the origin whitelisted for this Web3Auth
+  // client ID, so it is the port login works on — but `strictPort` made a busy
+  // port a hard startup failure, which came up more often than the login
+  // problem it was guarding against.
+  //
+  // The trade is worth knowing: if 5173 is taken, Vite moves to 5174/5175 and
+  // starts fine, and then **login fails** its redirect check with "could not
+  // validate redirect, please whitelist your domain". If you see that, look at
+  // the port in the address bar before looking anywhere else — the dev server
+  // prints it on startup.
   server: {
     port: 5173,
-    strictPort: true,
   },
   build: {
     outDir: "build", // Change the output directory to 'build'
