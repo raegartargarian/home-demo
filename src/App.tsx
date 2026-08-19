@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { VaultDetailPage } from "./containers/vaultDetail/loadable";
-import { ProjectDetailPage } from "./containers/projectDetail/loadable";
 import { StreamDetailPage } from "./containers/streamDetail/loadable";
 import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
 import { ServiceRecordPage } from "./containers/serviceRecord/loadable";
 import UploadRecordModal from "./containers/upload/components/UploadRecordModal";
+import UploadTray from "./containers/upload/components/UploadTray";
 import AuthModal from "./shared/components/AuthModal";
 import PageLayout from "./shared/components/PageLayOut";
 import ScrollToTop from "./shared/components/ScrollToTop";
@@ -23,6 +23,10 @@ function App() {
       {/* One upload modal for the whole app: the vault page and the stream
           page both open it, and both learn it finished the same way. */}
       <UploadRecordModal />
+
+      {/* Where an upload goes once the form hands it over, so filing a record
+          never pins the homeowner to one page. */}
+      <UploadTray />
 
       <ScrollToTop />
 
@@ -48,7 +52,9 @@ function App() {
         <Route
           path={appRoutes.vaultDetail.path}
           element={
-            <PageLayout>
+            // Opens on the property photograph, which runs to the top edge with
+            // the header floating on it.
+            <PageLayout bleed>
               <VaultDetailPage />
             </PageLayout>
           }
@@ -59,15 +65,6 @@ function App() {
           element={
             <PageLayout>
               <StreamDetailPage />
-            </PageLayout>
-          }
-        />
-
-        <Route
-          path={appRoutes.projectDetail.path}
-          element={
-            <PageLayout>
-              <ProjectDetailPage />
             </PageLayout>
           }
         />

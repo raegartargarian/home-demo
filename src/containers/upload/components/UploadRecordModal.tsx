@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
 import { vaultDetailSelectors } from "@/containers/vaultDetail/selectors";
+import { cn } from "@/lib/utils";
+import { FilterChip } from "@/shared/components/FilterChip";
+import {
+  facetForType,
+  RECORD_FACETS,
+  RecordFacet,
+} from "@/shared/constants/recordFacets";
+import { Room, ROOMS } from "@/shared/constants/rooms";
 import { STREAM_CATEGORIES } from "@/shared/constants/streams";
 import { useWalletAddress } from "@/shared/hooks/useWalletAddr";
 import { recordMeta } from "@/shared/utils/recordLens";
@@ -10,14 +16,15 @@ import {
   docTypesForSection,
   RecordDocType,
 } from "@/shared/utils/recordNaming";
+import { withRecordTags } from "@/shared/utils/recordTags";
 import { withFlatNames } from "@filedgr/web-core/browser";
 import { formatFileSize } from "@filedgr/web-core/format";
-import type { UploadPhase } from "@filedgr/web-core/upload";
 import { createDeterministicZip } from "@filedgr/web-core/zip";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AlertCircle, Loader2, Pause, Play, X } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { AlertCircle, Loader2, X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { captureRect } from "../originRect";
 import { uploadSelectors } from "../selectors";
 import { uploadActions } from "../slice";
 import { uploadTargetFor } from "../target";
@@ -28,15 +35,6 @@ import FileDropZone from "./FileDropZone";
 const MAX_FILES = 50;
 const MAX_TOTAL_BYTES = 5 * 1024 * 1024 * 1024;
 
-const PHASE_LABEL: Record<UploadPhase, string> = {
-  creating: "Preparing the record…",
-  reviewing: "Reviewing the files…",
-  uploading: "Uploading…",
-  completing: "Finalising the upload…",
-  confirming: "Anchoring to the blockchain…",
-  done: "Done",
-};
-
 const slugify = (value: string) =>
   value
     .trim()
@@ -46,6 +44,8 @@ const slugify = (value: string) =>
 
 const FIELD_CLASS =
   "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-cat";
+
+const LABEL_CLASS = "text-sm font-medium text-ink";
 
 const totalSize = (files: File[]) =>
   files.reduce((sum, file) => sum + file.size, 0);
@@ -62,8 +62,22 @@ const fromDateInput = (value: string): Date | null => {
 };
 
 /** "Hill Country final invoice.pdf" → "Hill Country final invoice". */
-const stripExtension = (filename: string) =>
-  filename.replace(/\.[^./\\]+$/, "");
+const stripExtension = (filename: string) => filename.replace(/\.[^./\\]+$/, "");
+
+/** A titled block of fields. The form is a full page, so it needs signposting. */
+const FieldGroup: React.FC<{
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}> = ({ title, hint, children }) => (
+  <section className="space-y-4">
+    <div>
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      {hint && <p className="mt-0.5 text-xs text-ink-subtle">{hint}</p>}
+    </div>
+    {children}
+  </section>
+);
 
 /**
  * Files a new record into one stream.
@@ -71,14 +85,19 @@ const stripExtension = (filename: string) =>
  * Mounted once, app-wide (see App.tsx): the vault page and the stream page both
  * open it by dispatching `openUpload`, and both learn it finished through
  * `useUploadedInto` rather than by owning the flow.
+ *
+ * A full page rather than a dialog, because filing one record means a
+ * destination, four naming fields, a description, room tags and a file set —
+ * enough that a phone-sized sheet spent more of itself scrolling than showing.
+ *
+ * Once submitted the run belongs to the tray (see UploadTray.tsx) and this form
+ * hides itself. It stays *mounted* while it does, so a failure can put it back
+ * with the files and every field exactly as they were left.
  */
 export const UploadRecordModal: React.FC = () => {
   const dispatch = useDispatch();
   const target = useSelector(uploadSelectors.target);
   const status = useSelector(uploadSelectors.status);
-  const phase = useSelector(uploadSelectors.phase);
-  const progress = useSelector(uploadSelectors.progress);
-  const parts = useSelector(uploadSelectors.parts);
   const error = useSelector(uploadSelectors.error);
   const walletAddress = useWalletAddress();
   const reduceMotion = useReducedMotion();
@@ -90,10 +109,14 @@ export const UploadRecordModal: React.FC = () => {
   const [project, setProject] = useState("");
   const [docName, setDocName] = useState("");
   const [description, setDescription] = useState("");
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [contains, setContains] = useState<RecordFacet[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
   // Zipping happens before the flow starts, and a large set takes a moment.
   const [isPacking, setIsPacking] = useState(false);
+  // Measured at submit, so the tray card can fly out of the button that filed it.
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   const isRunning = status !== "idle";
   const isOpen = target !== null;
@@ -124,14 +147,16 @@ export const UploadRecordModal: React.FC = () => {
       streams
         .map((stream) => ({
           id: stream.id,
-          target: target ? uploadTargetFor(target.vaultId, stream, target.ledger) : null,
+          target: target
+            ? uploadTargetFor(target.vaultId, stream, target.ledger)
+            : null,
         }))
         .filter(
           (option): option is { id: string; target: UploadTarget } =>
-            option.target !== null
+            option.target !== null,
         )
         .map((option) => ({ id: option.id, label: option.target.streamLabel })),
-    [streams, target]
+    [streams, target],
   );
 
   const section = destination?.sectionCode
@@ -139,7 +164,7 @@ export const UploadRecordModal: React.FC = () => {
     : null;
   const docTypes = useMemo(
     () => docTypesForSection(section?.code),
-    [section?.code]
+    [section?.code],
   );
 
   // Suggest the projects this vault already has, so "Kitchen Remodel" is picked
@@ -150,10 +175,19 @@ export const UploadRecordModal: React.FC = () => {
       ...new Set(
         vaultRecords
           .map((record) => recordMeta(record).project)
-          .filter((name): name is string => !!name)
+          .filter((name): name is string => !!name),
       ),
     ],
-    [vaultRecords]
+    [vaultRecords],
+  );
+
+  // A record's Type puts it in one facet already; this is for everything *else*
+  // in the same zip. Offering the typed facet again would just be a second way
+  // to say what the Type said.
+  const typedFacet = useMemo(() => facetForType(docType), [docType]);
+  const containsOptions = useMemo(
+    () => RECORD_FACETS.filter((facet) => facet.code !== typedFacet?.code),
+    [typedFacet],
   );
 
   const recordName = useMemo(() => {
@@ -174,6 +208,8 @@ export const UploadRecordModal: React.FC = () => {
     setProject("");
     setDocName("");
     setDescription("");
+    setRooms([]);
+    setContains([]);
     setFiles([]);
     setFileError("");
     setIsPacking(false);
@@ -205,13 +241,13 @@ export const UploadRecordModal: React.FC = () => {
 
     if (next.length > MAX_FILES) {
       setFileError(
-        `One record can hold at most ${MAX_FILES} files (this selection has ${next.length}). File the rest as a second record.`
+        `One record can hold at most ${MAX_FILES} files (this selection has ${next.length}). File the rest as a second record.`,
       );
       return;
     }
     if (totalSize(next) > MAX_TOTAL_BYTES) {
       setFileError(
-        `The files add up to more than ${formatFileSize(MAX_TOTAL_BYTES)}.`
+        `The files add up to more than ${formatFileSize(MAX_TOTAL_BYTES)}.`,
       );
       return;
     }
@@ -243,6 +279,9 @@ export const UploadRecordModal: React.FC = () => {
     event.preventDefault();
     if (!canSubmit || !destination?.streamId || !destination.assetCode) return;
 
+    // Taken before the form hides itself, while the button is still on screen.
+    const originRect = captureRect(submitRef.current);
+
     setIsPacking(true);
     try {
       // A lone zip is uploaded as-is; anything else is packed into one.
@@ -256,19 +295,38 @@ export const UploadRecordModal: React.FC = () => {
             });
 
       dispatch(
-        uploadActions.startUpload({
-          // The canonical name is what the browsing lenses read back — see
-          // utils/recordLens.ts. A free-text name would file the record under
-          // "Unfiled" and leave it off every project.
-          name: recordName,
-          description: description.trim() || undefined,
-          file,
-          filename: file.name,
-          streamId: destination.streamId,
-          assetCode: destination.assetCode,
-          ledger: destination.ledger,
-          networkOwner: walletAddress,
-        })
+        uploadActions.startUpload(
+          {
+            // The canonical name is what the browsing lenses read back — see
+            // utils/recordLens.ts. A free-text name would file the record under
+            // "Unfiled" and leave it off every project.
+            name: recordName,
+            // Rooms are appended to the description as a readable line: the
+            // backend stores no tags, and this is the only field that comes back
+            // on every row of the section list. See utils/recordTags.ts.
+            // A Type change can leave a selection that the Type now covers;
+            // drop it rather than writing the same facet down twice.
+            description: withRecordTags(description.trim(), {
+              rooms,
+              contains: contains.filter(
+                (facet) => facet.code !== typedFacet?.code,
+              ),
+            }),
+            file,
+            filename: file.name,
+            streamId: destination.streamId,
+            assetCode: destination.assetCode,
+            ledger: destination.ledger,
+            networkOwner: walletAddress,
+          },
+          {
+            title: recordName,
+            subtitle: destination.streamLabel,
+            originRect,
+            vaultId: destination.vaultId,
+            assetCode: destination.assetCode,
+          },
+        ),
       );
     } catch (packError) {
       console.error("Failed to package the record:", packError);
@@ -278,18 +336,28 @@ export const UploadRecordModal: React.FC = () => {
     }
   };
 
+  // A failed run, a rejected file set, or a missing wallet — whichever is
+  // blocking, shown in one place beside the files.
+  const problem = fileError || error;
+
   return (
     <AnimatePresence>
       {isOpen && target && (
         <motion.div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          onClick={close}
+          className="fixed inset-0 z-[60] bg-surface-sunken"
+          // Handed over to the tray on submit. Hidden rather than unmounted so
+          // a failed run comes back to a form that never lost anything.
+          style={isRunning ? { display: "none" } : undefined}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
+          transition={
+            reduceMotion
+              ? { duration: 0.15 }
+              : { type: "spring", stiffness: 420, damping: 36 }
+          }
         >
-          <motion.div
+          <div
             role="dialog"
             aria-modal="true"
             aria-label={`Add a record to ${destination?.streamLabel ?? "this vault"}`}
@@ -297,312 +365,347 @@ export const UploadRecordModal: React.FC = () => {
             // canonical section code, not the raw asset code, which may carry a
             // per-vault prefix.
             data-category={destination?.sectionCode}
-            onClick={(event) => event.stopPropagation()}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
-            transition={
-              reduceMotion
-                ? { duration: 0.15 }
-                : { type: "spring", stiffness: 420, damping: 34 }
-            }
-            className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-line bg-surface-raised shadow-xl sm:max-w-lg sm:rounded-2xl"
+            className="flex h-full flex-col"
           >
-            <header className="flex items-start justify-between gap-4 border-b border-line p-5">
-              <div className="min-w-0">
-                <h2 className="text-base font-semibold text-ink">
-                  Add a record
-                </h2>
-                <p className="mt-0.5 truncate text-sm text-ink-muted">
-                  {destination
-                    ? `Filed into ${destination.streamLabel}`
-                    : "Choose a section to file it into"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={close}
-                disabled={isRunning}
-                aria-label="Close"
-                className="rounded-lg p-1.5 text-ink-subtle transition-colors hover:bg-surface-inset hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
-            </header>
-
-            {isRunning ? (
-              <div className="space-y-4 p-5">
-                <div className="flex items-center gap-2 text-sm font-medium text-ink">
-                  <Loader2 className="h-4 w-4 animate-spin text-cat" aria-hidden />
-                  {status === "paused"
-                    ? "Paused"
-                    : (phase && PHASE_LABEL[phase]) || "Uploading…"}
-                </div>
-                <Progress value={progress} className="bg-surface-inset" />
-                <p className="text-xs text-ink-subtle">
-                  {progress}%
-                  {parts && ` · part ${parts.current} of ${parts.total}`}
-                </p>
-                <p className="text-xs text-ink-subtle">
-                  Keep this window open until the record is anchored.
-                </p>
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-line text-ink-muted hover:bg-surface-inset"
-                    onClick={() =>
-                      dispatch(
-                        status === "paused"
-                          ? uploadActions.resumeUpload()
-                          : uploadActions.pauseUpload()
-                      )
-                    }
-                  >
-                    {status === "paused" ? (
-                      <Play className="mr-1.5 h-3.5 w-3.5" />
-                    ) : (
-                      <Pause className="mr-1.5 h-3.5 w-3.5" />
-                    )}
-                    {status === "paused" ? "Resume" : "Pause"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-line text-ink-muted hover:bg-surface-inset"
-                    onClick={() => dispatch(uploadActions.cancelUpload())}
-                  >
-                    Cancel upload
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 p-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="record-date"
-                      className="text-sm font-medium text-ink"
-                    >
-                      Date
-                    </label>
-                    <input
-                      id="record-date"
-                      type="date"
-                      value={date}
-                      onChange={(event) => setDate(event.target.value)}
-                      className={FIELD_CLASS}
-                    />
-                    <p className="text-xs text-ink-subtle">
-                      When the work happened, not today.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="record-section"
-                      className="text-sm font-medium text-ink"
-                    >
-                      Section
-                    </label>
-                    <select
-                      id="record-section"
-                      value={destination?.streamId ?? ""}
-                      onChange={(event) => setStreamId(event.target.value)}
-                      className={FIELD_CLASS}
-                    >
-                      <option value="" disabled>
-                        Choose a section…
-                      </option>
-                      {sectionOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="truncate text-xs text-ink-subtle">
-                      {destination
-                        ? "Where this record is filed."
-                        : "Pick where this record belongs."}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="record-type"
-                      className="text-sm font-medium text-ink"
-                    >
-                      Type
-                    </label>
-                    <select
-                      id="record-type"
-                      value={docType}
-                      onChange={(event) =>
-                        setDocType(event.target.value as RecordDocType)
-                      }
-                      className={FIELD_CLASS}
-                    >
-                      {docTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="truncate text-xs text-ink-subtle">
-                      Types filed in {section?.label ?? "this section"}.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="record-project"
-                    className="text-sm font-medium text-ink"
-                  >
-                    Project
-                  </label>
-                  <input
-                    id="record-project"
-                    list="known-projects"
-                    value={project}
-                    onChange={(event) => setProject(event.target.value)}
-                    placeholder="e.g. Roof Replacement"
-                    autoFocus
-                    className={FIELD_CLASS}
-                  />
-                  <datalist id="known-projects">
-                    {knownProjects.map((known) => (
-                      <option key={known} value={known} />
-                    ))}
-                  </datalist>
-                  <p className="text-xs text-ink-subtle">
-                    The job this belongs to. Reuse the same wording and every
-                    section's paperwork gathers on one page.
+            <header className="shrink-0 border-b border-line bg-surface-raised">
+              <div className="mx-auto flex max-w-5xl items-start justify-between gap-4 px-5 py-4 sm:px-8">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-ink">
+                    Add a record
+                  </h2>
+                  <p className="mt-0.5 truncate text-sm text-ink-muted">
+                    {destination
+                      ? `Filed into ${destination.streamLabel}`
+                      : "Choose a section to file it into"}
                   </p>
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={close}
+                  aria-label="Close"
+                  className="-mr-1"
+                >
+                  <X aria-hidden />
+                </Button>
+              </div>
+            </header>
 
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="record-doc-name"
-                    className="text-sm font-medium text-ink"
-                  >
-                    Document
-                  </label>
-                  <input
-                    id="record-doc-name"
-                    value={docName}
-                    onChange={(event) => setDocName(event.target.value)}
-                    placeholder="e.g. Summit Roofing final invoice"
-                    className={FIELD_CLASS}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="record-description"
-                    className="text-sm font-medium text-ink"
-                  >
-                    Description{" "}
-                    <span className="font-normal text-ink-subtle">
-                      (optional)
-                    </span>
-                  </label>
-                  <textarea
-                    id="record-description"
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    rows={2}
-                    placeholder="Who did the work, what was covered, anything worth remembering."
-                    className={cn(FIELD_CLASS, "resize-none")}
-                  />
-                </div>
-
-                <FileDropZone
-                  onFiles={acceptFiles}
-                  fileCount={files.length}
-                  totalBytes={totalSize(files)}
-                  maxFiles={MAX_FILES}
-                  maxTotalBytes={MAX_TOTAL_BYTES}
-                  disabled={isPacking}
-                />
-
-                {files.length > 0 && (
-                  <ul className="max-h-44 space-y-1.5 overflow-y-auto">
-                    {files.map((file, index) => (
-                      <li
-                        key={`${file.name}-${index}`}
-                        className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2"
-                      >
-                        <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                          {file.name}
-                        </span>
-                        <span className="shrink-0 text-xs tabular-nums text-ink-subtle">
-                          {formatFileSize(file.size)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          aria-label={`Remove ${file.name}`}
-                          className="shrink-0 rounded p-1 text-ink-subtle transition-colors hover:bg-surface-inset hover:text-ink"
+            <form
+              onSubmit={handleSubmit}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-12 gap-y-10 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+                  <div className="space-y-10">
+                    <FieldGroup
+                      title="Where it goes"
+                      hint="A record lives in one section. Rooms and projects cut across them later."
+                    >
+                      <div className="space-y-1.5">
+                        <label htmlFor="record-section" className={LABEL_CLASS}>
+                          Section
+                        </label>
+                        <select
+                          id="record-section"
+                          value={destination?.streamId ?? ""}
+                          onChange={(event) => setStreamId(event.target.value)}
+                          className={FIELD_CLASS}
                         >
-                          <X className="h-3.5 w-3.5" aria-hidden />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                          <option value="" disabled>
+                            Choose a section…
+                          </option>
+                          {sectionOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </FieldGroup>
 
-                {(fileError || error || !walletAddress) && (
-                  <div
-                    className={cn(
-                      "flex items-start gap-2 rounded-lg border p-3 text-sm",
-                      fileError || error
-                        ? "border-destructive/20 bg-destructive/10 text-destructive"
-                        : "border-line bg-surface-sunken text-ink-muted"
-                    )}
-                  >
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                    <span>
-                      {fileError ||
-                        error ||
-                        "Connect your wallet to file a record."}
-                    </span>
-                  </div>
-                )}
+                    <FieldGroup
+                      title="What it is"
+                      hint="These four fields become the record's name, shown at the bottom right."
+                    >
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label htmlFor="record-date" className={LABEL_CLASS}>
+                            Date
+                          </label>
+                          <input
+                            id="record-date"
+                            type="date"
+                            value={date}
+                            onChange={(event) => setDate(event.target.value)}
+                            className={FIELD_CLASS}
+                          />
+                          <p className="text-xs text-ink-subtle">
+                            When the work happened, not today.
+                          </p>
+                        </div>
 
-                {recordName && (
-                  <div className="rounded-lg border border-line bg-surface-sunken px-3 py-2">
-                    <p className="text-xs text-ink-subtle">Filed as</p>
-                    <p className="mt-0.5 break-all font-mono text-xs text-ink-muted">
-                      {recordName}
-                    </p>
+                        <div className="space-y-1.5">
+                          <label htmlFor="record-type" className={LABEL_CLASS}>
+                            Type
+                          </label>
+                          <select
+                            id="record-type"
+                            value={docType}
+                            onChange={(event) =>
+                              setDocType(event.target.value as RecordDocType)
+                            }
+                            className={FIELD_CLASS}
+                          >
+                            {docTypes.map((type) => (
+                              <option key={type} value={type}>
+                                {type}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="truncate text-xs text-ink-subtle">
+                            Types filed in {section?.label ?? "this section"}.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="record-project" className={LABEL_CLASS}>
+                          Project
+                        </label>
+                        <input
+                          id="record-project"
+                          list="known-projects"
+                          value={project}
+                          onChange={(event) => setProject(event.target.value)}
+                          placeholder="e.g. Roof Replacement"
+                          autoFocus
+                          className={FIELD_CLASS}
+                        />
+                        <datalist id="known-projects">
+                          {knownProjects.map((known) => (
+                            <option key={known} value={known} />
+                          ))}
+                        </datalist>
+                        <p className="text-xs text-ink-subtle">
+                          The job this belongs to. Reuse the same wording and
+                          every section's paperwork gathers on one page.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="record-doc-name" className={LABEL_CLASS}>
+                          Document
+                        </label>
+                        <input
+                          id="record-doc-name"
+                          value={docName}
+                          onChange={(event) => setDocName(event.target.value)}
+                          placeholder="e.g. Summit Roofing final invoice"
+                          className={FIELD_CLASS}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label
+                          htmlFor="record-description"
+                          className={LABEL_CLASS}
+                        >
+                          Description{" "}
+                          <span className="font-normal text-ink-subtle">
+                            (optional)
+                          </span>
+                        </label>
+                        <textarea
+                          id="record-description"
+                          value={description}
+                          onChange={(event) =>
+                            setDescription(event.target.value)
+                          }
+                          rows={4}
+                          placeholder="Who did the work, what was covered, anything worth remembering."
+                          className={cn(FIELD_CLASS, "resize-none")}
+                        />
+                      </div>
+                    </FieldGroup>
+
+                    {/* One upload is one zip, and a zip is often more than one
+                        kind of document — the contractor's invoice together
+                        with the photos of the finished work. The name can only
+                        carry one Type, so this is how the rest of what is
+                        inside stays findable. See utils/recordTags.ts. */}
+                    <FieldGroup
+                      title="Also contains"
+                      hint={`Optional. ${
+                        typedFacet
+                          ? `This is filed under ${typedFacet.label} — tick anything else in the same files.`
+                          : "Tick what else is in these files."
+                      }`}
+                    >
+                      <div
+                        role="group"
+                        aria-label="What else these files contain"
+                        className="flex flex-wrap gap-1.5"
+                      >
+                        {containsOptions.map((facet) => (
+                          <FilterChip
+                            key={facet.code}
+                            label={facet.label}
+                            icon={facet.icon}
+                            isActive={contains.some(
+                              (it) => it.code === facet.code,
+                            )}
+                            onToggle={() =>
+                              setContains((current) =>
+                                current.some((it) => it.code === facet.code)
+                                  ? current.filter(
+                                      (it) => it.code !== facet.code,
+                                    )
+                                  : [...current, facet],
+                              )
+                            }
+                          />
+                        ))}
+                      </div>
+                    </FieldGroup>
+
+                    {/* Tags, not filing: the record still lives in the section
+                        chosen above, and tagging it "Kitchen" does not move it.
+                        A closed list rather than free text, because these are
+                        what the section's filter chips are built from and two
+                        spellings of one room would split its records across two
+                        chips. */}
+                    <FieldGroup
+                      title="Rooms"
+                      hint="Optional. Lets this record be found by where the work was."
+                    >
+                      <div
+                        role="group"
+                        aria-label="Rooms this record covers"
+                        className="flex flex-wrap gap-1.5"
+                      >
+                        {ROOMS.map((room) => (
+                          <FilterChip
+                            key={room.code}
+                            label={room.label}
+                            isActive={rooms.some((it) => it.code === room.code)}
+                            onToggle={() =>
+                              setRooms((current) =>
+                                current.some((it) => it.code === room.code)
+                                  ? current.filter((it) => it.code !== room.code)
+                                  : [...current, room],
+                              )
+                            }
+                          />
+                        ))}
+                      </div>
+                    </FieldGroup>
                   </div>
-                )}
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={close}
-                    className="border-line text-ink-muted hover:bg-surface-inset"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="bg-brand text-ink-inverse hover:bg-brand-hover"
-                  >
-                    {isPacking && (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+
+                  <div className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+                    <FieldGroup
+                      title="Files"
+                      hint="Everything here is filed as one record."
+                    >
+                      <FileDropZone
+                        onFiles={acceptFiles}
+                        fileCount={files.length}
+                        totalBytes={totalSize(files)}
+                        maxFiles={MAX_FILES}
+                        maxTotalBytes={MAX_TOTAL_BYTES}
+                        disabled={isPacking}
+                      />
+
+                      {files.length > 0 && (
+                        <ul className="max-h-72 space-y-1.5 overflow-y-auto">
+                          {files.map((file, index) => (
+                            <li
+                              key={`${file.name}-${index}`}
+                              className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2"
+                            >
+                              <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                                {file.name}
+                              </span>
+                              <span className="shrink-0 text-xs tabular-nums text-ink-subtle">
+                                {formatFileSize(file.size)}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => removeFile(index)}
+                                aria-label={`Remove ${file.name}`}
+                                className="shrink-0"
+                              >
+                                <X aria-hidden />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </FieldGroup>
+
+                    {recordName && (
+                      <div className="rounded-lg border border-line bg-surface px-3 py-2">
+                        <p className="text-xs text-ink-subtle">Filed as</p>
+                        <p className="mt-0.5 break-all font-mono text-xs text-ink-muted">
+                          {recordName}
+                        </p>
+                      </div>
                     )}
-                    {isPacking ? "Packaging…" : "File record"}
-                  </Button>
+
+                    {(problem || !walletAddress) && (
+                      <div
+                        className={cn(
+                          "flex items-start gap-2 rounded-lg border p-3 text-sm",
+                          problem
+                            ? "border-destructive/20 bg-destructive/10 text-destructive"
+                            : "border-line bg-surface text-ink-muted",
+                        )}
+                      >
+                        <AlertCircle
+                          className="mt-0.5 h-4 w-4 shrink-0"
+                          aria-hidden
+                        />
+                        <span>
+                          {problem || "Connect your wallet to file a record."}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </form>
-            )}
-          </motion.div>
+              </div>
+
+              <footer className="shrink-0 border-t border-line bg-surface-raised">
+                <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+                  <p className="hidden text-xs text-ink-subtle sm:block">
+                    Filing keeps running in the corner — you can carry on
+                    browsing.
+                  </p>
+                  <div className="flex flex-1 justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={close}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      ref={submitRef}
+                      type="submit"
+                      disabled={!canSubmit}
+                    >
+                      {isPacking && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      )}
+                      {isPacking ? "Packaging…" : "File record"}
+                    </Button>
+                  </div>
+                </div>
+              </footer>
+            </form>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

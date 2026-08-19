@@ -1,5 +1,6 @@
 import type { StreamCategoryCode } from "@/shared/constants/streams";
 import type { UploadPhase } from "@filedgr/web-core/upload";
+import type { OriginRect } from "./originRect";
 
 /**
  * Where a record is being filed. Non-null means the modal is open.
@@ -41,6 +42,25 @@ export interface UploadRequest {
   networkOwner: string;
 }
 
+/**
+ * What the corner tray shows about a run, and where it flies from.
+ *
+ * Deliberately separate from the run fields below: those describe an upload in
+ * flight and are cleared the moment it ends, whereas the card outlives it so a
+ * finished record can still be seen — and opened — before it is dismissed.
+ */
+export interface UploadCard {
+  /** The canonical record name, as filed. */
+  title: string;
+  /** The section it was filed into. */
+  subtitle?: string;
+  /** Where the card animates out of — the submit button's rect. */
+  originRect?: OriginRect;
+  /** Both halves of the section's URL, so the card can offer to open it. */
+  vaultId: string;
+  assetCode: string;
+}
+
 export interface UploadState {
   target: UploadTarget | null;
   status: "idle" | "running" | "paused";
@@ -56,4 +76,12 @@ export interface UploadState {
    * stream must both be observable.
    */
   completed: { assetCode: string; at: number } | null;
+  /** The tray card, from submit until it is dismissed or replaced. */
+  card: UploadCard | null;
+  /**
+   * Whether the run behind the current card finished. Needed because `status`
+   * falls back to "idle" when a run ends, which on its own cannot tell a
+   * finished upload from one that never started.
+   */
+  succeeded: boolean;
 }

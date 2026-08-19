@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { filesFromDataTransfer } from "@filedgr/web-core/browser";
 import { useFolderPicker } from "@filedgr/web-core/react";
@@ -85,18 +86,20 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           Up to {maxFiles} files, {formatFileSize(maxTotalBytes)} in total.
           Several files are filed as one record.
         </p>
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="sm"
           disabled={disabled}
           onClick={(event) => {
             event.stopPropagation();
             folderPicker.open();
           }}
-          className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-cat-ink underline-offset-2 hover:underline disabled:cursor-not-allowed"
+          className="mt-1"
         >
-          <FolderOpen className="h-3.5 w-3.5" aria-hidden />
+          <FolderOpen aria-hidden />
           or select a whole folder
-        </button>
+        </Button>
       </div>
 
       <input

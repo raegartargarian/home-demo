@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWeb3Auth } from "../global/Web3AuthProvider";
@@ -23,12 +24,9 @@ export const LoginPage = () => {
             Please sign in to continue
           </p>
         </div>
-        <button
-          onClick={login}
-          className="group relative w-full flex justify-center py-3 px-4 text-sm font-medium rounded-full text-ink-inverse bg-brand hover:bg-brand-hover transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-        >
+        <Button onClick={login} size="lg" className="w-full">
           Sign in with Web3Auth
-        </button>
+        </Button>
       </div>
     </div>
   );

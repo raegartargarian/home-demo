@@ -12,4 +12,12 @@ export const uploadSelectors = {
   parts: createSelector(selectUploadState, (state) => state.parts),
   error: createSelector(selectUploadState, (state) => state.error),
   completed: createSelector(selectUploadState, (state) => state.completed),
+  card: createSelector(selectUploadState, (state) => state.card),
+  /**
+   * Whether a run is in flight. One at a time: the saga takes the leading
+   * start and ignores the rest, so the entry points offer to file a record
+   * only when one can actually be filed.
+   */
+  isFiling: createSelector(selectUploadState, (state) => state.status !== "idle"),
+  succeeded: createSelector(selectUploadState, (state) => state.succeeded),
 };

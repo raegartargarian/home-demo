@@ -35,6 +35,14 @@ const SEMANTIC_COLORS = {
     surface: withAlpha("--brand-surface"),
     line: withAlpha("--brand-line"),
   },
+  // The landing-page drawing's blue, used as a support accent. Not merged into
+  // `brand`: brand is the primary action and stays near-black.
+  blueprint: {
+    DEFAULT: withAlpha("--blueprint-solid"),
+    ink: withAlpha("--blueprint-ink"),
+    surface: withAlpha("--blueprint-surface"),
+    line: withAlpha("--blueprint-line"),
+  },
   verified: {
     DEFAULT: withAlpha("--verified"),
     surface: withAlpha("--verified-surface"),

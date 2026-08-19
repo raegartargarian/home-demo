@@ -64,6 +64,15 @@ export const getSingleVault = (id: string) => {
  * merging five independent paginations client-side. Each row carries its
  * `stream_id` and an embedded `stream`, so a record can still be badged with the
  * section it lives in.
+ *
+ * NOT DEPLOYED YET (checked 2026-08-19, dev). The route is in `openapi.json`,
+ * but the dev gateway answers it exactly as it answers a route that does not
+ * exist — 403 `MissingAuthenticationTokenException`, and no `Access-Control-*`
+ * headers, which the browser can only surface as a CORS error. `/vaults/{id}`,
+ * `/attachments` and `/streams/{code}/attachments` all preflight 200 on the
+ * same host, and `filedgr-web-app` only ever reads attachments per stream.
+ * So: not CORS, not the dev-server port — the route is simply not on the stage.
+ * Anything reading the vault's records as one set is empty until it is.
  */
 export const getVaultAttachments = (
   vaultId: string,

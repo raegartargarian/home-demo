@@ -1,6 +1,6 @@
 import type { UploadPhase } from "@filedgr/web-core/upload";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UploadRequest, UploadState, UploadTarget } from "./types";
+import { UploadCard, UploadRequest, UploadState, UploadTarget } from "./types";
 
 const initialState: UploadState = {
   target: null,
@@ -10,9 +10,12 @@ const initialState: UploadState = {
   parts: null,
   error: null,
   completed: null,
+  card: null,
+  succeeded: false,
 };
 
-/** Everything describing a run in flight. `completed` and `error` outlive it. */
+/** Everything describing a run in flight. `completed`, `error` and the tray
+ *  card outlive it. */
 const clearRun = (state: UploadState) => {
   state.status = "idle";
   state.phase = null;
@@ -35,16 +38,25 @@ const uploadSlice = createSlice({
       clearRun(state);
     },
     startUpload: {
-      // The payload is the request; the reducer only flips the modal into its
-      // running state, so it never reads it.
-      reducer(state: UploadState) {
+      // The request itself is for the saga; the reducer only flips into the
+      // running state and raises the tray card, which is why the card travels
+      // as `meta` rather than being mixed into the request.
+      reducer(
+        state: UploadState,
+        action: PayloadAction<UploadRequest, string, { card: UploadCard }>
+      ) {
         state.status = "running";
         state.phase = "creating";
         state.progress = 0;
         state.parts = null;
         state.error = null;
+        state.card = action.meta.card;
+        state.succeeded = false;
       },
-      prepare: (request: UploadRequest) => ({ payload: request }),
+      prepare: (request: UploadRequest, card: UploadCard) => ({
+        payload: request,
+        meta: { card },
+      }),
     },
 
     // The three control actions carry no state of their own: the saga wires
@@ -75,15 +87,25 @@ const uploadSlice = createSlice({
     ) {
       state.completed = { assetCode: action.payload.assetCode, at: Date.now() };
       state.target = null;
+      // The card stays, now showing the finished record, until it is dismissed.
+      state.succeeded = true;
       clearRun(state);
     },
     uploadFailed(state, action: PayloadAction<string>) {
-      // The modal stays open on failure so the picked files survive a retry.
+      // The form comes back on failure, with the files and everything typed
+      // into it intact, so the retry costs nothing. That makes it the only
+      // place the error belongs — a tray card would be a second, deader copy.
       state.error = action.payload;
+      state.card = null;
       clearRun(state);
     },
     uploadCancelled(state) {
+      state.card = null;
       clearRun(state);
+    },
+    dismissTray(state) {
+      state.card = null;
+      state.succeeded = false;
     },
     dismissError(state) {
       state.error = null;

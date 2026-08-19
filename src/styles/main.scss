@@ -54,6 +54,18 @@
     --brand-surface: 237 234 229;
     --brand-line: 220 216 209;
 
+    // -- blueprint accent ----------------------------------------------------
+    // Lifted from the isometric house drawing on the landing page — the one
+    // colour the product already had that wasn't a status or a category. Used
+    // sparingly: focus rings, the secondary action, small highlights. It is a
+    // *support* colour, not a second brand — the primary action stays near-black
+    // for the contrast reasons above, and blueprint at #99BACE is far too light
+    // to carry white text.
+    --blueprint-solid: 153 186 206; // #99BACE — the drawing's own blue
+    --blueprint-ink: 55 90 115; // readable on the warm ground
+    --blueprint-surface: 234 241 246;
+    --blueprint-line: 198 217 230;
+
     // -- status --------------------------------------------------------------
     // `verified` is reserved for ledger proof. Do not reuse it as a brand green:
     // that collision is what made the old palette unreadable. Desaturated to sit
@@ -96,7 +108,8 @@
     --destructive-foreground: var(--ink-inverse);
     --border: var(--line);
     --input: var(--line-strong);
-    --ring: var(--brand);
+    // Focus is the one place the accent appears on every screen.
+    --ring: var(--blueprint-solid);
 
     --chart-1: 67 56 202;
     --chart-2: 15 118 110;
@@ -129,6 +142,13 @@
     --brand-ink: 242 239 234;
     --brand-surface: 48 46 41;
     --brand-line: 74 71 63;
+
+    // The drawing's blue is the identity, so it holds; only the ground under
+    // it and the text weight above it change.
+    --blueprint-solid: 153 186 206;
+    --blueprint-ink: 168 197 215;
+    --blueprint-surface: 29 41 51;
+    --blueprint-line: 52 71 87;
 
     --verified: 126 178 143;
     --verified-surface: 28 46 34;
@@ -234,6 +254,20 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  // Tailwind's preflight is switched off (see `corePlugins` in
+  // tailwind.config.js), so the handful of resets the app actually depends on
+  // have to be declared here. Every list in this app is a layout container —
+  // the nav, file grids, chip rows, the picked-files list — never prose, so the
+  // browser's disc marker and 40px indent are wrong every time. They were
+  // showing: the stray dot in the header island was the first nav item's
+  // bullet.
+  ul,
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 }
 

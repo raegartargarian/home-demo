@@ -10,13 +10,12 @@ import { vaultDetailActions } from "./slice";
 const MAX_PAGES = 10;
 
 /**
- * The vault's records, for the Timeline and Projects lenses.
+ * The vault's records as one set, across every section.
  *
- * `loadAll` is the difference between the two: a timeline is chronological and
- * newest-first, so a partial page is simply the recent past and reads correctly.
- * Grouping by project is not — a project whose invoice landed on page 2 would
- * show up missing its invoice — so those views page through the whole vault
- * before they can be trusted.
+ * `loadAll` is for callers that group or count: a partial page read in date
+ * order is simply the recent past and is honest, but anything that gathers
+ * records into buckets is wrong until the whole vault has arrived — the bucket
+ * whose second half landed on page 2 shows up missing half of itself.
  */
 export const useVaultRecords = (vaultId?: string, loadAll = false) => {
   const dispatch = useDispatch();
@@ -62,5 +61,12 @@ export const useVaultRecords = (vaultId?: string, loadAll = false) => {
     loadMore,
     /** True once every page the lens is allowed to load has arrived. */
     isComplete: currentPage > 0 && currentPage >= lastPage,
+    /**
+     * True when the vault is longer than `MAX_PAGES` — so `isComplete` means
+     * "loaded all it may", not "loaded all there is", and any grouping over
+     * these records is missing the older history. A lens that groups has to say
+     * so rather than presenting a partial set as the whole vault.
+     */
+    isTruncated: totalPages !== null && totalPages > MAX_PAGES,
   };
 };

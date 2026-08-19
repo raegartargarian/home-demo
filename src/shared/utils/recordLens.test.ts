@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  groupByProject,
-  groupByYear,
-  LensRecord,
-  recordMeta,
-  recordsInProject,
-} from "./recordLens";
+import { groupByYear, LensRecord, recordMeta } from "./recordLens";
 
 const record = (
   id: string,
@@ -103,50 +97,5 @@ describe("groupByYear", () => {
 
   it("returns nothing for an empty vault", () => {
     expect(groupByYear([])).toEqual([]);
-  });
-});
-
-describe("groupByProject", () => {
-  const groups = groupByProject([
-    KITCHEN_ESTIMATE,
-    ROOF_WARRANTY,
-    LEGACY,
-    KITCHEN_INVOICE,
-    ROOF_PERMIT,
-  ]);
-
-  it("assembles a project from every section it touches", () => {
-    const roof = groups.find((group) => group.project === "Roof Replacement");
-    expect(roof?.records.map((r) => r.id)).toEqual(["4", "3"]);
-    expect(roof?.assetCodes).toEqual(["systems-warranties", "property-records"]);
-  });
-
-  it("spans the project from its oldest record to its newest", () => {
-    const kitchen = groups.find((group) => group.project === "Kitchen Remodel");
-    expect(kitchen?.from).toEqual(new Date(2024, 1, 19));
-    expect(kitchen?.to).toEqual(new Date(2024, 5, 28));
-  });
-
-  it("orders by most recent activity, with Unfiled always last", () => {
-    expect(groups.map((group) => group.project)).toEqual([
-      "Roof Replacement",
-      "Kitchen Remodel",
-      null,
-    ]);
-  });
-
-  it("collects legacy names under Unfiled instead of inventing a project", () => {
-    const unfiled = groups.find((group) => group.project === null);
-    expect(unfiled?.records.map((r) => r.id)).toEqual(["5"]);
-  });
-});
-
-describe("recordsInProject", () => {
-  it("finds one project's records again, newest first", () => {
-    const found = recordsInProject(
-      [KITCHEN_ESTIMATE, ROOF_PERMIT, KITCHEN_INVOICE],
-      "Kitchen Remodel"
-    );
-    expect(found.map((r) => r.id)).toEqual(["2", "1"]);
   });
 });

@@ -19,9 +19,11 @@ import {
   FileText,
   HardDrive,
   Loader2,
+  MapPin,
   ShieldCheck,
 } from "lucide-react";
-import { useEffect } from "react";
+import { parseRoomTags } from "@/shared/utils/recordTags";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import FileViewer from "./components/FileViewer";
@@ -38,6 +40,11 @@ const ServiceRecord = () => {
   const isLoading = useSelector(serviceRecordSelectors.isLoading);
   const isProcessingZip = useSelector(serviceRecordSelectors.isProcessingZip);
   const error = useSelector(serviceRecordSelectors.error);
+
+  const rooms = useMemo(
+    () => parseRoomTags(attachment?.description),
+    [attachment?.description],
+  );
 
   const attachmentStatus = attachment?.status
     ? getStatusConfig(attachment.status)
@@ -137,6 +144,21 @@ const ServiceRecord = () => {
                     </span>
                   )}
                 </div>
+                {/* Where the work was, as opposed to where the record is
+                    filed. Tags, so a record can carry more than one. */}
+                {rooms.length > 0 && (
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {rooms.map((room) => (
+                      <li
+                        key={room.code}
+                        className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-inset px-2 py-0.5 text-[11px] font-medium text-ink-muted"
+                      >
+                        <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                        {room.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {attachment?.stream?.asset_code && (
                   <div className="flex items-center gap-1.5 mt-1.5 text-xs text-ink-subtle">
                     <span>Stream:</span>
@@ -156,7 +178,6 @@ const ServiceRecord = () => {
                       attachment.ledger as NETWORK_SERVER_NAMES,
                     )
                   }
-                  className="border-line text-ink-muted hover:bg-surface-inset"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View Transaction

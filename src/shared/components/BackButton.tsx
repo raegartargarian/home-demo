@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { appRoutes } from "../constants/routes";
@@ -16,16 +17,9 @@ export const BackButton = () => {
   };
 
   return (
-    <button
-      onClick={handleBack}
-      className="
-          cursor-pointer
-          flex items-center gap-3 
-          mt-5
-          "
-    >
-      <ArrowLeft size={16} />
-      <p className="font-light"> Return Back</p>
-    </button>
+    <Button variant="ghost" size="sm" onClick={handleBack} className="mt-5">
+      <ArrowLeft />
+      Return Back
+    </Button>
   );
 };

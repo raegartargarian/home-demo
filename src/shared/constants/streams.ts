@@ -3,8 +3,10 @@ import { Cpu, Home, Landmark, Lock, LucideIcon, Wrench } from "lucide-react";
 /**
  * The Filedgr House Template — five-section architecture.
  *
- * Source of truth: "Filedgr Property Vault – Proposed Architecture (MVP &
- * Future Vision)". The taxonomy is fixed at five streams and does not grow;
+ * Source of truth: the "Initial Demo Structure" column of the demo/product
+ * structure sketch — its five section names and their example contents are
+ * reproduced verbatim below. The taxonomy is fixed at five streams and does not
+ * grow;
  * customer-specific structure is expressed by which streams a scenario surfaces
  * and, later, by Event Vaults layered on top (see `transfersOnSale` below).
  *
@@ -62,34 +64,25 @@ export const STREAM_CATEGORIES: Record<StreamCategoryCode, StreamCategory> = {
     icon: Home,
     order: 1,
     contents: [
-      "Floor plans",
+      "Original plans",
       "Builder documents",
-      "Material specifications",
-      "Paint colours",
-      "Certificate of Occupancy",
-      "Initial surveys",
+      "Materials",
+      "Surveys",
     ],
     transfersOnSale: true,
   },
   "maintenance-upgrades": {
     code: "maintenance-upgrades",
-    label: "Maintenance & Upgrades",
-    description: "The ongoing history of work performed on the property.",
+    label: "Maintenance and Upgrades",
+    description: "Captures events and projects done on the property.",
     icon: Wrench,
     order: 2,
-    contents: [
-      "Repairs",
-      "Renovations",
-      "Maintenance records",
-      "Contractor invoices",
-      "Photos",
-      "Inspection reports",
-    ],
+    contents: ["Repairs", "Renovations", "Receipts"],
     transfersOnSale: true,
   },
   "systems-warranties": {
     code: "systems-warranties",
-    label: "Systems & Warranties",
+    label: "Home Systems and Appliances",
     description: "Information relating to installed equipment.",
     icon: Cpu,
     order: 3,
@@ -97,10 +90,9 @@ export const STREAM_CATEGORIES: Record<StreamCategoryCode, StreamCategory> = {
       "HVAC",
       "Appliances",
       "Solar",
-      "Smart home devices",
       "Manuals",
-      "Serial numbers",
       "Warranties",
+      "Security System",
     ],
     transfersOnSale: true,
   },
@@ -111,28 +103,22 @@ export const STREAM_CATEGORIES: Record<StreamCategoryCode, StreamCategory> = {
     icon: Landmark,
     order: 4,
     contents: [
+      "HOA",
       "Deeds",
-      "Surveys",
-      "HOA documentation",
       "Zoning",
       "Permits",
-      "Compliance records",
+      "Surveys",
+      "Compliance",
     ],
     transfersOnSale: true,
   },
   "personal-vault": {
     code: "personal-vault",
-    label: "Personal Vault",
+    label: "My Personal Home Info",
     description: "Information belonging only to the current homeowner.",
     icon: Lock,
     order: 5,
-    contents: [
-      "Mortgage documents",
-      "Insurance policies",
-      "Insurance claims",
-      "Property taxes",
-      "Financing documents",
-    ],
+    contents: ["Mortgage", "Insurance", "Taxes", "Personal documents"],
     transfersOnSale: false,
   },
 };

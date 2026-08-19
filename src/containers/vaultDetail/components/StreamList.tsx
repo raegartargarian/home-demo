@@ -1,7 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
-import { uploadActions } from "@/containers/upload/slice";
-import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { StreamCard } from "@/shared/components/StreamCard";
 import { streamDetailPath } from "@/shared/constants/routes";
@@ -10,7 +7,6 @@ import { getStreamAttachments } from "@/shared/providers/api";
 import { VaultStreamDto } from "@/shared/types/vault";
 import { categoryForStream } from "@/shared/utils/streamHelpers";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
 import FileShelf from "./FileShelf";
@@ -27,8 +23,6 @@ const TILE_COUNT = 6;
 interface StreamListProps {
   vaultId: string;
   streams: VaultStreamDto[];
-  /** Fallback ledger for streams that don't carry one of their own. */
-  vaultLedger?: string;
 }
 
 interface StreamPreview {
@@ -66,14 +60,8 @@ const withCategory = (streams: VaultStreamDto[]) =>
     }))
     .sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
 
-const StreamList: React.FC<StreamListProps> = ({
-  vaultId,
-  streams,
-  vaultLedger,
-}) => {
+const StreamList: React.FC<StreamListProps> = ({ vaultId, streams }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { isAuthenticated } = useWeb3Auth() || {};
   // streamId -> { first few records, true total }, loaded in parallel up front.
   const [previewsByStream, setPreviewsByStream] = useState<
     Record<string, StreamPreview>
@@ -137,15 +125,7 @@ const StreamList: React.FC<StreamListProps> = ({
       {sections.map(({ stream, category }) => {
         const { previews, total } =
           previewsByStream[stream.id] ?? EMPTY_PREVIEW;
-        const allTiles = sectionTiles(previews);
-        const tiles = allTiles.slice(0, TILE_COUNT);
-        // More to see if records were left unfetched, or if the records we did
-        // fetch carry more files than the shelf has room for.
-        const hasMore =
-          total > previews.length || allTiles.length > tiles.length;
-        const uploadTarget = isAuthenticated
-          ? uploadTargetFor(vaultId, stream, vaultLedger)
-          : null;
+        const tiles = sectionTiles(previews).slice(0, TILE_COUNT);
 
         return (
           <StreamCard
@@ -153,15 +133,9 @@ const StreamList: React.FC<StreamListProps> = ({
             stream={stream}
             category={category as StreamCategory | null}
             total={total}
-            hasMore={hasMore}
             onOpen={
               stream.asset_code
                 ? () => navigate(streamDetailPath(vaultId, stream.asset_code!))
-                : undefined
-            }
-            onAddRecord={
-              uploadTarget
-                ? () => dispatch(uploadActions.openUpload(uploadTarget))
                 : undefined
             }
           >

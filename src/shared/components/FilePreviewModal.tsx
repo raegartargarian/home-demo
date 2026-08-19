@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   downloadSource,
   toPreviewSource,
@@ -125,49 +126,55 @@ const PreviewShell: React.FC<{
 
           {entries.length > 1 && (
             <div className="flex shrink-0 items-center gap-1">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={goPrev}
                 disabled={!hasPrev}
                 aria-label="Previous file"
-                className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-inset hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
               >
-                <ChevronLeft className="h-4 w-4" aria-hidden />
-              </button>
+                <ChevronLeft aria-hidden />
+              </Button>
               <span className="px-1 text-xs tabular-nums text-ink-subtle">
                 {index + 1} / {entries.length}
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={goNext}
                 disabled={!hasNext}
                 aria-label="Next file"
-                className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-inset hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
               >
-                <ChevronRight className="h-4 w-4" aria-hidden />
-              </button>
+                <ChevronRight aria-hidden />
+              </Button>
             </div>
           )}
 
           {canPreview && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => downloadSource(resolver, source)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-inset hover:text-ink"
+              className="shrink-0"
             >
-              <Download className="h-3.5 w-3.5" aria-hidden />
+              <Download aria-hidden />
               Download
-            </button>
+            </Button>
           )}
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 rounded-lg p-1.5 text-ink-subtle transition-colors hover:bg-surface-inset hover:text-ink"
+            className="shrink-0"
           >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
+            <X aria-hidden />
+          </Button>
         </header>
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-surface-sunken p-4">

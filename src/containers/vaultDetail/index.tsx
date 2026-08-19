@@ -1,4 +1,5 @@
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
+import { uploadSelectors } from "@/containers/upload/selectors";
 import { uploadActions } from "@/containers/upload/slice";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +10,6 @@ import {
   type PageMeasure,
 } from "@/shared/components/PageContainer";
 import { PropertyHero } from "@/shared/components/PropertyHero";
-import { scenarioForTemplateId } from "@/shared/constants/scenarios";
 import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import {
   getLedgerNameFromServerName,
@@ -21,11 +21,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { generateVaultProofPdf } from "./components/generateVaultProofPdf";
-import { useLens } from "./components/lens";
-import LensTabs from "./components/LensTabs";
-import ProjectList from "./components/ProjectList";
-import RecordTimeline from "./components/RecordTimeline";
-import { makeSectionResolver } from "./components/recordSection";
 import StreamList from "./components/StreamList";
 import { vaultDetailSelectors } from "./selectors";
 import { vaultDetailActions } from "./slice";
@@ -35,6 +30,7 @@ const VaultDetail = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const vault = useSelector(vaultDetailSelectors.vault);
+  const isFiling = useSelector(uploadSelectors.isFiling);
   const { isAuthenticated } = useWeb3Auth() || {};
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -42,34 +38,12 @@ const VaultDetail = () => {
 
   const facts = useMemo(() => (vault ? parseHomeFacts(vault) : null), [vault]);
 
-  // The lens is a display choice, not a different vault: sections, timeline and
-  // projects are three readings of the same records. The scenario picks the
-  // opening one (`defaultGroupBy`), the URL overrides it, and nothing about
-  // where a record is stored changes with it.
-  const scenario = useMemo(
-    () => scenarioForTemplateId(vault?.template_id),
-    [vault?.template_id],
-  );
-  const [lens, setLens] = useLens(scenario?.defaultGroupBy);
+  const measure: PageMeasure = "wide";
 
-  // Sections are a grid of cards and want the room; the timeline and project
-  // lists are rows, which get unreadable past a comfortable measure. The hero
-  // takes the same width so the address lines up with what is under it.
-  const measure: PageMeasure = lens === "sections" ? "wide" : "standard";
-
-  // Projects need the whole vault before the grouping is trustworthy; the
-  // timeline reads correctly a page at a time.
-  const {
-    records,
-    isLoading: isLoadingRecords,
-    hasMore,
-    loadMore,
-  } = useVaultRecords(id, lens === "projects");
-
-  const sectionOf = useMemo(
-    () => makeSectionResolver(vault?.streams),
-    [vault?.streams],
-  );
+  // Not read here: the vault page shows its sections, which fetch their own
+  // records. This fills the record store the upload form reads its project
+  // suggestions from, and is the first page of the vault, not all of it.
+  useVaultRecords(id);
 
   const handleDownloadProof = async () => {
     if (!vault || isGeneratingPdf) return;
@@ -142,7 +116,7 @@ const VaultDetail = () => {
                     vault.ledger as NETWORK_SERVER_NAMES,
                   )
                 }
-                className="w-fit border-line text-ink-muted hover:bg-surface-inset"
+                className="w-fit"
                 title={
                   vault.ledger
                     ? `View on ${getLedgerNameFromServerName(vault.ledger) || vault.ledger}`
@@ -163,8 +137,8 @@ const VaultDetail = () => {
             <div>
               <h2 className="text-lg font-semibold text-ink">Property Vault</h2>
               <p className="mt-1 text-sm text-ink-muted">
-                Four sections travel with the property for its lifetime. The
-                Personal Vault belongs to you and is detached at sale.
+                Four sections travel with the property for its lifetime. My
+                Personal Home Info belongs to you and is detached at sale.
               </p>
             </div>
 
@@ -176,6 +150,7 @@ const VaultDetail = () => {
             {isAuthenticated && (
               <Button
                 size="sm"
+                disabled={isFiling}
                 onClick={() =>
                   dispatch(
                     uploadActions.openUpload({
@@ -184,7 +159,7 @@ const VaultDetail = () => {
                     }),
                   )
                 }
-                className="w-fit shrink-0 bg-brand text-ink-inverse hover:bg-brand-hover"
+                className="w-fit shrink-0"
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add record
@@ -192,28 +167,8 @@ const VaultDetail = () => {
             )}
           </div>
 
-          <LensTabs value={lens} onChange={setLens} className="mb-5" />
-
-          {lens === "timeline" ? (
-            <RecordTimeline
-              records={records}
-              sectionOf={sectionOf}
-              hasMore={hasMore}
-              isLoading={isLoadingRecords}
-              onLoadMore={loadMore}
-            />
-          ) : lens === "projects" ? (
-            <ProjectList
-              vaultId={vault.id}
-              records={records}
-              isLoading={isLoadingRecords}
-            />
-          ) : vault.streams && vault.streams.length > 0 ? (
-            <StreamList
-              vaultId={vault.id}
-              streams={vault.streams}
-              vaultLedger={vault.ledger}
-            />
+          {vault.streams && vault.streams.length > 0 ? (
+            <StreamList vaultId={vault.id} streams={vault.streams} />
           ) : (
             <div className="rounded-xl border border-line bg-surface-raised p-12 text-center shadow-sm">
               <Layers className="mx-auto mb-3 h-10 w-10 text-ink-subtle" />

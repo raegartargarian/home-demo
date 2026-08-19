@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CopyableHash } from "@/shared/components/CopyableHash";
@@ -102,22 +103,24 @@ const FileViewer: React.FC<FileViewerProps> = ({ attachment }) => {
                     </div>
                     {previewable && (
                       <div className="flex items-center gap-4 flex-shrink-0">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setExpanded(source)}
-                          className="inline-flex items-center gap-1.5 text-ink-muted hover:text-ink text-xs font-medium transition-colors"
                         >
-                          <Maximize2 className="w-3.5 h-3.5" />
+                          <Maximize2 />
                           Full screen
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => downloadSource(resolver, source)}
-                          className="inline-flex items-center gap-1.5 text-ink-muted hover:text-ink text-xs font-medium transition-colors"
                         >
-                          <Download className="w-3.5 h-3.5" />
+                          <Download />
                           Download
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -197,14 +200,15 @@ const FileViewer: React.FC<FileViewerProps> = ({ attachment }) => {
                 <h3 className="text-sm font-medium text-ink truncate">
                   {expanded.filename}
                 </h3>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setExpanded(null)}
                   aria-label="Close preview"
-                  className="text-ink-subtle hover:text-ink transition-colors"
                 >
-                  <X className="w-5 h-5" />
-                </button>
+                  <X />
+                </Button>
               </div>
               <div className="flex-1 min-h-0 bg-surface-sunken">
                 <FilePreview
