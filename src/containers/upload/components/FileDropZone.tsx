@@ -70,7 +70,7 @@ export const FileDropZone: React.FC<FileDropZoneProps> = ({
           "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center transition-colors",
           isDragActive
             ? "border-cat bg-cat-surface"
-            : "border-line bg-surface-sunken hover:border-cat-line hover:bg-cat-surface/40",
+            : "border-line-strong bg-surface hover:border-cat-line hover:bg-cat-surface/40",
           disabled && "cursor-not-allowed opacity-60"
         )}
       >

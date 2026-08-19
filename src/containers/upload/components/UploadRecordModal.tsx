@@ -42,8 +42,21 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "record";
 
-const FIELD_CLASS =
-  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-cat";
+/**
+ * A field has to look like something you can type into.
+ *
+ * These were `bg-surface` on a `bg-surface-sunken` page — #F7F5F2 on #F4F4F4,
+ * three points of luminance apart — so a row of inputs read as faint rectangles
+ * rather than as controls. They lift to the raised surface, take the stronger
+ * hairline, and gain a focus ring, which is the app's one accent doing the job
+ * it exists for.
+ */
+const FIELD_CLASS = [
+  "w-full rounded-lg border border-line-strong bg-surface-raised",
+  "px-3 py-2 text-sm text-ink outline-none transition-colors",
+  "placeholder:text-ink-subtle",
+  "focus-visible:border-blueprint focus-visible:ring-2 focus-visible:ring-ring/40",
+].join(" ");
 
 const LABEL_CLASS = "text-sm font-medium text-ink";
 
@@ -365,15 +378,19 @@ export const UploadRecordModal: React.FC = () => {
             // canonical section code, not the raw asset code, which may carry a
             // per-vault prefix.
             data-category={destination?.sectionCode}
-            className="flex h-full flex-col"
+            className="relative flex h-full flex-col"
           >
-            <header className="shrink-0 border-b border-line bg-surface-raised">
-              <div className="mx-auto flex max-w-5xl items-start justify-between gap-4 px-5 py-4 sm:px-8">
+            {/* The same floating island the app's own header is: the form
+                scrolls underneath it, which is exactly the condition glass is
+                for. A flat band welded to the top of a full-page form was the
+                one piece of chrome still drawn the old way. */}
+            <header className="pointer-events-none absolute inset-x-3 top-3 z-10 md:inset-x-6 md:top-4">
+              <div className="glass pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
                 <div className="min-w-0">
-                  <h2 className="text-lg font-semibold text-ink">
+                  <h2 className="text-base font-medium tracking-tight text-ink">
                     Add a record
                   </h2>
-                  <p className="mt-0.5 truncate text-sm text-ink-muted">
+                  <p className="truncate text-xs text-ink-muted">
                     {destination
                       ? `Filed into ${destination.streamLabel}`
                       : "Choose a section to file it into"}
@@ -385,7 +402,6 @@ export const UploadRecordModal: React.FC = () => {
                   size="icon"
                   onClick={close}
                   aria-label="Close"
-                  className="-mr-1"
                 >
                   <X aria-hidden />
                 </Button>
@@ -397,7 +413,8 @@ export const UploadRecordModal: React.FC = () => {
               className="flex min-h-0 flex-1 flex-col"
             >
               <div className="min-h-0 flex-1 overflow-y-auto">
-                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-12 gap-y-10 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+                {/* Clears the floating header, which is out of flow. */}
+                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-12 gap-y-10 px-5 pb-28 pt-[6.5rem] sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
                   <div className="space-y-10">
                     <FieldGroup
                       title="Where it goes"
@@ -622,7 +639,7 @@ export const UploadRecordModal: React.FC = () => {
                           {files.map((file, index) => (
                             <li
                               key={`${file.name}-${index}`}
-                              className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2"
+                              className="flex items-center gap-2 rounded-lg border border-line bg-surface-raised px-3 py-2"
                             >
                               <span className="min-w-0 flex-1 truncate text-sm text-ink">
                                 {file.name}
@@ -647,7 +664,7 @@ export const UploadRecordModal: React.FC = () => {
                     </FieldGroup>
 
                     {recordName && (
-                      <div className="rounded-lg border border-line bg-surface px-3 py-2">
+                      <div className="rounded-lg border border-line bg-surface-raised px-3 py-2">
                         <p className="text-xs text-ink-subtle">Filed as</p>
                         <p className="mt-0.5 break-all font-mono text-xs text-ink-muted">
                           {recordName}
@@ -661,7 +678,7 @@ export const UploadRecordModal: React.FC = () => {
                           "flex items-start gap-2 rounded-lg border p-3 text-sm",
                           problem
                             ? "border-destructive/20 bg-destructive/10 text-destructive"
-                            : "border-line bg-surface text-ink-muted",
+                            : "border-line bg-surface-raised text-ink-muted",
                         )}
                       >
                         <AlertCircle
@@ -677,8 +694,10 @@ export const UploadRecordModal: React.FC = () => {
                 </div>
               </div>
 
-              <footer className="shrink-0 border-t border-line bg-surface-raised">
-                <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+              {/* Matching island at the other end. A floating header over a
+                  welded footer reads as two different surfaces. */}
+              <footer className="pointer-events-none absolute inset-x-3 bottom-3 z-10 md:inset-x-6 md:bottom-4">
+                <div className="glass pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
                   <p className="hidden text-xs text-ink-subtle sm:block">
                     Filing keeps running in the corner — you can carry on
                     browsing.
