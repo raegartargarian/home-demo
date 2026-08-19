@@ -106,17 +106,15 @@ const Dashboard = () => {
               Every plan, permit, renovation and receipt, from the first sketch
               to the final walkthrough. Verified, and yours to hand on.
             </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-9">
               <Link
                 to={appRoutes.vaults.path}
-                className="inline-flex items-center justify-center rounded-full bg-brand px-7 py-3.5 text-base font-medium text-ink-inverse transition-colors hover:bg-brand-hover"
+                className="group inline-flex items-center justify-center whitespace-nowrap rounded-full bg-brand px-7 py-3.5 text-base font-medium text-ink-inverse transition-colors hover:bg-brand-hover"
               >
                 View your homes
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {/* The arrow leans the way the link goes, on hover. */}
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 motion-safe:group-hover:translate-x-1" />
               </Link>
-              <span className="text-sm text-ink-subtle sm:ml-4">
-                4412 Maple Ridge Drive · 22 records on file
-              </span>
             </div>
           </motion.div>
 
@@ -242,10 +240,10 @@ const Dashboard = () => {
           </h2>
           <Link
             to={appRoutes.vaults.path}
-            className="mt-10 inline-flex items-center justify-center rounded-full bg-brand px-8 py-4 text-base font-medium text-ink-inverse transition-colors hover:bg-brand-hover"
+            className="group mt-10 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-brand px-8 py-4 text-base font-medium text-ink-inverse transition-colors hover:bg-brand-hover"
           >
             View your homes
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 motion-safe:group-hover:translate-x-1" />
           </Link>
         </motion.div>
       </section>
