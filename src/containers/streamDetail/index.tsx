@@ -7,7 +7,7 @@ import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { PageContainer } from "@/shared/components/PageContainer";
 import { getStreamAttachments } from "@/shared/providers/api";
-import { FileText, Layers, Plus } from "lucide-react";
+import { AlertCircle, FileText, Layers, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -33,10 +33,17 @@ const StreamDetail = () => {
   const [isFetching, setIsFetching] = useState(false);
   // Bumped when a record is filed into this stream, to re-run the loader below.
   const [reloadKey, setReloadKey] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // null totalPages = not yet loaded; treat as "no more" until the first page
   // resolves so the sentinel doesn't fire before we know the page count.
-  const hasMore = totalPages !== null && page < totalPages;
+  //
+  // `loadError` closes it too, and that is not politeness. A failed page leaves
+  // `page` and `totalPages` untouched, so without this the sentinel re-arms on
+  // the next render, calls `loadMore` again, fails again — an unbounded loop
+  // against an endpoint that is already unhappy. One failure stops the paging
+  // until something asks again.
+  const hasMore = totalPages !== null && page < totalPages && !loadError;
 
   // Reset + load the first page whenever the stream changes.
   useEffect(() => {
@@ -46,6 +53,7 @@ const StreamDetail = () => {
     setPage(0);
     setTotalPages(null);
     setTotalRecords(null);
+    setLoadError(null);
     setIsFetching(true);
     getStreamAttachments(code, 1, PAGE_SIZE)
       .then((res) => {
@@ -56,7 +64,9 @@ const StreamDetail = () => {
         setTotalRecords(res.data?.total_records ?? null);
       })
       .catch((error) => {
-        if (!cancelled) console.error("Failed to load attachments:", error);
+        if (cancelled) return;
+        console.error("Failed to load attachments:", error);
+        setLoadError("This section's records could not be loaded.");
       })
       .finally(() => {
         if (!cancelled) setIsFetching(false);
@@ -77,6 +87,7 @@ const StreamDetail = () => {
       setTotalPages(res.data?.total_pages ?? totalPages);
     } catch (error) {
       console.error("Failed to load attachments:", error);
+      setLoadError("The rest of this section could not be loaded.");
     } finally {
       setIsFetching(false);
     }
@@ -112,6 +123,10 @@ const StreamDetail = () => {
   }, [filtering, hasMore, isFetching, loadMore]);
 
   const isFirstLoad = isFetching && attachments.length === 0;
+  const retry = () => {
+    setLoadError(null);
+    setReloadKey((key) => key + 1);
+  };
   return (
     <PageContainer measure="wide">
       {/* The section's own heading line: what is in it, and how much. The
@@ -129,7 +144,22 @@ const StreamDetail = () => {
       </div>
 
       {/* Records */}
-      {isFirstLoad ? (
+      {loadError && attachments.length === 0 ? (
+        // A failed load used to render the "no records yet" empty state, which
+        // says the section is empty when what happened is that nobody could
+        // tell. Say which it was, and offer the retry that the paging no longer
+        // does by itself.
+        <div className="rounded-xl border border-line bg-surface-raised p-12 text-center">
+          <AlertCircle className="mx-auto mb-3 h-10 w-10 text-ink-subtle" />
+          <h3 className="mb-1 text-base font-medium tracking-tight text-ink">
+            Could not load this section
+          </h3>
+          <p className="text-sm text-ink-muted">{loadError}</p>
+          <Button size="sm" variant="outline" onClick={retry} className="mt-4">
+            Try again
+          </Button>
+        </div>
+      ) : isFirstLoad ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton

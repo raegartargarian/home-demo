@@ -56,33 +56,21 @@ export const getSingleVault = (id: string) => {
   return apiClient.get(`/vaults/${id}`);
 };
 
-/**
- * Every record in the vault, newest first, across all five sections.
- *
- * The browsing lenses (see `utils/recordLens.ts`) need the whole vault in one
- * ordering, which fanning out across `getStreamAttachments` cannot give without
- * merging five independent paginations client-side. Each row carries its
- * `stream_id` and an embedded `stream`, so a record can still be badged with the
- * section it lives in.
- *
- * NOT DEPLOYED YET (checked 2026-08-19, dev). The route is in `openapi.json`,
- * but the dev gateway answers it exactly as it answers a route that does not
- * exist — 403 `MissingAuthenticationTokenException`, and no `Access-Control-*`
- * headers, which the browser can only surface as a CORS error. `/vaults/{id}`,
- * `/attachments` and `/streams/{code}/attachments` all preflight 200 on the
- * same host, and `filedgr-web-app` only ever reads attachments per stream.
- * So: not CORS, not the dev-server port — the route is simply not on the stage.
- * Anything reading the vault's records as one set is empty until it is.
- */
-export const getVaultAttachments = (
-  vaultId: string,
-  page: number = 1,
-  pageSize: number = 15
-) => {
-  return apiClient.get(
-    `/vaults/${vaultId}/attachments?page_size=${pageSize}&page=${page}`
-  );
-};
+// `GET /vaults/{id}/attachments` — every record in a vault, in one ordering —
+// is deliberately not wrapped here.
+//
+// NOT DEPLOYED (checked 2026-08-19, dev). The route is in `openapi.json`, but
+// the dev gateway answers it exactly as it answers a route that does not exist:
+// 403 `MissingAuthenticationTokenException`, and no `Access-Control-*` headers,
+// which the browser can only surface as a CORS error. `/vaults/{id}`,
+// `/attachments` and `/streams/{code}/attachments` all preflight 200 on the
+// same host, and `filedgr-web-app` only ever reads attachments per stream. So:
+// not CORS, not the dev-server port — the route is simply not on the stage.
+//
+// Calling it cost more than nothing: the hook that did retried on failure, and
+// with the route 403ing that became an unbounded loop against the gateway.
+// Anything that needs the vault as one set waits for the route, or fans out
+// across `getStreamAttachments` and merges five paginations itself.
 
 export const getStreamAttachments = (
   streamCode: string,

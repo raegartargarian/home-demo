@@ -30,7 +30,7 @@ import {
 } from "@/shared/utils/streamHelpers";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import { Download, ExternalLink, Layers, Loader2, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useParams } from "react-router-dom";
 import { vaultDetailSelectors } from "./selectors";
@@ -69,10 +69,16 @@ const VaultShell = () => {
   // width underneath you on the way into a section.
   const measure: PageMeasure = "wide";
 
+  // Guarded by what has been asked for, not by what has arrived. `fetchStart`
+  // clears the vault so the previous one cannot flash under the new heading —
+  // which changes `vault?.id` from the old id to undefined, re-runs this, and
+  // fires a second identical request that `takeLatest` then throws away. The
+  // ref is per-mount, so a failed load still retries on the next visit.
+  const requestedId = useRef<string | null>(null);
   useEffect(() => {
-    if (id && vault?.id !== id) {
-      dispatch(vaultDetailActions.fetchVaultDetailStart({ id }));
-    }
+    if (!id || vault?.id === id || requestedId.current === id) return;
+    requestedId.current = id;
+    dispatch(vaultDetailActions.fetchVaultDetailStart({ id }));
   }, [id, vault?.id, dispatch]);
 
   const facts = useMemo(() => (vault ? parseHomeFacts(vault) : null), [vault]);

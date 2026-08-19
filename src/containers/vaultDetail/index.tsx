@@ -2,7 +2,6 @@ import { PageContainer } from "@/shared/components/PageContainer";
 import { Layers } from "lucide-react";
 import StreamList from "./components/StreamList";
 import { useVaultContext } from "./vaultContext";
-import { useVaultRecords } from "./useVaultRecords";
 
 /**
  * The vault's own page: its five sections.
@@ -13,11 +12,6 @@ import { useVaultRecords } from "./useVaultRecords";
  */
 const VaultDetail = () => {
   const { vault } = useVaultContext();
-
-  // Not read here: the sections fetch their own records. This fills the record
-  // store the upload form reads its project suggestions from, and is the first
-  // page of the vault, not all of it.
-  useVaultRecords(vault.id);
 
   return (
     <PageContainer measure="wide">

@@ -10,7 +10,6 @@ import {
 import { Room, ROOMS } from "@/shared/constants/rooms";
 import { STREAM_CATEGORIES } from "@/shared/constants/streams";
 import { useWalletAddress } from "@/shared/hooks/useWalletAddr";
-import { recordMeta } from "@/shared/utils/recordLens";
 import {
   buildRecordName,
   docTypesForSection,
@@ -178,20 +177,6 @@ export const UploadRecordModal: React.FC = () => {
   const docTypes = useMemo(
     () => docTypesForSection(section?.code),
     [section?.code],
-  );
-
-  // Suggest the projects this vault already has, so "Kitchen Remodel" is picked
-  // rather than retyped into a near-miss that splits the project in two.
-  const { items: vaultRecords } = useSelector(vaultDetailSelectors.records);
-  const knownProjects = useMemo(
-    () => [
-      ...new Set(
-        vaultRecords
-          .map((record) => recordMeta(record).project)
-          .filter((name): name is string => !!name),
-      ),
-    ],
-    [vaultRecords],
   );
 
   // A record's Type puts it in one facet already; this is for everything *else*
@@ -493,18 +478,17 @@ export const UploadRecordModal: React.FC = () => {
                         </label>
                         <input
                           id="record-project"
-                          list="known-projects"
                           value={project}
                           onChange={(event) => setProject(event.target.value)}
                           placeholder="e.g. Roof Replacement"
                           autoFocus
                           className={FIELD_CLASS}
                         />
-                        <datalist id="known-projects">
-                          {knownProjects.map((known) => (
-                            <option key={known} value={known} />
-                          ))}
-                        </datalist>
+                        {/* No suggestions list: the only source for one was
+                            every record in the vault, and the route that
+                            returns them is not deployed — see the note in
+                            providers/api.ts. Restore it there and the datalist
+                            comes back with it. */}
                         <p className="text-xs text-ink-subtle">
                           The job this belongs to. Reuse the same wording and
                           every section's paperwork gathers on one page.
