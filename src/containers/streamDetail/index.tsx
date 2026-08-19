@@ -1,20 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { uploadSelectors } from "@/containers/upload/selectors";
 import { uploadActions } from "@/containers/upload/slice";
 import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
-import { CopyableHash } from "@/shared/components/CopyableHash";
+import { PageHeader } from "@/shared/components/PageHeader";
+import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import { TransferBadge } from "@/shared/components/TransferBadge";
 import { getStreamAttachments } from "@/shared/providers/api";
-import { formatDate } from "@/shared/utils/dateFormatter";
-import {
-  getLedgerNameFromServerName,
-  NETWORK_SERVER_NAMES,
-} from "@/shared/utils/networks";
+import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import {
   categoryForStream,
@@ -23,13 +19,11 @@ import {
 import { vaultDetailPath } from "@/shared/constants/routes";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import {
-  Calendar,
   ChevronLeft,
   ExternalLink,
   FileText,
   Layers,
   Plus,
-  ShieldCheck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -167,94 +161,58 @@ const StreamDetail = () => {
           Back to the vault
         </Link>
 
-        {/* Stream header */}
-        <div className="bg-surface-raised rounded-xl border border-line p-6 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-cat-surface border border-cat-line flex items-center justify-center flex-shrink-0">
-              {category ? (
-                <category.icon className="w-6 h-6 text-cat" aria-hidden />
-              ) : (
-                <Layers className="w-6 h-6 text-cat" aria-hidden />
+        <PageHeader
+          icon={category?.icon ?? Layers}
+          title={
+            category?.label ?? (stream ? formatStreamName(stream) : "Record Stream")
+          }
+          description={category?.description ?? stream?.description}
+          className="mb-6"
+          meta={
+            <>
+              {category && (
+                <TransferBadge transfersOnSale={category.transfersOnSale} />
               )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl md:text-2xl font-medium tracking-tight text-ink truncate">
-                {category?.label ??
-                  (stream ? formatStreamName(stream) : "Record Stream")}
-              </h1>
-              {(category?.description || stream?.description) && (
-                <p className="text-sm text-ink-muted mt-1">
-                  {category?.description ?? stream?.description}
-                </p>
+              {status && (
+                <Badge variant="secondary" className={status.className}>
+                  {status.label}
+                </Badge>
               )}
-              <div className="flex flex-wrap items-center gap-3 mt-3">
-                {category && (
-                  <TransferBadge transfersOnSale={category.transfersOnSale} />
-                )}
-                {status && (
-                  <Badge variant="secondary" className={status.className}>
-                    {status.label}
-                  </Badge>
-                )}
-                {stream?.ledger && (
-                  <Badge
-                    variant="secondary"
-                    className="bg-surface-inset text-ink-muted border-line"
-                  >
-                    {getLedgerNameFromServerName(stream.ledger) ||
-                      stream.ledger}
-                  </Badge>
-                )}
-                {stream?.created_at && (
-                  <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Created {formatDate(stream.created_at)}
-                  </span>
-                )}
-                {totalRecords != null && (
-                  <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
-                    <FileText className="w-3.5 h-3.5" />
-                    {totalRecords} record{totalRecords !== 1 ? "s" : ""}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {uploadTarget && (
-              <Button
-                size="sm"
-                disabled={isFiling}
-                onClick={openUpload}
-                className="shrink-0"
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+              {totalRecords != null && (
+                <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
+                  <FileText className="h-3.5 w-3.5" />
+                  {totalRecords} record{totalRecords !== 1 ? "s" : ""}
+                </span>
+              )}
+            </>
+          }
+          actions={
+            uploadTarget && (
+              <Button size="sm" disabled={isFiling} onClick={openUpload}>
+                <Plus />
                 Add record
               </Button>
-            )}
-          </div>
-
-          {(stream?.tx_hash || stream?.asset_code) && (
-            <>
-              <Separator className="my-5 bg-line" />
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {stream?.tx_hash && (
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-verified" />
-                      <span className="text-sm text-verified font-medium">
-                        Verified on blockchain
-                      </span>
-                      <CopyableHash value={stream.tx_hash} />
-                    </div>
-                  )}
-                  {stream?.asset_code && (
-                    <div className="flex items-center gap-1.5 text-xs text-ink-subtle">
-                      <span>Stream:</span>
-                      <CopyableHash value={stream.asset_code} />
-                    </div>
-                  )}
-                </div>
-                {stream?.tx_hash && (
+            )
+          }
+          provenance={
+            <ProvenanceDetails
+              txHash={stream?.tx_hash}
+              ledger={stream?.ledger}
+              createdAt={stream?.created_at}
+              createdLabel="Created"
+              rows={
+                stream?.asset_code
+                  ? [
+                      {
+                        label: "Stream",
+                        value: stream.asset_code,
+                        copyable: true,
+                      },
+                    ]
+                  : []
+              }
+              actions={
+                stream?.tx_hash && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -264,16 +222,15 @@ const StreamDetail = () => {
                         stream.ledger as NETWORK_SERVER_NAMES,
                       )
                     }
-                    className="w-fit"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                    <ExternalLink />
                     Explorer
                   </Button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+                )
+              }
+            />
+          }
+        />
 
         {/* Records */}
         {isFirstLoad ? (
@@ -281,7 +238,7 @@ const StreamDetail = () => {
             {Array.from({ length: 12 }).map((_, i) => (
               <Skeleton
                 key={i}
-                className="aspect-[4/3] w-full rounded-md bg-surface-inset"
+                className="aspect-[4/3] w-full rounded-lg bg-surface-inset"
               />
             ))}
           </div>

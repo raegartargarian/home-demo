@@ -277,6 +277,27 @@
 // Four layers, and the effect falls apart if any one is missing: blur, a
 // *semi-transparent* tint, a hairline plus top-edge highlight, and a wide soft
 // shadow so the bar hovers rather than sits.
+//
+// WHERE IT GOES: only on surfaces that float *over* page content — the header
+// island, the mobile nav pill, menus, the upload tray. That is the whole rule.
+// It is a material for things that hover, and it earns its cost by making the
+// floating layer legible as a layer: you can see the page moving underneath.
+//
+// WHERE IT DOES NOT: anything that sits *in* the page. Section cards, page
+// headers, list rows, the upload form. Blur behind content that is not moving
+// buys nothing, translucency over arbitrary page content hurts contrast, and
+// once everything is glass the floating layer stops reading as one. Those use
+// `bg-surface-raised` with a `border-line` hairline.
+//
+// RADIUS: three sizes and a pill, everywhere.
+//   rounded-lg  (12px) — elements inside a surface: icon tiles, inputs, file
+//                        tiles, menu items, wells
+//   rounded-xl  (16px) — the surfaces themselves: cards, page headers, panels,
+//                        menus, modals, the tray
+//   rounded-full       — anything that reads as a control or a token: buttons,
+//                        badges, chips, avatars, the nav
+// `sm`, `md`, `2xl` and `3xl` are deliberately unused. A fourth size is a
+// decision nobody can make consistently twice.
 // ---------------------------------------------------------------------------
 @layer components {
   .glass {

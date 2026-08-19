@@ -1,15 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import { VaultImage } from "@/shared/components/VaultImage";
-import { VerificationBadge } from "@/shared/components/VerificationBadge";
 import { appRoutes } from "@/shared/constants/routes";
 import { HomeFacts } from "@/shared/types/home";
 import { VaultDto } from "@/shared/types/vault";
-import { formatDate } from "@/shared/utils/dateFormatter";
 import { factItems, formatLocation } from "@/shared/utils/homeFacts";
-import { getLedgerNameFromServerName } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
-import { CalendarDays, ChevronLeft, MapPin } from "lucide-react";
+import { ChevronLeft, MapPin } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -64,9 +62,6 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
   className,
 }) => {
   const status = vault.status ? getStatusConfig(vault.status) : null;
-  const ledger = vault.ledger
-    ? getLedgerNameFromServerName(vault.ledger) || vault.ledger
-    : null;
   const location = facts ? formatLocation(facts) : "";
   const items = facts ? factItems(facts) : [];
 
@@ -139,40 +134,26 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
         </div>
       </div>
 
-      {/* Provenance and actions, on a surface that renders them honestly. */}
+      {/* Provenance and actions, on a surface that renders them honestly. The
+          same component the section page uses, so the two pages cannot end up
+          giving two different accounts of the same facts. */}
       <div className="border-b border-line bg-surface-raised">
-        <div
-          className={cn(
-            "mx-auto flex w-full flex-wrap items-center gap-x-2 gap-y-2 px-4 py-3",
-            innerClassName,
-          )}
-        >
-          <VerificationBadge txHash={vault.tx_hash} />
-          {status && (
-            <Badge variant="secondary" className={status.className}>
-              {status.label}
-            </Badge>
-          )}
-          {ledger && (
-            <Badge
-              variant="secondary"
-              className="border-line bg-surface-inset text-ink-muted"
-            >
-              {ledger}
-            </Badge>
-          )}
-          {vault.created_at && (
-            <span className="flex items-center gap-1.5 text-xs text-ink-subtle">
-              <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-              Registered {formatDate(vault.created_at)}
-            </span>
-          )}
-
-          {actions && (
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              {actions}
-            </div>
-          )}
+        <div className={cn("mx-auto w-full px-4 py-3", innerClassName)}>
+          <ProvenanceDetails
+            txHash={vault.tx_hash}
+            ledger={vault.ledger}
+            createdAt={vault.created_at}
+            actions={
+              <>
+                {status && (
+                  <Badge variant="secondary" className={status.className}>
+                    {status.label}
+                  </Badge>
+                )}
+                {actions}
+              </>
+            }
+          />
         </div>
       </div>
     </header>

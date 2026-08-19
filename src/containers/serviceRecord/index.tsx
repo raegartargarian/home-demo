@@ -151,7 +151,7 @@ const ServiceRecord = () => {
                     {rooms.map((room) => (
                       <li
                         key={room.code}
-                        className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-inset px-2 py-0.5 text-[11px] font-medium text-ink-muted"
+                        className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-inset px-2 py-0.5 text-[11px] font-medium text-ink-muted"
                       >
                         <MapPin className="h-3 w-3 shrink-0" aria-hidden />
                         {room.label}

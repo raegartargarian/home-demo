@@ -88,7 +88,7 @@ const Slide = ({ item, aspect }: { item: BeforeAfterItem; aspect: string }) => {
     <figure
       ref={ref}
       className={cn(
-        "relative overflow-hidden rounded-3xl bg-surface-sunken",
+        "relative overflow-hidden rounded-xl bg-surface-sunken",
         aspect,
       )}
     >

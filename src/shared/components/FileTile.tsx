@@ -25,7 +25,7 @@ export const TILE_GRID_CLASS = "grid list-none grid-cols-3 gap-1.5 pl-0";
 
 /** The frame every face sits in: fixed ratio, so a row of tiles lines up. */
 const TILE_CLASS =
-  "relative flex aspect-[4/3] flex-col overflow-hidden rounded-md border border-line bg-surface-raised";
+  "relative flex aspect-[4/3] flex-col overflow-hidden rounded-lg border border-line bg-surface-raised";
 
 /**
  * Two sizes, because the same tile is rendered at two very different widths:

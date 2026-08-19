@@ -346,7 +346,7 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                           {/* Before */}
                           <div>
                             <div className="flex items-center gap-1.5 mb-2">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-inset text-ink-muted text-[11px] font-medium uppercase tracking-wide border border-line">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-inset text-ink-muted text-[11px] font-medium uppercase tracking-wide border border-line">
                                 Before
                               </span>
                             </div>
@@ -379,7 +379,7 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                           {/* After */}
                           <div>
                             <div className="flex items-center gap-1.5 mb-2">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-verified-surface text-verified text-[11px] font-medium uppercase tracking-wide border border-verified-line">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-verified-surface text-verified text-[11px] font-medium uppercase tracking-wide border border-verified-line">
                                 After
                               </span>
                             </div>
@@ -466,7 +466,7 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                           {tags.map((t) => (
                             <span
                               key={t}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-inset text-ink-muted text-xs border border-line"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-inset text-ink-muted text-xs border border-line"
                             >
                               <Tag className="w-2.5 h-2.5" />
                               {t}

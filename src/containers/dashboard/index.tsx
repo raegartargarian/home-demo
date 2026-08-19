@@ -128,7 +128,7 @@ const Dashboard = () => {
               delay: 0.15,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="overflow-hidden rounded-3xl"
+            className="overflow-hidden rounded-xl"
           >
             <img
               src={axonometric}
@@ -180,7 +180,7 @@ const Dashboard = () => {
                   data-category={code}
                   {...fadeInUp}
                   transition={{ ...fadeInUp.transition, delay: index * 0.06 }}
-                  className="rounded-2xl border border-line bg-surface-raised p-6"
+                  className="rounded-xl border border-line bg-surface-raised p-6"
                 >
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-cat-line bg-cat-surface">
                     <category.icon className="h-5 w-5 text-cat" aria-hidden />
