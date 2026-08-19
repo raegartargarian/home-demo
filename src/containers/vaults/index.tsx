@@ -37,6 +37,12 @@ const Vaults = () => {
     return (
       <div className="min-h-screen bg-surface">
         <PageContainer measure="wide">
+        <PageHeader
+          icon={Home}
+          title="Your homes"
+          description="Your properties and their complete home record."
+          className="mb-8"
+        />
           <div className="flex justify-center items-center mt-16">
             <NoActivity
               title="No Homes Found"
@@ -55,22 +61,22 @@ const Vaults = () => {
           icon={Home}
           title="Your homes"
           description="Your properties and their complete home record."
-          className="mb-6"
+          className="mb-8"
         />
 
         {/* Home Grid */}
         {isFirstLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, index) => (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
+            {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton
-                className="h-[230px] w-full bg-surface-inset rounded-xl"
+                className="h-[300px] w-full max-w-[400px] rounded-xl bg-surface-inset"
                 key={index}
               />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
               {vaults.map((vault) => (
                 <div key={vault.id}>
                   <VaultItem vault={vault} />

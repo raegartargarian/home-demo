@@ -1,26 +1,20 @@
-import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/shared/components/Chip";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CopyableHash } from "@/shared/components/CopyableHash";
+import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import HomeRecordVisualization from "@/shared/components/HomeRecordVisualization";
-import { formatDate } from "@/shared/utils/dateFormatter";
 import { formatFileSize } from "@/shared/utils/fileHelpers";
 import { cleanupHomeData } from "@/shared/utils/zipHandler";
-import {
-  getLedgerNameFromServerName,
-  NETWORK_SERVER_NAMES,
-} from "@/shared/utils/networks";
+import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import {
   AlertCircle,
-  Calendar,
   ExternalLink,
   FileText,
   HardDrive,
   Loader2,
   MapPin,
-  ShieldCheck,
 } from "lucide-react";
 import { parseRoomTags } from "@/shared/utils/recordTags";
 import { useEffect, useMemo } from "react";
@@ -98,40 +92,25 @@ const ServiceRecord = () => {
   return (
     <div className="min-h-screen bg-surface">
       <PageContainer measure="wide">
-        {/* Attachment Header */}
-        <div className="bg-surface-raised rounded-xl border border-line p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-surface-inset border border-line flex items-center justify-center flex-shrink-0">
-                <FileText className="w-6 h-6 text-ink-muted" />
+        {/* Type on the page ground, like every other page header — see
+            `PageHeader`. Not built from it, because a record's name is a long
+            filename that has to wrap where a page title never does. */}
+        <header className="mb-8 border-b border-line pb-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-inset">
+                <FileText className="h-5 w-5 text-ink-muted" />
               </div>
-              <div>
-                <h1 className="text-xl md:text-2xl font-medium tracking-tight text-ink">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-medium tracking-tight text-ink md:text-3xl">
                   {attachment?.name || "Home Record"}
                 </h1>
                 <div className="flex flex-wrap items-center gap-3 mt-2">
-                  {attachment?.created_at && (
-                    <span className="flex items-center gap-1.5 text-sm text-ink-muted">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {formatDate(attachment.created_at)}
-                    </span>
-                  )}
                   {attachmentStatus && (
-                    <Badge
-                      variant="secondary"
-                      className={attachmentStatus.className}
-                    >
-                      {attachmentStatus.label}
-                    </Badge>
-                  )}
-                  {attachment?.ledger && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-surface-inset text-ink-muted border-line"
-                    >
-                      {getLedgerNameFromServerName(attachment.ledger) ||
-                        attachment.ledger}
-                    </Badge>
+                    <Chip
+                      label={attachmentStatus.label}
+                      tone={attachmentStatus.tone}
+                    />
                   )}
                   {attachment?.file_count != null && (
                     <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
@@ -159,12 +138,6 @@ const ServiceRecord = () => {
                     ))}
                   </ul>
                 )}
-                {attachment?.stream?.asset_code && (
-                  <div className="flex items-center gap-1.5 mt-1.5 text-xs text-ink-subtle">
-                    <span>Stream:</span>
-                    <CopyableHash value={attachment.stream.asset_code} />
-                  </div>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -186,17 +159,27 @@ const ServiceRecord = () => {
             </div>
           </div>
 
-          {/* Blockchain verification banner */}
-          {attachment?.tx_hash && (
-            <div className="mt-4 pt-4 border-t border-line flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-verified" />
-              <span className="text-sm text-verified font-medium">
-                Verified on blockchain
-              </span>
-              <CopyableHash value={attachment.tx_hash} />
-            </div>
-          )}
-        </div>
+          {/* The same disclosure the vault and section pages carry, rather
+              than this page's own hand-rolled verification banner. */}
+          <ProvenanceDetails
+            className="mt-5"
+            txHash={attachment?.tx_hash}
+            ledger={attachment?.ledger}
+            createdAt={attachment?.created_at}
+            createdLabel="Filed"
+            rows={
+              attachment?.stream?.asset_code
+                ? [
+                    {
+                      label: "Stream",
+                      value: attachment.stream.asset_code,
+                      copyable: true,
+                    },
+                  ]
+                : []
+            }
+          />
+        </header>
 
         {/* Processing state */}
         {isProcessingZip && (

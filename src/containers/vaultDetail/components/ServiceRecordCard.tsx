@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/shared/components/Chip";
 import { appRoutes } from "@/shared/constants/routes";
 import { formatDate } from "@/shared/utils/dateFormatter";
 import { recordMeta } from "@/shared/utils/recordLens";
@@ -81,7 +81,7 @@ const ServiceRecordCard: React.FC<ServiceRecordCardProps> = ({
   return (
     <button
       onClick={() => navigate(`${appRoutes.serviceRecord.name}${attachment.id}`)}
-      className="group w-full cursor-pointer rounded-lg border border-line bg-surface-raised p-4 text-left transition-all duration-200 hover:border-cat-line hover:shadow-md"
+      className="group w-full cursor-pointer rounded-lg border border-line bg-surface-raised p-4 text-left transition-colors duration-200 hover:border-cat-line"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -113,12 +113,11 @@ const ServiceRecordCard: React.FC<ServiceRecordCardProps> = ({
 
         <div className="flex shrink-0 items-center gap-2">
           {status && (
-            <Badge
-              variant="secondary"
-              className={`hidden text-xs sm:inline-flex ${status.className}`}
-            >
-              {status.label}
-            </Badge>
+            <Chip
+              label={status.label}
+              tone={status.tone}
+              className="hidden sm:inline-flex"
+            />
           )}
           <ArrowRight className="h-4 w-4 text-ink-subtle transition-all group-hover:translate-x-0.5 group-hover:text-cat" />
         </div>

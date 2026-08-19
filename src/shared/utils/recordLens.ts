@@ -58,24 +58,90 @@ const time = (date: Date | null) => date?.getTime() ?? -Infinity;
 const byDateDesc = (a: LensRecord, b: LensRecord) =>
   time(recordMeta(b).date) - time(recordMeta(a).date);
 
-export interface YearGroup<T extends LensRecord> {
-  /** Null for records with neither a parsed date nor a `created_at`. */
-  year: number | null;
+export type Granularity = "year" | "month" | "day";
+
+export interface PeriodGroup<T extends LensRecord> {
+  /** Stable key for React, and the sort order. Null for undated records. */
+  key: string | null;
+  /** "2026", "August 2026", "August 18, 2026". */
+  label: string;
   records: T[];
 }
 
-/** Records by year, newest first — how a section lists its own history. */
-export const groupByYear = <T extends LensRecord>(
+const YEAR = new Intl.DateTimeFormat("en-US", { year: "numeric" });
+const MONTH = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" });
+const DAY = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+
+/**
+ * How finely a set of records is worth splitting.
+ *
+ * A heading earns its place by telling the reader something the next heading
+ * does not. A section whose records all landed this year, grouped by year, is
+ * one heading over everything — it says nothing, and it costs a row. The rule
+ * is simply to go one step finer than the coarsest axis that would collapse:
+ * several years, group by year; one year, group by month; one month, by day.
+ */
+export const granularityFor = <T extends LensRecord>(
   records: T[]
-): YearGroup<T>[] => {
-  const groups = new Map<number | null, T[]>();
+): Granularity => {
+  const dates = records
+    .map((record) => recordMeta(record).date)
+    .filter((date): date is Date => date !== null);
+
+  const years = new Set(dates.map((date) => date.getFullYear()));
+  if (years.size > 1) return "year";
+
+  const months = new Set(
+    dates.map((date) => `${date.getFullYear()}-${date.getMonth()}`)
+  );
+  return months.size > 1 ? "month" : "day";
+};
+
+const periodKey = (date: Date, granularity: Granularity): string => {
+  const year = date.getFullYear();
+  if (granularity === "year") return `${year}`;
+  const month = `${date.getMonth()}`.padStart(2, "0");
+  return granularity === "month"
+    ? `${year}-${month}`
+    : `${year}-${month}-${`${date.getDate()}`.padStart(2, "0")}`;
+};
+
+const periodLabel = (date: Date, granularity: Granularity): string =>
+  granularity === "year"
+    ? YEAR.format(date)
+    : granularity === "month"
+      ? MONTH.format(date)
+      : DAY.format(date);
+
+/**
+ * Records grouped into periods, newest first, at whatever granularity the set
+ * actually warrants. Undated records collect under one group at the end rather
+ * than disappearing — the same contract `groupByYear` keeps.
+ */
+export const groupByPeriod = <T extends LensRecord>(
+  records: T[],
+  granularity: Granularity = granularityFor(records)
+): PeriodGroup<T>[] => {
+  const groups = new Map<string | null, PeriodGroup<T>>();
 
   for (const record of [...records].sort(byDateDesc)) {
-    const year = recordMeta(record).date?.getFullYear() ?? null;
-    const existing = groups.get(year);
-    if (existing) existing.push(record);
-    else groups.set(year, [record]);
+    const date = recordMeta(record).date;
+    const key = date ? periodKey(date, granularity) : null;
+    const existing = groups.get(key);
+
+    if (existing) existing.records.push(record);
+    else {
+      groups.set(key, {
+        key,
+        label: date ? periodLabel(date, granularity) : "Undated",
+        records: [record],
+      });
+    }
   }
 
-  return [...groups].map(([year, grouped]) => ({ year, records: grouped }));
+  return [...groups.values()];
 };

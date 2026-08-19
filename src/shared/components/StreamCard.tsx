@@ -56,8 +56,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     <section
       data-category={category?.code}
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-xl border border-line bg-surface-raised shadow-sm transition-shadow",
-        onOpen && "hover:shadow-md",
+        "relative flex flex-col overflow-hidden rounded-xl border border-line bg-surface-raised transition-colors",
+        onOpen && "hover:border-line-strong",
         className,
       )}
     >

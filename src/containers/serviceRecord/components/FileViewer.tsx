@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/shared/components/Chip";
 import { Card, CardContent } from "@/components/ui/card";
 import { CopyableHash } from "@/shared/components/CopyableHash";
 import {
@@ -85,14 +85,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ attachment }) => {
                           {file.filename || "Unnamed file"}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          {file.mimetype && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-surface-inset text-ink-muted border-line text-[10px] px-1.5 py-0"
-                            >
-                              {file.mimetype}
-                            </Badge>
-                          )}
+                          {file.mimetype && <Chip label={file.mimetype} />}
                           {file.size != null && (
                             <span className="text-xs text-ink-subtle">
                               {formatFileSize(file.size)}

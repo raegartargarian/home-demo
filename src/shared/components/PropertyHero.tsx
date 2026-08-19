@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Chip } from "@/shared/components/Chip";
 import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import { VaultImage } from "@/shared/components/VaultImage";
 import { appRoutes } from "@/shared/constants/routes";
@@ -7,12 +7,25 @@ import { HomeFacts } from "@/shared/types/home";
 import { VaultDto } from "@/shared/types/vault";
 import { factItems, formatLocation } from "@/shared/utils/homeFacts";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
-import { ChevronLeft, MapPin } from "lucide-react";
+import { ChevronLeft, LucideIcon, MapPin } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 
 interface PropertyHeroProps {
   vault: VaultDto;
+  /**
+   * `page` — the vault's own header: the house is the subject, so it gets the
+   * frame. `band` — a section's header: the house is context, so it drops to a
+   * strip and the section takes the headline.
+   */
+  variant?: "page" | "band";
+  /** `band` only: what this page is about, set over the photograph. */
+  bandTitle?: string;
+  bandDescription?: string;
+  bandIcon?: LucideIcon;
+  /** `band` only: where the back-link goes, and what it says. */
+  backTo?: string;
+  backLabel?: string;
   /** Resolved by the page via `parseHomeFacts`. Null renders the name only. */
   facts?: HomeFacts | null;
   /** Page-level actions (proof download, explorer link, share). */
@@ -56,18 +69,30 @@ const SCRIM =
 
 export const PropertyHero: React.FC<PropertyHeroProps> = ({
   vault,
+  variant = "page",
+  bandTitle,
+  bandDescription,
+  bandIcon: BandIcon,
+  backTo,
+  backLabel,
   facts,
   actions,
   innerClassName,
   className,
 }) => {
+  const isBand = variant === "band";
   const status = vault.status ? getStatusConfig(vault.status) : null;
   const location = facts ? formatLocation(facts) : "";
   const items = facts ? factItems(facts) : [];
 
   return (
     <header className={className}>
-      <div className="relative isolate flex min-h-[min(52svh,420px)] flex-col justify-end overflow-hidden bg-surface-inset">
+      <div
+        className={cn(
+          "relative isolate flex flex-col justify-end overflow-hidden bg-surface-inset",
+          isBand ? "min-h-[200px]" : "min-h-[min(52svh,420px)]",
+        )}
+      >
         {/* The photograph carries nothing the address beside it does not
             already say, so it is decorative to a screen reader. */}
         <div
@@ -90,30 +115,45 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
             theme, and the ground here is a photograph either way. */}
         <div
           className={cn(
-            "mx-auto w-full px-4 pb-8 pt-24 md:pb-10",
+            "mx-auto w-full px-4",
+            isBand ? "pb-5 pt-24" : "pb-8 pt-24 md:pb-10",
             innerClassName,
           )}
         >
           <Link
-            to={appRoutes.vaults.path}
+            to={backTo ?? appRoutes.vaults.path}
             className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-white"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-            All homes
+            {backLabel ?? "All homes"}
           </Link>
 
-          <h1 className="mt-3 max-w-[20ch] text-2xl font-bold leading-tight tracking-tight text-white drop-shadow-sm md:text-4xl">
-            {facts?.address ?? vault.name}
+          <h1
+            className={cn(
+              "mt-2 flex max-w-[24ch] items-center gap-2.5 font-medium leading-tight tracking-tight text-white drop-shadow-sm",
+              isBand ? "text-2xl md:text-3xl" : "mt-3 text-3xl md:text-4xl",
+            )}
+          >
+            {BandIcon && (
+              <BandIcon className="h-6 w-6 shrink-0 opacity-90" aria-hidden />
+            )}
+            {isBand ? bandTitle : (facts?.address ?? vault.name)}
           </h1>
 
-          {location && (
+          {isBand && bandDescription && (
+            <p className="mt-1.5 max-w-prose text-sm text-white/80">
+              {bandDescription}
+            </p>
+          )}
+
+          {!isBand && location && (
             <p className="mt-2 flex items-center gap-1.5 text-sm text-white/80">
               <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {location}
             </p>
           )}
 
-          {items.length > 0 && (
+          {!isBand && items.length > 0 && (
             <dl className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white">
               {items.map((item, index) => (
                 <React.Fragment key={item.label}>
@@ -145,11 +185,7 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
             createdAt={vault.created_at}
             actions={
               <>
-                {status && (
-                  <Badge variant="secondary" className={status.className}>
-                    {status.label}
-                  </Badge>
-                )}
+                {status && <Chip label={status.label} tone={status.tone} />}
                 {actions}
               </>
             }

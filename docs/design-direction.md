@@ -224,8 +224,13 @@ Things that are easy to say and hard to hold:
 
 1. **Colour is functional, never decorative.** Blue means "verified" or
    "interactive" and nothing else. The page is carried by warm neutrals.
-2. **Two weights of text.** Regular and bold — Cover ships exactly two cuts of
-   Diatype and needs no more.
+2. **Two weights of text.** Regular (400) and medium (500) — `font-bold` and
+   `font-semibold` do not appear. One recipe per role, and there are four:
+   `text-3xl md:text-4xl font-medium tracking-tight` (page title),
+   `text-lg font-medium tracking-tight` (section title),
+   `text-base font-medium` (card title), `text-sm text-ink-muted` (body).
+   Hierarchy is carried by colour — `ink` / `ink-muted` / `ink-subtle` — as much
+   as by size.
 3. **Negative tracking on anything above 2.4rem.** `-0.02em` as the default.
 4. **Borders over shadows** for structure; shadows only for things that
    genuinely float (the tab bar, dropdowns, modals).
@@ -460,7 +465,12 @@ and the drawings are all built on them. Anything still genuinely undecided is in
 | Before/after: carousel or drag-divider? | **Peek carousel**, with the §5B sketch→result wipe on each slide. `BeforeAfterCarousel.tsx` already implemented both the peek and the wipe; it had no assets until now. The drag-divider comparison slider was not built. |
 | Does the glass bar replace `Header.tsx`? | **Coexist.** A quiet top bar carries identity and the account action; a floating glass pill carries the routes — bottom on mobile, top on desktop. |
 | Dark mode? | **Kept working.** Warm dark, so the two themes read as one family. Not the demo default. |
-| Blueprint blue alongside warm neutrals? | **Yes, scoped.** `#A3C1D5` is the axonometric's field and a tint inside drawings. It is not a UI colour. |
+| Blueprint blue alongside warm neutrals? | **Yes — and it is now the one UI accent.** `#99BACE`, sampled from the axonometric, is the drawing's field *and* the single accent in the interface: focus rings, the active nav indicator, the avatar fallback, the `link` button. It is never a fill for a primary action — at that lightness it cannot carry white text, and the primary action stays near-black. Tokens: `--blueprint-solid` / `-ink` / `-surface` / `-line`. *(Amended: this row previously read "it is not a UI colour".)* |
+| **Radius** | **Three sizes and a pill.** `rounded-lg` (12px) for elements inside a surface — icon tiles, inputs, file tiles, menu items, wells. `rounded-xl` (16px) for the surfaces themselves — cards, panels, menus, modals, the tray. `rounded-full` for anything that reads as a control or a token — buttons, chips, avatars, the nav. `sm`, `md`, `2xl` and `3xl` are unused: a fourth size is a decision nobody can make consistently twice. |
+| **Where glass goes** | **Only on surfaces that float over page content** — the header island, the mobile nav pill, menus, the upload tray. Anything that sits *in* the page uses `bg-surface-raised` with a `border-line` hairline. Blur behind content that is not moving buys nothing, translucency over arbitrary content hurts contrast, and once everything is glass the floating layer stops reading as a layer. |
+| **How many chips?** | **One.** `shared/components/Chip.tsx` — tinted fill, hairline border, 11px medium, optional icon, five tones (`neutral` / `verified` / `warn` / `alert` / `category`). `TransferBadge` and `VerificationBadge` are thin wrappers that hold the domain meaning; `FilterChip` is the same chip in its pressable size. The shadcn `Badge` is deleted. `getStatusConfig` returns a *tone*, not a className, so a caller cannot compose a conflicting border on top of it. |
+| **Page titles** | **Typography on the page ground, never a card.** A card is a container for content, and a page title is not content in a container — boxed, it draws itself in the same surface, border and radius as the cards beneath it and reads as an oversized sibling. `PageHeader` is a bare block; the hairline appears only when provenance or actions sit under the title. The vault and section pages are the exception in the other direction: they open on the house photograph. |
+| **Chain data** | **Folded away.** `ProvenanceDetails` shows the claim — a Verified chip — and puts the transaction hash, identifiers, network and date behind a Details disclosure. Shared by the vault, section and record pages so the three cannot give different accounts of the same facts. |
 | Motto | **"Your whole house, in one place."** as the H1; **"Hand over the keys. And the history."** closes the page. The bolder "Everything your house has ever been." is the axonometric's own headline. |
 
 ### Still open

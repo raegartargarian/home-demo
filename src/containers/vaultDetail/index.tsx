@@ -3,7 +3,6 @@ import { uploadSelectors } from "@/containers/upload/selectors";
 import { uploadActions } from "@/containers/upload/slice";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CopyableHash } from "@/shared/components/CopyableHash";
 import {
   measureFor,
   PageContainer,
@@ -91,7 +90,23 @@ const VaultDetail = () => {
         innerClassName={measureFor(measure)}
         actions={
           <>
-            {vault.tx_hash && <CopyableHash value={vault.tx_hash} />}
+            {isAuthenticated && (
+              <Button
+                size="sm"
+                disabled={isFiling}
+                onClick={() =>
+                  dispatch(
+                    uploadActions.openUpload({
+                      vaultId: vault.id,
+                      ledger: vault.ledger || "",
+                    }),
+                  )
+                }
+              >
+                <Plus />
+                Add record
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -133,44 +148,16 @@ const VaultDetail = () => {
 
       <PageContainer measure={measure}>
         <div>
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-ink">Property Vault</h2>
-              <p className="mt-1 text-sm text-ink-muted">
-                Four sections travel with the property for its lifetime. My
-                Personal Home Info belongs to you and is detached at sale.
-              </p>
-            </div>
-
-            {/* Filing from the vault rather than from a section: the same modal,
-                opened with no destination, which then asks for one. Someone
-                holding a document does not always know which of the five
-                sections it belongs in, and should not have to guess before the
-                form will open. */}
-            {isAuthenticated && (
-              <Button
-                size="sm"
-                disabled={isFiling}
-                onClick={() =>
-                  dispatch(
-                    uploadActions.openUpload({
-                      vaultId: vault.id,
-                      ledger: vault.ledger || "",
-                    }),
-                  )
-                }
-                className="w-fit shrink-0"
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add record
-              </Button>
-            )}
-          </div>
-
+          {/* No heading here. The photograph above says which house this is and
+              the provenance row says what state it is in; a third block
+              announcing "Property Vault" over the sections was the page saying
+              its own name for the third time. What the sentence under it
+              explained — that one section is private — every card already
+              carries on its own TransferBadge. */}
           {vault.streams && vault.streams.length > 0 ? (
             <StreamList vaultId={vault.id} streams={vault.streams} />
           ) : (
-            <div className="rounded-xl border border-line bg-surface-raised p-12 text-center shadow-sm">
+            <div className="rounded-xl border border-line bg-surface-raised p-12 text-center">
               <Layers className="mx-auto mb-3 h-10 w-10 text-ink-subtle" />
               <h3 className="mb-1 text-base font-semibold text-ink">
                 No sections yet

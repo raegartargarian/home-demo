@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { Chip } from "@/shared/components/Chip";
 import { ShieldCheck, ShieldQuestion } from "lucide-react";
 import React from "react";
 
@@ -23,27 +23,20 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   className,
 }) => {
   const isVerified = Boolean(txHash);
-  const Icon = isVerified ? ShieldCheck : ShieldQuestion;
-  const label = isVerified ? "Verified" : "Pending";
-  const title = isVerified
-    ? "Anchored on the ledger — this record cannot be altered after the fact"
-    : "Not yet anchored on the ledger";
 
   return (
-    <span
-      title={title}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+    <Chip
+      label={isVerified ? "Verified" : "Pending"}
+      tone={isVerified ? "verified" : "warn"}
+      icon={isVerified ? ShieldCheck : ShieldQuestion}
+      iconOnly={compact}
+      title={
         isVerified
-          ? "border-verified-line bg-verified-surface text-verified"
-          : "border-warn-line bg-warn-surface text-warn",
-        className
-      )}
-    >
-      <Icon className="h-3 w-3 shrink-0" aria-hidden />
-      {!compact && label}
-      {compact && <span className="sr-only">{label}</span>}
-    </span>
+          ? "Anchored on the ledger — this record cannot be altered after the fact"
+          : "Not yet anchored on the ledger"
+      }
+      className={className}
+    />
   );
 };
 

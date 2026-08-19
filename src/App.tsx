@@ -63,7 +63,8 @@ function App() {
         <Route
           path={appRoutes.streamDetail.path}
           element={
-            <PageLayout>
+            // Opens on the same photograph the vault does, so it bleeds too.
+            <PageLayout bleed>
               <StreamDetailPage />
             </PageLayout>
           }

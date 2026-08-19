@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
@@ -6,10 +5,12 @@ import { uploadSelectors } from "@/containers/upload/selectors";
 import { uploadActions } from "@/containers/upload/slice";
 import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
-import { PageHeader } from "@/shared/components/PageHeader";
+import { Chip } from "@/shared/components/Chip";
+import { PropertyHero } from "@/shared/components/PropertyHero";
 import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import { TransferBadge } from "@/shared/components/TransferBadge";
 import { getStreamAttachments } from "@/shared/providers/api";
+import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import {
@@ -18,16 +19,10 @@ import {
 } from "@/shared/utils/streamHelpers";
 import { vaultDetailPath } from "@/shared/constants/routes";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
-import {
-  ChevronLeft,
-  ExternalLink,
-  FileText,
-  Layers,
-  Plus,
-} from "lucide-react";
+import { ExternalLink, FileText, Layers, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import RecordFilterBar from "./components/RecordFilterBar";
 import { filterRecords, isFilterActive } from "./components/recordFilter";
 import StreamTimeline from "./components/StreamTimeline";
@@ -35,7 +30,10 @@ import { useRecordFilter } from "./components/useRecordFilter";
 import { vaultDetailSelectors } from "../vaultDetail/selectors";
 import { vaultDetailActions } from "../vaultDetail/slice";
 import { Attachment } from "../vaultDetail/types";
-import { PageContainer } from "@/shared/components/PageContainer";
+import {
+  measureFor,
+  PageContainer,
+} from "@/shared/components/PageContainer";
 
 const PAGE_SIZE = 15;
 
@@ -54,6 +52,9 @@ const StreamDetail = () => {
   }, [id, vault?.id, dispatch]);
 
   const stream = vault?.streams?.find((s) => s.asset_code === code);
+  // The same name the vault page gives the house, so the way back says where
+  // it goes rather than just "back".
+  const facts = useMemo(() => (vault ? parseHomeFacts(vault) : null), [vault]);
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [page, setPage] = useState(0);
@@ -152,83 +153,76 @@ const StreamDetail = () => {
     /* Repoints the --cat-* variables, same as the section cards on the vault
        page — without it every stream renders in the default grey. */
     <div data-category={category?.code} className="min-h-screen bg-surface">
-      <PageContainer measure="wide">
-        <Link
-          to={id ? vaultDetailPath(id) : "/"}
-          className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-ink-subtle transition-colors hover:text-ink"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-          Back to the vault
-        </Link>
-
-        <PageHeader
-          icon={category?.icon ?? Layers}
-          title={
-            category?.label ?? (stream ? formatStreamName(stream) : "Record Stream")
+      {/* The same photograph the vault page opens on, dropped to a strip: the
+          house is the context here, and the section is the subject. Without it
+          a section page had no sense of place at all — five of them in a row
+          were five identical boxes of text. */}
+      {vault && (
+        <PropertyHero
+          variant="band"
+          vault={vault}
+          bandIcon={category?.icon ?? Layers}
+          bandTitle={
+            category?.label ??
+            (stream ? formatStreamName(stream) : "Record Stream")
           }
-          description={category?.description ?? stream?.description}
+          bandDescription={category?.description ?? stream?.description}
+          backTo={id ? vaultDetailPath(id) : "/"}
+          backLabel={facts?.address ?? vault.name}
+          innerClassName={measureFor("wide")}
+        />
+      )}
+
+      <PageContainer measure="wide">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-line pb-5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {category && (
+              <TransferBadge transfersOnSale={category.transfersOnSale} />
+            )}
+            {status && <Chip label={status.label} tone={status.tone} />}
+            {totalRecords != null && (
+              <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
+                <FileText className="h-3.5 w-3.5" />
+                {totalRecords} record{totalRecords !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {uploadTarget && (
+            <Button size="sm" disabled={isFiling} onClick={openUpload}>
+              <Plus />
+              Add record
+            </Button>
+          )}
+        </div>
+
+        <ProvenanceDetails
           className="mb-6"
-          meta={
-            <>
-              {category && (
-                <TransferBadge transfersOnSale={category.transfersOnSale} />
-              )}
-              {status && (
-                <Badge variant="secondary" className={status.className}>
-                  {status.label}
-                </Badge>
-              )}
-              {totalRecords != null && (
-                <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
-                  <FileText className="h-3.5 w-3.5" />
-                  {totalRecords} record{totalRecords !== 1 ? "s" : ""}
-                </span>
-              )}
-            </>
+          txHash={stream?.tx_hash}
+          ledger={stream?.ledger}
+          createdAt={stream?.created_at}
+          createdLabel="Created"
+          rows={
+            stream?.asset_code
+              ? [{ label: "Stream", value: stream.asset_code, copyable: true }]
+              : []
           }
           actions={
-            uploadTarget && (
-              <Button size="sm" disabled={isFiling} onClick={openUpload}>
-                <Plus />
-                Add record
+            stream?.tx_hash && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  viewTXInExplorer(
+                    stream.tx_hash!,
+                    stream.ledger as NETWORK_SERVER_NAMES,
+                  )
+                }
+              >
+                <ExternalLink />
+                Explorer
               </Button>
             )
-          }
-          provenance={
-            <ProvenanceDetails
-              txHash={stream?.tx_hash}
-              ledger={stream?.ledger}
-              createdAt={stream?.created_at}
-              createdLabel="Created"
-              rows={
-                stream?.asset_code
-                  ? [
-                      {
-                        label: "Stream",
-                        value: stream.asset_code,
-                        copyable: true,
-                      },
-                    ]
-                  : []
-              }
-              actions={
-                stream?.tx_hash && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      viewTXInExplorer(
-                        stream.tx_hash!,
-                        stream.ledger as NETWORK_SERVER_NAMES,
-                      )
-                    }
-                  >
-                    <ExternalLink />
-                    Explorer
-                  </Button>
-                )
-              }
-            />
           }
         />
 

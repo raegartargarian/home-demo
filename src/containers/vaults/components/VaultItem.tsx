@@ -1,73 +1,103 @@
-import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/shared/components/Chip";
 import { VaultImage } from "@/shared/components/VaultImage";
 import { appRoutes } from "@/shared/constants/routes";
 import { VaultDto } from "@/shared/types/vault";
 import { formatDate } from "@/shared/utils/dateFormatter";
+import { formatLocation, parseHomeFacts } from "@/shared/utils/homeFacts";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
-import { ArrowRight, Calendar, Layers } from "lucide-react";
-import React from "react";
+import { ArrowRight, Calendar, Layers, MapPin } from "lucide-react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface VaultItemProps {
   vault: VaultDto;
 }
 
+/** Weighted to the bottom, where the status chip sits. */
+const SCRIM =
+  "linear-gradient(to bottom," +
+  "rgba(24,23,21,0) 45%," +
+  "rgba(24,23,21,0.35) 100%)";
+
+/**
+ * One home, in the list of homes.
+ *
+ * The card names the house the way its own page does: `parseHomeFacts` reads
+ * the address out of the vault's description, so the list says "4412 Maple
+ * Ridge Drive" where it used to say the vault's internal label — and the two
+ * screens stop disagreeing about what the home is called.
+ *
+ * `aspect-[3/2]` rather than a fixed height: a 128px band against a 360px
+ * column is a 2.8:1 letterbox, which crops a house in half whatever the
+ * photograph is.
+ */
 const VaultItem: React.FC<VaultItemProps> = ({ vault }) => {
   const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate(`${appRoutes.vaultDetail.name}${vault.id}`);
-  };
-
+  const facts = useMemo(() => parseHomeFacts(vault), [vault]);
   const status = vault.status ? getStatusConfig(vault.status) : null;
+  const location = facts ? formatLocation(facts) : "";
 
   return (
     <button
-      onClick={handleClick}
-      className="w-full h-full flex flex-col text-left bg-surface-raised rounded-xl border border-line hover:border-line-strong transition-colors duration-200 cursor-pointer group overflow-hidden"
+      onClick={() => navigate(`${appRoutes.vaultDetail.name}${vault.id}`)}
+      className="group flex h-full w-full min-w-[280px] max-w-[400px] cursor-pointer flex-col overflow-hidden rounded-xl border border-line bg-surface-raised text-left transition-colors duration-200 hover:border-line-strong"
     >
-      {/* Top half: vault image (with graceful fallback) */}
-      <div className="relative h-32 bg-surface-inset flex items-center justify-center overflow-hidden">
+      <div className="relative flex aspect-[3/2] items-center justify-center overflow-hidden bg-surface-inset">
         <VaultImage
           vault={vault}
-          imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          iconClassName="w-10 h-10 text-ink-subtle"
+          imgClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          iconClassName="h-10 w-10 text-ink-subtle"
         />
 
-        {/* Status overlay */}
+        {/* A pale chip on a bright sky is unreadable, which is the problem
+            `PropertyHero` solves the same way. */}
         {status && (
-          <Badge
-            variant="secondary"
-            className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 shadow-sm ${status.className}`}
-          >
-            {status.label}
-          </Badge>
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{ backgroundImage: SCRIM }}
+            />
+            <Chip
+              label={status.label}
+              tone={status.tone}
+              className="absolute bottom-2 left-2"
+            />
+          </>
         )}
       </div>
 
-      {/* Bottom: details */}
-      <div className="flex flex-col flex-1 p-4">
-        <h3 className="font-medium tracking-tight text-ink truncate text-base mb-3">
-          {vault.name}
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="truncate text-base font-medium tracking-tight text-ink">
+          {facts?.address ?? vault.name}
         </h3>
+        {location && (
+          <p className="mt-1 flex items-center gap-1 truncate text-xs text-ink-subtle">
+            <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+            {location}
+          </p>
+        )}
 
-        {/* Footer: Meta + Arrow */}
-        <div className="flex items-center justify-between pt-3 mt-auto border-t border-line">
-          <div className="flex items-center gap-3">
+        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+          <div className="flex items-center gap-3 text-xs text-ink-subtle">
             {vault.created_at && (
-              <span className="flex items-center gap-1 text-xs text-ink-subtle">
-                <Calendar className="w-3 h-3" />
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" aria-hidden />
                 {formatDate(vault.created_at)}
               </span>
             )}
             {vault.streams && vault.streams.length > 0 && (
-              <span className="flex items-center gap-1 text-xs text-ink-subtle">
-                <Layers className="w-3 h-3" />
-                {vault.streams.length}
+              <span className="flex items-center gap-1">
+                <Layers className="h-3 w-3" aria-hidden />
+                {vault.streams.length} section
+                {vault.streams.length !== 1 ? "s" : ""}
               </span>
             )}
           </div>
-          <ArrowRight className="w-4 h-4 text-ink-subtle group-hover:text-ink group-hover:translate-x-0.5 transition-all" />
+          <ArrowRight
+            className="h-4 w-4 shrink-0 text-ink-subtle transition-all group-hover:translate-x-0.5 group-hover:text-ink"
+            aria-hidden
+          />
         </div>
       </div>
     </button>

@@ -67,7 +67,7 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
         label={label}
         format={formatOf(file) ?? undefined}
         size="md"
-        className="transition-all duration-200 group-hover:border-cat-line group-hover:shadow-md"
+        className="transition-colors duration-200 group-hover:border-cat-line"
       >
         {source ? (
           <FileThumbnail

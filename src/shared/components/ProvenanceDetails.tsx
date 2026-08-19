@@ -4,6 +4,7 @@ import { CopyableHash } from "@/shared/components/CopyableHash";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
 import { formatDate } from "@/shared/utils/dateFormatter";
 import { getLedgerNameFromServerName } from "@/shared/utils/networks";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
 
@@ -51,6 +52,14 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  // The dashboard's curve, so this does not introduce a second motion
+  // vocabulary. No spring: nothing here is gesture-driven, and a disclosure
+  // that overshoots reads as decoration.
+  const reveal = reduceMotion
+    ? { duration: 0.15, ease: "easeOut" as const }
+    : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const };
 
   const detail: ProvenanceRow[] = [
     ...(txHash ? [{ label: "Transaction", value: txHash, copyable: true }] : []),
@@ -80,8 +89,13 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
             className="gap-1"
           >
             Details
+            {/* Same duration as the panel, so the two halves of the gesture
+                finish together. */}
             <ChevronDown
-              className={cn("transition-transform", isOpen && "rotate-180")}
+              className={cn(
+                "transition-transform duration-[220ms]",
+                isOpen && "rotate-180",
+              )}
               aria-hidden
             />
           </Button>
@@ -94,25 +108,40 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
         )}
       </div>
 
-      {isOpen && detail.length > 0 && (
-        <dl className="mt-3 grid gap-x-6 gap-y-2 rounded-lg border border-line bg-surface-sunken p-3 sm:grid-cols-2">
-          {detail.map((row) => (
-            <div
-              key={row.label}
-              className="flex items-baseline justify-between gap-3"
-            >
-              <dt className="text-xs text-ink-subtle">{row.label}</dt>
-              <dd className="min-w-0 text-xs text-ink-muted">
-                {row.copyable ? (
-                  <CopyableHash value={row.value} />
-                ) : (
-                  <span className="truncate">{row.value}</span>
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      <AnimatePresence initial={false}>
+        {isOpen && detail.length > 0 && (
+          // Height has to be animated in JS — `auto` is not interpolable in CSS
+          // — and the clip lives on this wrapper rather than an ancestor, so
+          // nothing outside the panel gets cropped while it slides.
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={
+              reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }
+            }
+            exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={reveal}
+            className="overflow-hidden"
+          >
+            <dl className="mt-3 grid gap-x-6 gap-y-2 rounded-lg border border-line bg-surface-sunken p-3 sm:grid-cols-2">
+              {detail.map((row) => (
+                <div
+                  key={row.label}
+                  className="flex items-baseline justify-between gap-3"
+                >
+                  <dt className="text-xs text-ink-subtle">{row.label}</dt>
+                  <dd className="min-w-0 text-xs text-ink-muted">
+                    {row.copyable ? (
+                      <CopyableHash value={row.value} />
+                    ) : (
+                      <span className="truncate">{row.value}</span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

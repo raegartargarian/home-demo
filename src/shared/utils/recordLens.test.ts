@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { groupByYear, LensRecord, recordMeta } from "./recordLens";
+import {
+  granularityFor,
+  groupByPeriod,
+  LensRecord,
+  recordMeta,
+} from "./recordLens";
 
 const record = (
   id: string,
@@ -70,32 +75,72 @@ describe("recordMeta", () => {
   });
 });
 
-describe("groupByYear", () => {
-  it("groups newest year first, by the record's own date", () => {
-    const groups = groupByYear([
+describe("granularityFor", () => {
+  it("splits by year when the records span years", () => {
+    expect(granularityFor([KITCHEN_INVOICE, ROOF_PERMIT])).toBe("year");
+  });
+
+  it("splits by month inside a single year", () => {
+    // A year heading over a section that only has this year is one heading
+    // over everything: it costs a row and says nothing. February and June.
+    expect(granularityFor([KITCHEN_ESTIMATE, KITCHEN_INVOICE])).toBe("month");
+  });
+
+  it("splits by day inside a single month", () => {
+    // Both roof records are May 2026 — 21st and 30th.
+    expect(granularityFor([ROOF_PERMIT, ROOF_WARRANTY])).toBe("day");
+  });
+
+  it("does not let undated records widen the span", () => {
+    expect(granularityFor([ROOF_PERMIT, { id: "x" }])).toBe("day");
+  });
+});
+
+describe("groupByPeriod", () => {
+  it("groups newest first, by the record's own date", () => {
+    const groups = groupByPeriod([
       KITCHEN_ESTIMATE,
       ROOF_WARRANTY,
       KITCHEN_INVOICE,
       ROOF_PERMIT,
     ]);
 
-    expect(groups.map((group) => group.year)).toEqual([2026, 2024]);
-    // Within a year, newest first: the warranty (30 May) precedes the permit (21 May).
+    expect(groups.map((group) => group.label)).toEqual(["2026", "2024"]);
+    // Within a period, newest first: the warranty (30 May) precedes the permit (21 May).
     expect(groups[0].records.map((r) => r.id)).toEqual(["4", "3"]);
     expect(groups[1].records.map((r) => r.id)).toEqual(["2", "1"]);
   });
 
+  it("labels a single year by month", () => {
+    const groups = groupByPeriod([KITCHEN_ESTIMATE, KITCHEN_INVOICE]);
+    expect(groups.map((group) => group.label)).toEqual([
+      "June 2024",
+      "February 2024",
+    ]);
+  });
+
+  it("labels a single month by day", () => {
+    const groups = groupByPeriod([ROOF_PERMIT, ROOF_WARRANTY]);
+    expect(groups.map((group) => group.label)).toEqual([
+      "May 30, 2026",
+      "May 21, 2026",
+    ]);
+  });
+
   it("keeps a legacy record visible, dated by created_at", () => {
-    const groups = groupByYear([KITCHEN_INVOICE, LEGACY]);
-    expect(groups.map((group) => group.year)).toEqual([2025, 2024]);
+    const groups = groupByPeriod([KITCHEN_INVOICE, LEGACY]);
+    expect(groups.map((group) => group.label)).toEqual(["2025", "2024"]);
   });
 
   it("sorts undated records last rather than dropping them", () => {
-    const groups = groupByYear([{ id: "x" }, KITCHEN_INVOICE]);
-    expect(groups.map((group) => group.year)).toEqual([2024, null]);
+    const groups = groupByPeriod([{ id: "x" }, KITCHEN_INVOICE]);
+    expect(groups.map((group) => group.label)).toEqual([
+      "June 28, 2024",
+      "Undated",
+    ]);
   });
 
   it("returns nothing for an empty vault", () => {
-    expect(groupByYear([])).toEqual([]);
+    expect(groupByPeriod([])).toEqual([]);
   });
 });
