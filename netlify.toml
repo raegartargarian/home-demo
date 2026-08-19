@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  # vite.config.ts sets build.outDir = "build", not the Vite default "dist".
+  # The Netlify UI was pointing at "dist", which would publish an empty site
+  # even on a green build.
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "24"
+  # The bundle (web3auth + occt-import-js + polyfills, ~7.4k modules) exceeds
+  # Node's default ~2GB heap during Rollup's chunk generation and OOMs.
+  NODE_OPTIONS = "--max-old-space-size=4096"
+
+# react-router-dom does client-side routing, so every deep link has to be
+# served index.html rather than 404ing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

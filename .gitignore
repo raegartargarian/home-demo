@@ -33,3 +33,6 @@ dist-ssr
 template.zip
 .history
 .vite/
+
+# Local Netlify folder
+.netlify
