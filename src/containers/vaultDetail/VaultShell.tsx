@@ -177,8 +177,8 @@ const VaultShell = () => {
             ledger={subject.ledger}
             createdAt={subject.createdAt}
             createdLabel={subject.createdLabel}
-            rows={
-              stream?.asset_code
+            rows={[
+              ...(stream?.asset_code
                 ? [
                     {
                       label: "Stream",
@@ -186,27 +186,44 @@ const VaultShell = () => {
                       copyable: true,
                     },
                   ]
-                : []
-            }
+                : []),
+              // Chips rather than words: what a section does at sale and what
+              // state it is in are both facts that carry a colour, and losing
+              // that to fit a definition list would be a downgrade.
+              ...(category
+                ? [
+                    {
+                      label: "At sale",
+                      value: (
+                        <TransferBadge
+                          transfersOnSale={category.transfersOnSale}
+                        />
+                      ),
+                    },
+                  ]
+                : []),
+              ...(status
+                ? [
+                    {
+                      label: "Status",
+                      value: <Chip label={status.label} tone={status.tone} />,
+                    },
+                  ]
+                : []),
+            ]}
             actions={
-              <>
-                {category && (
-                  <TransferBadge transfersOnSale={category.transfersOnSale} />
-                )}
-                {status && <Chip label={status.label} tone={status.tone} />}
-                {uploadTarget && (
-                  <Button
-                    size="sm"
-                    disabled={isFiling}
-                    onClick={() =>
-                      dispatch(uploadActions.openUpload(uploadTarget))
-                    }
-                  >
-                    <Plus />
-                    Add record
-                  </Button>
-                )}
-              </>
+              uploadTarget && (
+                <Button
+                  size="sm"
+                  disabled={isFiling}
+                  onClick={() =>
+                    dispatch(uploadActions.openUpload(uploadTarget))
+                  }
+                >
+                  <Plus />
+                  Add record
+                </Button>
+              )
             }
             detailActions={
               <>

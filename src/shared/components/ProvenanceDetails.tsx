@@ -10,8 +10,12 @@ import React, { useState } from "react";
 
 export interface ProvenanceRow {
   label: string;
-  value: string;
-  /** Hashes and codes are shown shortened, with a copy affordance. */
+  /**
+   * Plain text, or a `Chip` where the value carries a meaning worth colouring —
+   * a status, or whether the section transfers at sale.
+   */
+  value: React.ReactNode;
+  /** Hashes and codes are shown shortened, with a copy affordance. Text only. */
   copyable?: boolean;
 }
 
@@ -145,9 +149,9 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
                       <dt className="text-xs text-ink-subtle">{row.label}</dt>
                       <dd className="min-w-0 text-xs text-ink-muted">
                         {row.copyable ? (
-                          <CopyableHash value={row.value} />
+                          <CopyableHash value={String(row.value)} />
                         ) : (
-                          <span className="truncate">{row.value}</span>
+                          row.value
                         )}
                       </dd>
                     </div>

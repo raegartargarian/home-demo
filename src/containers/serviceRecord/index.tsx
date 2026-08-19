@@ -106,12 +106,6 @@ const ServiceRecord = () => {
                   {attachment?.name || "Home Record"}
                 </h1>
                 <div className="flex flex-wrap items-center gap-3 mt-2">
-                  {attachmentStatus && (
-                    <Chip
-                      label={attachmentStatus.label}
-                      tone={attachmentStatus.tone}
-                    />
-                  )}
                   {attachment?.file_count != null && (
                     <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
                       <HardDrive className="w-3.5 h-3.5" />
@@ -126,14 +120,10 @@ const ServiceRecord = () => {
                 {/* Where the work was, as opposed to where the record is
                     filed. Tags, so a record can carry more than one. */}
                 {rooms.length > 0 && (
-                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                  <ul className="mt-2 flex list-none flex-wrap gap-1.5">
                     {rooms.map((room) => (
-                      <li
-                        key={room.code}
-                        className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-inset px-2 py-0.5 text-[11px] font-medium text-ink-muted"
-                      >
-                        <MapPin className="h-3 w-3 shrink-0" aria-hidden />
-                        {room.label}
+                      <li key={room.code}>
+                        <Chip label={room.label} icon={MapPin} />
                       </li>
                     ))}
                   </ul>
@@ -150,8 +140,8 @@ const ServiceRecord = () => {
             ledger={attachment?.ledger}
             createdAt={attachment?.created_at}
             createdLabel="Filed"
-            rows={
-              attachment?.stream?.asset_code
+            rows={[
+              ...(attachment?.stream?.asset_code
                 ? [
                     {
                       label: "Stream",
@@ -159,8 +149,21 @@ const ServiceRecord = () => {
                       copyable: true,
                     },
                   ]
-                : []
-            }
+                : []),
+              ...(attachmentStatus
+                ? [
+                    {
+                      label: "Status",
+                      value: (
+                        <Chip
+                          label={attachmentStatus.label}
+                          tone={attachmentStatus.tone}
+                        />
+                      ),
+                    },
+                  ]
+                : []),
+            ]}
             detailActions={
               attachment?.tx_hash && (
                 <Button
