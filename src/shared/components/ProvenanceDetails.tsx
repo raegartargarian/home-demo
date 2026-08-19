@@ -24,8 +24,17 @@ interface ProvenanceDetailsProps {
   createdLabel?: string;
   /** Anything else worth identifying — a stream's asset code, for instance. */
   rows?: ProvenanceRow[];
-  /** Explorer link, proof download: the things you do *with* the provenance. */
+  /**
+   * The page's own action, kept in the collapsed row — the one thing someone
+   * came here to do.
+   */
   actions?: React.ReactNode;
+  /**
+   * What you do *with* the provenance: open the explorer, download the proof.
+   * These live inside the panel, with the evidence they act on. In the row they
+   * were three buttons of equal weight beside the one that matters.
+   */
+  detailActions?: React.ReactNode;
   className?: string;
 }
 
@@ -49,6 +58,7 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
   createdLabel = "Registered",
   rows = [],
   actions,
+  detailActions,
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,16 +80,18 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
     ...(createdAt ? [{ label: createdLabel, value: formatDate(createdAt) }] : []),
   ];
 
+  const hasPanel = detail.length > 0 || !!detailActions;
+
   // Nothing to prove and nothing to do with it: render nothing rather than an
   // empty disclosure that opens onto a blank panel.
-  if (detail.length === 0 && !actions) return null;
+  if (!hasPanel && !actions) return null;
 
   return (
     <div className={className}>
       <div className="flex flex-wrap items-center gap-2">
         <VerificationBadge txHash={txHash ?? undefined} />
 
-        {detail.length > 0 && (
+        {hasPanel && (
           <Button
             type="button"
             variant="ghost"
@@ -109,7 +121,7 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
       </div>
 
       <AnimatePresence initial={false}>
-        {isOpen && detail.length > 0 && (
+        {isOpen && hasPanel && (
           // Height has to be animated in JS — `auto` is not interpolable in CSS
           // — and the clip lives on this wrapper rather than an ancestor, so
           // nothing outside the panel gets cropped while it slides.
@@ -122,23 +134,38 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
             transition={reveal}
             className="overflow-hidden"
           >
-            <dl className="mt-3 grid gap-x-6 gap-y-2 rounded-lg border border-line bg-surface-sunken p-3 sm:grid-cols-2">
-              {detail.map((row) => (
+            <div className="mt-3 rounded-lg border border-line bg-surface-sunken p-3">
+              {detail.length > 0 && (
+                <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                  {detail.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-baseline justify-between gap-3"
+                    >
+                      <dt className="text-xs text-ink-subtle">{row.label}</dt>
+                      <dd className="min-w-0 text-xs text-ink-muted">
+                        {row.copyable ? (
+                          <CopyableHash value={row.value} />
+                        ) : (
+                          <span className="truncate">{row.value}</span>
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              {detailActions && (
                 <div
-                  key={row.label}
-                  className="flex items-baseline justify-between gap-3"
+                  className={cn(
+                    "flex flex-wrap items-center gap-2",
+                    detail.length > 0 && "mt-3 border-t border-line pt-3",
+                  )}
                 >
-                  <dt className="text-xs text-ink-subtle">{row.label}</dt>
-                  <dd className="min-w-0 text-xs text-ink-muted">
-                    {row.copyable ? (
-                      <CopyableHash value={row.value} />
-                    ) : (
-                      <span className="truncate">{row.value}</span>
-                    )}
-                  </dd>
+                  {detailActions}
                 </div>
-              ))}
-            </dl>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

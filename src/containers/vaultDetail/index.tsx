@@ -89,35 +89,36 @@ const VaultDetail = () => {
         facts={facts}
         innerClassName={measureFor(measure)}
         actions={
+          isAuthenticated && (
+            <Button
+              size="sm"
+              disabled={isFiling}
+              onClick={() =>
+                dispatch(
+                  uploadActions.openUpload({
+                    vaultId: vault.id,
+                    ledger: vault.ledger || "",
+                  }),
+                )
+              }
+            >
+              <Plus />
+              Add record
+            </Button>
+          )
+        }
+        detailActions={
           <>
-            {isAuthenticated && (
-              <Button
-                size="sm"
-                disabled={isFiling}
-                onClick={() =>
-                  dispatch(
-                    uploadActions.openUpload({
-                      vaultId: vault.id,
-                      ledger: vault.ledger || "",
-                    }),
-                  )
-                }
-              >
-                <Plus />
-                Add record
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
               onClick={handleDownloadProof}
               disabled={isGeneratingPdf}
-              className="w-fit border-brand-line text-brand hover:bg-brand-surface"
             >
               {isGeneratingPdf ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="animate-spin" />
               ) : (
-                <Download className="mr-1.5 h-3.5 w-3.5" />
+                <Download />
               )}
               {isGeneratingPdf ? "Generating..." : "Download Proof"}
             </Button>
@@ -131,14 +132,13 @@ const VaultDetail = () => {
                     vault.ledger as NETWORK_SERVER_NAMES,
                   )
                 }
-                className="w-fit"
                 title={
                   vault.ledger
                     ? `View on ${getLedgerNameFromServerName(vault.ledger) || vault.ledger}`
                     : undefined
                 }
               >
-                <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                <ExternalLink />
                 Explorer
               </Button>
             )}

@@ -140,23 +140,6 @@ const ServiceRecord = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {attachment?.tx_hash && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    viewTXInExplorer(
-                      attachment.tx_hash!,
-                      attachment.ledger as NETWORK_SERVER_NAMES,
-                    )
-                  }
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View Transaction
-                </Button>
-              )}
-            </div>
           </div>
 
           {/* The same disclosure the vault and section pages carry, rather
@@ -177,6 +160,23 @@ const ServiceRecord = () => {
                     },
                   ]
                 : []
+            }
+            detailActions={
+              attachment?.tx_hash && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    viewTXInExplorer(
+                      attachment.tx_hash!,
+                      attachment.ledger as NETWORK_SERVER_NAMES,
+                    )
+                  }
+                >
+                  <ExternalLink />
+                  Explorer
+                </Button>
+              )
             }
           />
         </header>

@@ -207,7 +207,7 @@ const StreamDetail = () => {
               ? [{ label: "Stream", value: stream.asset_code, copyable: true }]
               : []
           }
-          actions={
+          detailActions={
             stream?.tx_hash && (
               <Button
                 variant="outline"

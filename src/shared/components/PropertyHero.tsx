@@ -28,8 +28,10 @@ interface PropertyHeroProps {
   backLabel?: string;
   /** Resolved by the page via `parseHomeFacts`. Null renders the name only. */
   facts?: HomeFacts | null;
-  /** Page-level actions (proof download, explorer link, share). */
+  /** The page's own action, kept beside the status. */
   actions?: React.ReactNode;
+  /** Explorer, proof download — folded into the Details panel. */
+  detailActions?: React.ReactNode;
   /** Width of the content well — matched to the page it sits above. */
   innerClassName?: string;
   className?: string;
@@ -77,6 +79,7 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
   backLabel,
   facts,
   actions,
+  detailActions,
   innerClassName,
   className,
 }) => {
@@ -183,6 +186,7 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
             txHash={vault.tx_hash}
             ledger={vault.ledger}
             createdAt={vault.created_at}
+            detailActions={detailActions}
             actions={
               <>
                 {status && <Chip label={status.label} tone={status.tone} />}
