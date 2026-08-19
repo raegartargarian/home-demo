@@ -3,6 +3,12 @@
   # that file is gitignored (it is the local override) and so does not exist in
   # CI, leaving every VITE_* var undefined. Build against the checked-in
   # `.env.development` instead so the deploy gets real values.
+  #
+  # Note this only changes which .env file is read: `vite build` still emits a
+  # production bundle (production React) whatever --mode says. Do not be tempted
+  # to "correct" that with NODE_ENV=production here — [build.environment] also
+  # applies to `npm install`, where it makes npm skip devDependencies, and the
+  # build then dies in `tsc -b` on missing vitest/@vitejs/plugin-react types.
   command = "npm run build -- --mode development"
   # vite.config.ts sets build.outDir = "build", not the Vite default "dist".
   # The Netlify UI was pointing at "dist", which would publish an empty site
@@ -11,10 +17,6 @@
 
 [build.environment]
   NODE_VERSION = "24"
-  # `--mode development` would otherwise also flip Vite's isProduction off and
-  # bundle React's development build. Pinning NODE_ENV keeps a production
-  # bundle while still reading the .env.development values.
-  NODE_ENV = "production"
   # The bundle (web3auth + occt-import-js + polyfills, ~7.4k modules) exceeds
   # Node's default ~2GB heap during Rollup's chunk generation and OOMs.
   NODE_OPTIONS = "--max-old-space-size=4096"
