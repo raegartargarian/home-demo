@@ -20,7 +20,15 @@ import { UploadRequest } from "./types";
  * state and the error copy a homeowner should read.
  */
 
-/** This app's pause/resume/cancel actions, wired to the upload controller. */
+/**
+ * This app's pause/resume/cancel actions, wired to the upload controller.
+ *
+ * Nothing dispatches them right now — the tray offers no pause or cancel,
+ * because the controller only bites during the multipart PUT and a button that
+ * does nothing through four of the five phases is worse than no button. This
+ * stays because it is the seam: give the tray the controls back and they work,
+ * with no change here.
+ */
 const CONTROL = {
   pause: uploadActions.pauseUpload.type,
   resume: uploadActions.resumeUpload.type,

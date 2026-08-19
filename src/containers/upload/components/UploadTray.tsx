@@ -8,7 +8,7 @@ import {
   useReducedMotion,
   type Transition,
 } from "framer-motion";
-import { CheckCircle2, Loader2, Pause, Play, X } from "lucide-react";
+import { CheckCircle2, Loader2, X } from "lucide-react";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -63,7 +63,6 @@ const UploadCardView: React.FC<{ card: UploadCard }> = ({ card }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const succeeded = useSelector(uploadSelectors.succeeded);
-  const status = useSelector(uploadSelectors.status);
   const phase = useSelector(uploadSelectors.phase);
   const progress = useSelector(uploadSelectors.progress);
   const parts = useSelector(uploadSelectors.parts);
@@ -72,8 +71,6 @@ const UploadCardView: React.FC<{ card: UploadCard }> = ({ card }) => {
   const [delta] = useState(() =>
     card.originRect && !reduceMotion ? swooshDelta(card.originRect) : null,
   );
-
-  const isPaused = status === "paused";
 
   const initial = delta
     ? { opacity: 0, x: delta.x, y: delta.y, scale: 1.05 }
@@ -125,10 +122,7 @@ const UploadCardView: React.FC<{ card: UploadCard }> = ({ card }) => {
           {succeeded ? (
             <CheckCircle2 className="h-[18px] w-[18px]" aria-hidden />
           ) : (
-            <Loader2
-              className={`h-[18px] w-[18px] ${isPaused ? "" : "animate-spin"}`}
-              aria-hidden
-            />
+            <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden />
           )}
         </div>
 
@@ -171,7 +165,7 @@ const UploadCardView: React.FC<{ card: UploadCard }> = ({ card }) => {
           ) : (
             <>
               <p className="mt-2 truncate text-xs text-ink-muted">
-                {isPaused ? "Paused" : (phase && PHASE_LABEL[phase]) || "Uploading…"}
+                {(phase && PHASE_LABEL[phase]) || "Uploading…"}
               </p>
               <div className="mt-1.5 flex items-center gap-2">
                 <Progress
@@ -188,37 +182,6 @@ const UploadCardView: React.FC<{ card: UploadCard }> = ({ card }) => {
                 </p>
               )}
 
-              <div className="mt-3 flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                 
-                  onClick={() =>
-                    dispatch(
-                      isPaused
-                        ? uploadActions.resumeUpload()
-                        : uploadActions.pauseUpload(),
-                    )
-                  }
-                >
-                  {isPaused ? (
-                    <Play className="h-3.5 w-3.5" aria-hidden />
-                  ) : (
-                    <Pause className="h-3.5 w-3.5" aria-hidden />
-                  )}
-                  {isPaused ? "Resume" : "Pause"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                 
-                  onClick={() => dispatch(uploadActions.cancelUpload())}
-                >
-                  Cancel
-                </Button>
-              </div>
             </>
           )}
         </div>
@@ -237,6 +200,13 @@ const UploadCardView: React.FC<{ card: UploadCard }> = ({ card }) => {
  *
  * A failed run is *not* shown here: the form comes back with the error and
  * everything still typed into it, which is the only place a retry can happen.
+ *
+ * Nor is there a pause or a cancel. The machinery exists — `@filedgr/web-core`
+ * ships an upload controller and `upload/saga.ts` wires our action types into
+ * it — but it only bites during the multipart PUT. Between the create, review,
+ * complete and confirm phases a Pause button is a control that visibly does
+ * nothing, which is worse than not offering one. The wiring stays; the buttons
+ * come back the day the card can honestly say what they did.
  */
 export const UploadTray: React.FC = () => {
   const card = useSelector(uploadSelectors.card);
