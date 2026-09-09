@@ -1,8 +1,9 @@
-import axonometric from "@/assets/drawings/exploded-axonometric.svg";
 import kitchenAfter from "@/assets/drawings/kitchen-after.svg";
 import kitchenBefore from "@/assets/drawings/kitchen-before.svg";
 import floorPlan from "@/assets/drawings/floor-plan-a101.svg";
 import roofStormDamage from "@/assets/drawings/roof-storm-damage.svg";
+import housePoster from "@/assets/video/house-demo-poster.jpg";
+import houseFilm from "@/assets/video/house-demo.mp4";
 import {
   BeforeAfterCarousel,
   type BeforeAfterItem,
@@ -15,7 +16,7 @@ import {
   ALL_STREAM_CODES,
   STREAM_CATEGORIES,
 } from "@/shared/constants/streams";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -82,6 +83,12 @@ const STEPS = [
 ];
 
 const Dashboard = () => {
+  // The hero loops silently. Someone who has asked their system for less motion
+  // gets the still frame instead — the video is the subject here, not a
+  // flourish, so it degrades to a photograph of the same house rather than to
+  // nothing.
+  const reduceMotion = useReducedMotion();
+
   return (
     <div className="bg-surface">
       {/* Hero */}
@@ -126,14 +133,31 @@ const Dashboard = () => {
               delay: 0.15,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="overflow-hidden rounded-xl"
+            className="overflow-hidden rounded-xl bg-surface-inset"
           >
-            <img
-              src={axonometric}
-              alt="Exploded axonometric drawing of the property: foundation, first floor, systems and roof, each annotated with the record that documents it"
-              className="block h-full w-full object-cover"
-              draggable={false}
-            />
+            {reduceMotion ? (
+              <img
+                src={housePoster}
+                alt="The property the vault documents"
+                className="block aspect-video h-full w-full object-cover"
+                draggable={false}
+              />
+            ) : (
+              <video
+                src={houseFilm}
+                poster={housePoster}
+                autoPlay
+                loop
+                muted
+                playsInline
+                // Decorative: the copy beside it already says what the page is
+                // about, and a caption describing a looping fly-around would be
+                // read out over every visit.
+                aria-hidden
+                tabIndex={-1}
+                className="block aspect-video h-full w-full object-cover"
+              />
+            )}
           </motion.div>
         </div>
       </PageContainer>
