@@ -1,8 +1,19 @@
 import { globalActions } from "@/containers/global/slice";
 import { store } from "@/main";
+import { createFiledgrApi } from "@filedgr/web-core/api";
 import axios from "axios";
 import { LocalStorageKeys } from "../utils/localStorageHelpers";
 
+/** How many items a list page asks for, everywhere this app pages. */
+export const PAGE_SIZE = 15;
+
+/**
+ * This app's own axios instance rather than web-core's `createApiClient`, for
+ * two reasons its interceptors document: an expired token is rejected with a
+ * real Error carrying `status`, which the upload flow classifies as an auth
+ * failure where the library's bare string would read as unknown; and a 401
+ * response logs the homeowner out where a 403 deliberately does not.
+ */
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
@@ -39,22 +50,27 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const getVaults = (
-  templateIds: string[],
-  page: number = 1,
-  pageSize: number = 15
-) => {
-  const params = new URLSearchParams();
-  templateIds.forEach((id) => params.append("template_id", id));
-  params.append("page", String(page));
-  params.append("page_size", String(pageSize));
+// Every endpoint is web-core's, bound to the client above — the same wrappers
+// filedgr-web-app calls, so a backend path change (the attachment PUT switch
+// in 0.10.1, say) is one dependency bump here rather than a hand-edit.
+const api = createFiledgrApi(apiClient, { defaultPageSize: PAGE_SIZE });
 
-  return apiClient.get("/vaults", { params });
-};
+export const {
+  getSingleVault,
+  getSingleAttachment,
+  /** Rename, describe, or archive/unarchive a record. */
+  updateAttachment,
+  getTemplates,
+  getSingleTemplate,
+  createTemplate,
+  createVault,
+  uploadTemplateImage,
+  updateVaultImageStatus,
+} = api;
 
-export const getSingleVault = (id: string) => {
-  return apiClient.get(`/vaults/${id}`);
-};
+/** The homes seeded under the given templates, newest first. */
+export const getVaults = (templateIds: string[], page: number = 1) =>
+  api.getVaults(page, "", "created_at", "DESC", false, "ALL", templateIds);
 
 // `GET /vaults/{id}/attachments` — every record in a vault, in one ordering —
 // is deliberately not wrapped here.
@@ -72,16 +88,16 @@ export const getSingleVault = (id: string) => {
 // Anything that needs the vault as one set waits for the route, or fans out
 // across `getStreamAttachments` and merges five paginations itself.
 
+/**
+ * One page of a stream's records.
+ *
+ * `archived` follows the backend's reading: left out, the page holds live
+ * records only; `true` includes the archived ones alongside them. There is no
+ * archived-only mode.
+ */
 export const getStreamAttachments = (
   streamCode: string,
   page: number = 1,
-  pageSize: number = 15
-) => {
-  return apiClient.get(
-    `/streams/${streamCode}/attachments?page_size=${pageSize}&page=${page}`
-  );
-};
-
-export const getSingleAttachment = (id: string) => {
-  return apiClient.get(`/attachments/${id}`);
-};
+  pageSize: number = PAGE_SIZE,
+  archived?: boolean
+) => api.getTokenAttachments(streamCode, page, pageSize, archived);

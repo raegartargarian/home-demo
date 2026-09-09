@@ -13,7 +13,7 @@ function* fetchVaultsSaga(
 ): any {
   try {
     const { page } = action.payload;
-    const response = yield call(getVaults, ALL_TEMPLATE_IDS, page, 15);
+    const response = yield call(getVaults, ALL_TEMPLATE_IDS, page);
     const data = response.data;
 
     const vaults: VaultDto[] = data.content;
