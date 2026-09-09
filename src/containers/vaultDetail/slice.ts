@@ -4,6 +4,7 @@ import { VaultDetailState } from "./types";
 
 const initialState: VaultDetailState = {
   vault: null,
+  parent: null,
   isLoading: false,
   error: null,
 };
@@ -16,10 +17,15 @@ const vaultDetailSlice = createSlice({
       state.isLoading = true;
       state.error = null;
       state.vault = null;
+      state.parent = null;
     },
     fetchVaultDetailSuccess(state, action: PayloadAction<VaultDto>) {
       state.isLoading = false;
       state.vault = action.payload;
+    },
+    /** Non-null only for a project; resolved by the saga before success. */
+    setVaultParent(state, action: PayloadAction<VaultDto | null>) {
+      state.parent = action.payload;
     },
     fetchVaultDetailFailure(state, action: PayloadAction<string>) {
       state.isLoading = false;

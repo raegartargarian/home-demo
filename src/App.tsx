@@ -8,6 +8,7 @@ import { StreamDetailPage } from "./containers/streamDetail/loadable";
 import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
 import { ServiceRecordPage } from "./containers/serviceRecord/loadable";
+import CreateProjectVaultModal from "./containers/projectVaults/components/CreateProjectVaultModal";
 import UploadRecordModal from "./containers/upload/components/UploadRecordModal";
 import UploadTray from "./containers/upload/components/UploadTray";
 import AuthModal from "./shared/components/AuthModal";
@@ -26,6 +27,9 @@ function App() {
       {/* One upload modal for the whole app: the vault page and the stream
           page both open it, and both learn it finished the same way. */}
       <UploadRecordModal />
+
+      {/* Likewise one form for starting a project, opened from a home's page. */}
+      <CreateProjectVaultModal />
 
       {/* Where an upload goes once the form hands it over, so filing a record
           never pins the homeowner to one page. */}

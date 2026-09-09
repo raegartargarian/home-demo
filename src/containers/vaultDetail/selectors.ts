@@ -7,6 +7,7 @@ const selectVaultDetailState = (state: RootState): VaultDetailState =>
 
 export const vaultDetailSelectors = {
   vault: createSelector(selectVaultDetailState, (state) => state.vault),
+  parent: createSelector(selectVaultDetailState, (state) => state.parent),
   isLoading: createSelector(
     selectVaultDetailState,
     (state) => state.isLoading

@@ -13,6 +13,8 @@ import { useOutletContext } from "react-router-dom";
  */
 export interface VaultContext {
   vault: VaultDto;
+  /** The home this vault is a project of; null when the vault is the home. */
+  parent: VaultDto | null;
   facts: HomeFacts | null;
   /** The section being viewed, when the route names one. */
   stream: VaultStreamDto | null;

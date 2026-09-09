@@ -1,17 +1,23 @@
+import { ProjectsSection } from "@/containers/projectVaults/components/ProjectsSection";
 import { PageContainer } from "@/shared/components/PageContainer";
+import { PROJECT_VAULTS_ENABLED } from "@/shared/constants/projectVaults";
 import { Layers } from "lucide-react";
 import StreamList from "./components/StreamList";
 import { useVaultContext } from "./vaultContext";
 
 /**
- * The vault's own page: its five sections.
+ * The vault's own page: its five sections, and — for a home, when the option
+ * is on — the projects under it.
  *
  * The house, the way out and the provenance all live in `VaultShell`, which
  * stays mounted while you move between here and a section — so this is only the
  * content that changes.
  */
 const VaultDetail = () => {
-  const { vault } = useVaultContext();
+  const { vault, parent } = useVaultContext();
+
+  // A project is one level down and stays there: no projects under projects.
+  const showProjects = PROJECT_VAULTS_ENABLED && parent === null;
 
   return (
     <PageContainer measure="wide">
@@ -29,6 +35,8 @@ const VaultDetail = () => {
           </p>
         </div>
       )}
+
+      {showProjects && <ProjectsSection home={vault} />}
     </PageContainer>
   );
 };

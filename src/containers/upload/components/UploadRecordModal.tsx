@@ -3,6 +3,11 @@ import { vaultDetailSelectors } from "@/containers/vaultDetail/selectors";
 import { cn } from "@/lib/utils";
 import { FilterChip } from "@/shared/components/FilterChip";
 import {
+  FIELD_CLASS,
+  FieldGroup,
+  LABEL_CLASS,
+} from "@/shared/components/FormField";
+import {
   facetForType,
   RECORD_FACETS,
   RecordFacet,
@@ -43,24 +48,6 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "record";
 
-/**
- * A field has to look like something you can type into.
- *
- * These were `bg-surface` on a `bg-surface-sunken` page — #F7F5F2 on #F4F4F4,
- * three points of luminance apart — so a row of inputs read as faint rectangles
- * rather than as controls. They lift to the raised surface, take the stronger
- * hairline, and gain a focus ring, which is the app's one accent doing the job
- * it exists for.
- */
-const FIELD_CLASS = [
-  "w-full rounded-lg border border-line-strong bg-surface-raised",
-  "px-3 py-2 text-sm text-ink outline-none transition-colors",
-  "placeholder:text-ink-subtle",
-  "focus-visible:border-blueprint focus-visible:ring-2 focus-visible:ring-ring/40",
-].join(" ");
-
-const LABEL_CLASS = "text-sm font-medium text-ink";
-
 const totalSize = (files: File[]) =>
   files.reduce((sum, file) => sum + file.size, 0);
 
@@ -93,21 +80,6 @@ const extensionOf = (filename: string) => {
   const dot = filename.lastIndexOf(".");
   return dot > 0 && dot < filename.length - 1 ? filename.slice(dot + 1) : "";
 };
-
-/** A titled block of fields. The form is a full page, so it needs signposting. */
-const FieldGroup: React.FC<{
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}> = ({ title, hint, children }) => (
-  <section className="space-y-4">
-    <div>
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      {hint && <p className="mt-0.5 text-xs text-ink-subtle">{hint}</p>}
-    </div>
-    {children}
-  </section>
-);
 
 /**
  * Files a new record into one stream.

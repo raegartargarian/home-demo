@@ -29,7 +29,14 @@ import {
   formatStreamName,
 } from "@/shared/utils/streamHelpers";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
-import { Download, ExternalLink, Layers, Loader2, Plus } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  FolderKanban,
+  Layers,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useParams } from "react-router-dom";
@@ -60,6 +67,7 @@ const VaultShell = () => {
   const { id, code } = useParams<{ id: string; code?: string }>();
   const dispatch = useDispatch();
   const vault = useSelector(vaultDetailSelectors.vault);
+  const parent = useSelector(vaultDetailSelectors.parent);
   const isLoading = useSelector(vaultDetailSelectors.isLoading);
   const isFiling = useSelector(uploadSelectors.isFiling);
   const { isAuthenticated } = useWeb3Auth() || {};
@@ -82,6 +90,12 @@ const VaultShell = () => {
   }, [id, vault?.id, dispatch]);
 
   const facts = useMemo(() => (vault ? parseHomeFacts(vault) : null), [vault]);
+  // A project is named by its parent: the way out goes to the home, and the
+  // home is what the project is "of".
+  const parentAddress = useMemo(
+    () => (parent ? (parseHomeFacts(parent)?.address ?? parent.name) : null),
+    [parent],
+  );
   const stream = useMemo(
     () => vault?.streams?.find((entry) => entry.asset_code === code) ?? null,
     [vault?.streams, code],
@@ -91,7 +105,8 @@ const VaultShell = () => {
     [stream],
   );
 
-  // The section is the subject when one is open; otherwise the house is.
+  // The section is the subject when one is open; otherwise the house is —
+  // or the project, which is a smaller house with a home to go back to.
   const subject = stream
     ? {
         title: category?.label ?? formatStreamName(stream),
@@ -109,21 +124,38 @@ const VaultShell = () => {
         createdLabel: "Created",
         status: stream.status,
       }
-    : {
-        title: facts?.address ?? vault?.name ?? "",
-        subtitle: undefined,
-        icon: undefined,
-        backTo: appRoutes.vaults.path,
-        backLabel: "All homes",
-        // "All homes" means the list, even when there is one of them.
-        backState: BROWSE_ALL_HOMES,
-        facts,
-        txHash: vault?.tx_hash,
-        ledger: vault?.ledger,
-        createdAt: vault?.created_at,
-        createdLabel: "Registered",
-        status: vault?.status,
-      };
+    : parent && parentAddress
+      ? {
+          title: vault?.name ?? "",
+          subtitle: `A project of ${parentAddress}`,
+          icon: FolderKanban,
+          backTo: vaultDetailPath(parent.id),
+          backLabel: parentAddress,
+          backState: undefined,
+          // The facts are the home's; under a project's name they would be the
+          // house interrupting, exactly as under a section's.
+          facts: null,
+          txHash: vault?.tx_hash,
+          ledger: vault?.ledger,
+          createdAt: vault?.created_at,
+          createdLabel: "Started",
+          status: vault?.status,
+        }
+      : {
+          title: facts?.address ?? vault?.name ?? "",
+          subtitle: undefined,
+          icon: undefined,
+          backTo: appRoutes.vaults.path,
+          backLabel: "All homes",
+          // "All homes" means the list, even when there is one of them.
+          backState: BROWSE_ALL_HOMES,
+          facts,
+          txHash: vault?.tx_hash,
+          ledger: vault?.ledger,
+          createdAt: vault?.created_at,
+          createdLabel: "Registered",
+          status: vault?.status,
+        };
 
   const status = subject.status ? getStatusConfig(subject.status) : null;
 
@@ -281,7 +313,9 @@ const VaultShell = () => {
       </div>
 
       <Outlet
-        context={{ vault, facts, stream, category } satisfies VaultContext}
+        context={
+          { vault, parent, facts, stream, category } satisfies VaultContext
+        }
       />
     </div>
   );
