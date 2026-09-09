@@ -47,21 +47,29 @@ export const useRecordFilter = () => {
 
   const setFilter = useCallback(
     (next: RecordFilter) => {
-      const params = new URLSearchParams(searchParams);
+      // Built from the *current* params rather than the ones captured when this
+      // callback was made: two chips toggled inside one tick both read the same
+      // stale snapshot, and the second write silently dropped the first.
+      setSearchParams(
+        (current) => {
+          const params = new URLSearchParams(current);
 
-      // An empty axis leaves no trace in the URL — a bare `?facet=` is noise in
-      // a link someone is going to paste to somebody else.
-      for (const [key, values] of [
-        [FACET_PARAM, next.facets],
-        [ROOM_PARAM, next.rooms],
-      ] as const) {
-        if (values.length > 0) params.set(key, values.join(","));
-        else params.delete(key);
-      }
+          // An empty axis leaves no trace in the URL — a bare `?facet=` is
+          // noise in a link someone is going to paste to somebody else.
+          for (const [key, values] of [
+            [FACET_PARAM, next.facets],
+            [ROOM_PARAM, next.rooms],
+          ] as const) {
+            if (values.length > 0) params.set(key, values.join(","));
+            else params.delete(key);
+          }
 
-      setSearchParams(params, { replace: true });
+          return params;
+        },
+        { replace: true },
+      );
     },
-    [searchParams, setSearchParams],
+    [setSearchParams],
   );
 
   return [filter, setFilter] as const;

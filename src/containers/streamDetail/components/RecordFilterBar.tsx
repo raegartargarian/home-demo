@@ -129,9 +129,11 @@ export const RecordFilterBar: React.FC<RecordFilterBarProps> = ({
         )}
       </div>
 
-      {/* Grouping over a half-loaded section would under-report, so the page
-          pulls the rest in when a filter goes on. Say so while it does. */}
-      {active && isLoading && (
+      {/* Grouping or filtering over a half-loaded section would under-report,
+          so the page pulls the rest in for either. Say so while it does — and
+          say it whether or not a chip is on, because grouping by project starts
+          the same wait with the bar untouched. */}
+      {isLoading && (
         <p className="mt-2 text-xs text-ink-subtle">
           Loading the rest of this section…
         </p>
