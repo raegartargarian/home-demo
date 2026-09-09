@@ -8,6 +8,8 @@ const initialState: ServiceRecordState = {
   isLoading: false,
   isProcessingZip: false,
   error: null,
+  isArchiving: false,
+  archiveError: null,
 };
 
 const serviceRecordSlice = createSlice({
@@ -36,6 +38,24 @@ const serviceRecordSlice = createSlice({
       state.isLoading = false;
       state.isProcessingZip = false;
       state.error = action.payload;
+    },
+    // Archiving hides a record from its section without deleting it; restoring
+    // puts it back. The saga writes the flag and then re-reads the record, so
+    // the page shows what the backend now says rather than what was asked for.
+    archiveStart: {
+      reducer(state) {
+        state.isArchiving = true;
+        state.archiveError = null;
+      },
+      prepare: (payload: { id: string; archived: boolean }) => ({ payload }),
+    },
+    archiveSuccess(state, action: PayloadAction<AttachmentModel>) {
+      state.isArchiving = false;
+      state.attachment = action.payload;
+    },
+    archiveFailure(state, action: PayloadAction<string>) {
+      state.isArchiving = false;
+      state.archiveError = action.payload;
     },
     reset(state) {
       Object.assign(state, initialState);

@@ -2,6 +2,8 @@ import { VaultDto } from "@/shared/types/vault";
 
 export interface VaultDetailState {
   vault: VaultDto | null;
+  /** The home this vault is a project of, or null for a home itself. */
+  parent: VaultDto | null;
   isLoading: boolean;
   error: string | null;
   /** Every record in the vault, for the Timeline and Projects lenses. Paged
@@ -26,6 +28,8 @@ export interface Attachment {
   tx_hash?: string | null;
   ledger?: string;
   public_vault?: boolean;
+  /** Archived records are left out of a section unless asked for. */
+  archived?: boolean;
   /** Present on the vault-wide list, which is not scoped to one stream. */
   stream_id?: string;
   stream?: { asset_code?: string };

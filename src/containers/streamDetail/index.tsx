@@ -6,13 +6,15 @@ import { uploadActions } from "@/containers/upload/slice";
 import { uploadTargetFor } from "@/containers/upload/target";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { cn } from "@/lib/utils";
+import { Chip } from "@/shared/components/Chip";
 import { PageContainer } from "@/shared/components/PageContainer";
 import { getStreamAttachments } from "@/shared/providers/api";
-import { AlertCircle, FileText, Layers, Plus } from "lucide-react";
+import { AlertCircle, Archive, FileText, Layers, Plus } from "lucide-react";
 import { groupByProject } from "@/shared/utils/recordLens";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { archivedCountOf } from "./components/archivedCount";
 import RecordFilterBar from "./components/RecordFilterBar";
 import { filterRecords, isFilterActive } from "./components/recordFilter";
 import StreamTimeline, {
@@ -90,6 +92,16 @@ const StreamDetail = () => {
   // fresh budget rather than inheriting an exhausted one.
   const [pinPolls, setPinPolls] = useState(0);
 
+  // Archived records are out of the section by default. Asking for them adds
+  // them to the list — the backend has no archived-only view — and every fetch
+  // on this page has to ask the same way, or paging would mix two lists.
+  const [showArchived, setShowArchived] = useState(false);
+  // How many there are to show, which decides whether to offer the switch at
+  // all: a section with nothing archived should not advertise a view of
+  // nothing. Null until counted; a failed count keeps the last answer.
+  const [archivedCount, setArchivedCount] = useState<number | null>(null);
+  const archivedFilter = showArchived ? true : undefined;
+
   // null totalPages = not yet loaded; treat as "no more" until the first page
   // resolves so the sentinel doesn't fire before we know the page count.
   //
@@ -111,7 +123,7 @@ const StreamDetail = () => {
     setLoadError(null);
     setPinPolls(0);
     setIsFetching(true);
-    getStreamAttachments(code, 1, PAGE_SIZE)
+    getStreamAttachments(code, 1, PAGE_SIZE, archivedFilter)
       .then((res) => {
         if (cancelled) return;
         setAttachments(res.data?.content || []);
@@ -130,7 +142,31 @@ const StreamDetail = () => {
     return () => {
       cancelled = true;
     };
-  }, [code, reloadKey]);
+  }, [code, reloadKey, archivedFilter]);
+
+  // Counted on the same occasions the list is loaded — arrival, an upload
+  // landing, the switch changing — and never as part of the list request,
+  // because it is two extra one-item pages the list itself does not need.
+  useEffect(() => {
+    if (!code) return;
+    let cancelled = false;
+    Promise.all([
+      getStreamAttachments(code, 1, 1, true),
+      getStreamAttachments(code, 1, 1),
+    ])
+      .then(([everything, liveOnly]) => {
+        if (cancelled) return;
+        const count = archivedCountOf(everything, liveOnly);
+        if (count !== null) setArchivedCount(count);
+      })
+      .catch((error) => {
+        // Best effort: the switch simply does not appear until a count lands.
+        console.error("Failed to count archived records:", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [code, reloadKey, archivedFilter]);
 
   /**
    * The next page, with no opinion about whether it should be asked for.
@@ -146,7 +182,12 @@ const StreamDetail = () => {
 
     setIsFetching(true);
     try {
-      const res = await getStreamAttachments(code, next, PAGE_SIZE);
+      const res = await getStreamAttachments(
+        code,
+        next,
+        PAGE_SIZE,
+        archivedFilter,
+      );
       setAttachments((prev) => [...prev, ...(res.data?.content || [])]);
       setPage(res.data?.current_page ?? next);
       setTotalPages(res.data?.total_pages ?? totalPages);
@@ -157,7 +198,7 @@ const StreamDetail = () => {
     } finally {
       setIsFetching(false);
     }
-  }, [code, page, isFetching, totalPages]);
+  }, [code, page, isFetching, totalPages, archivedFilter]);
 
   const loadMore = useCallback(() => {
     if (!hasMore) return;
@@ -221,7 +262,7 @@ const StreamDetail = () => {
 
     const timer = setTimeout(
       () => {
-        getStreamAttachments(code, 1, PAGE_SIZE)
+        getStreamAttachments(code, 1, PAGE_SIZE, archivedFilter)
           .then((res) => {
             const fresh: Attachment[] = res.data?.content ?? [];
             setAttachments((prev) => withFreshFiles(prev, fresh));
@@ -238,12 +279,17 @@ const StreamDetail = () => {
     );
 
     return () => clearTimeout(timer);
-  }, [code, pendingPins, loadError, pinPolls]);
+  }, [code, pendingPins, loadError, pinPolls, archivedFilter]);
 
   const pullingAll = filtering || grouping === "project";
   useEffect(() => {
     if (pullingAll && hasMore && !isFetching) loadMore();
   }, [pullingAll, hasMore, isFetching, loadMore]);
+
+  // Offered once there is something to show — or while it is on, so switching
+  // the last archived record back to live does not make the switch vanish
+  // from under the cursor.
+  const offerArchived = (archivedCount ?? 0) > 0 || showArchived;
 
   const isFirstLoad = isFetching && attachments.length === 0;
   const retry = () => {
@@ -258,7 +304,19 @@ const StreamDetail = () => {
           sections. */}
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
         <h2 className="text-lg font-medium tracking-tight text-ink">Records</h2>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          {offerArchived && (
+            <Chip
+              label="Show archived"
+              icon={Archive}
+              tone="warn"
+              size="md"
+              count={archivedCount ?? undefined}
+              pressed={showArchived}
+              onToggle={() => setShowArchived((on) => !on)}
+              title="Archived records stay in the vault, out of the section's way. Show them alongside the rest."
+            />
+          )}
           {hasProjects && (
             <div
               role="group"

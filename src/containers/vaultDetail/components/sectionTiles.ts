@@ -21,6 +21,13 @@ export interface SectionTile {
   file: RecordFile;
   /** What the tile is called. See `labelFor`. */
   label: string;
+  /**
+   * Whether the record is archived. Only ever true on a shelf that asked for
+   * archived records, and then the tile has to say so — an archived receipt
+   * standing among live ones with nothing to mark it is the reason it was
+   * archived in the first place, back on the shelf.
+   */
+  archived: boolean;
   key: string;
 }
 
@@ -87,6 +94,7 @@ export const sectionTiles = (records: Attachment[]): SectionTile[] => {
         attachment,
         file,
         label: labelFor(attachment, file, files.length),
+        archived: !!attachment.archived,
         key: `${attachment.id}:${file.cid ?? index}`,
       });
     }
