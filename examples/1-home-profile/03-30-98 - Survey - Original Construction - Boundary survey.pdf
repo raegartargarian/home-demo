@@ -10,7 +10,7 @@
 endobj
 4 0 obj
 <<
-/Length 1746
+/Length 1403
 >>
 stream
 0.200025 w
@@ -34,7 +34,7 @@ BT
 10.3499999999999996 TL
 0.353 0.392 0.447 rg
 56. 724. Td
-(Personal Vault  ·  PRIVATE — not transferred at sale) Tj
+(Home Profile) Tj
 ET
 0.82 0.84 0.87 RG
 56. 702. m
@@ -45,70 +45,49 @@ BT
 19.5499999999999972 TL
 0.098 0.118 0.141 rg
 56. 674. Td
-(Property Tax) Tj
+(Original Construction) Tj
 ET
 BT
 /F1 10 Tf
 11.5 TL
 0.353 0.392 0.447 rg
 56. 654. Td
-(Tax  ·  April 30, 2026) Tj
+(Survey  ·  March 30, 1998) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
 56. 624. Td
-(Travis Central Appraisal District — notice of appraised value) Tj
+(Boundary and improvement survey) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
 56. 608. Td
-(Property ID: 0442181405) Tj
+(Surveyor: Colorado River Land Surveying, RPLS #5512) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
 56. 592. Td
-(Tax year: 2026) Tj
+(Lot 14, Block C, Maple Ridge Section Two) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
 56. 576. Td
-(Market value ................................. $ 641,300) Tj
+(Lot area: 8,712 sq ft \(0.20 acres\)) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
 56. 560. Td
-(Homestead cap adjustment ..................... \($ 42,880\)) Tj
-ET
-BT
-/F5 10 Tf
-11.5 TL
-0.098 0.118 0.141 rg
-56. 544. Td
-(Assessed value ............................... $ 598,420) Tj
-ET
-BT
-/F5 10 Tf
-11.5 TL
-0.098 0.118 0.141 rg
-56. 528. Td
-(Homestead exemption on file: yes) Tj
-ET
-BT
-/F5 10 Tf
-11.5 TL
-0.098 0.118 0.141 rg
-56. 512. Td
-(Protest deadline: 15 May 2026) Tj
+(Front building setback: 25 ft; side: 5 ft) Tj
 ET
 BT
 /F1 7.5 Tf
@@ -122,7 +101,7 @@ BT
 8.625 TL
 0.478 0.518 0.573 rg
 56. 31. Td
-(043026 - Tax - Property Tax - Travis County assessment.pdf) Tj
+(03-30-98 - Survey - Original Construction - Boundary survey.pdf) Tj
 ET
 endstream
 endobj
@@ -296,7 +275,7 @@ endobj
 19 0 obj
 <<
 /Producer (jsPDF 4.2.1)
-/CreationDate (D:20260817120104+03'00')
+/CreationDate (D:20260826135719+03'00')
 >>
 endobj
 20 0 obj
@@ -310,33 +289,33 @@ endobj
 xref
 0 21
 0000000000 65535 f 
-0000001918 00000 n 
-0000003735 00000 n 
+0000001575 00000 n 
+0000003392 00000 n 
 0000000015 00000 n 
 0000000120 00000 n 
-0000001975 00000 n 
-0000002100 00000 n 
-0000002230 00000 n 
-0000002363 00000 n 
-0000002500 00000 n 
-0000002623 00000 n 
-0000002752 00000 n 
-0000002884 00000 n 
-0000003020 00000 n 
-0000003148 00000 n 
-0000003275 00000 n 
-0000003404 00000 n 
-0000003537 00000 n 
-0000003639 00000 n 
-0000003983 00000 n 
-0000004069 00000 n 
+0000001632 00000 n 
+0000001757 00000 n 
+0000001887 00000 n 
+0000002020 00000 n 
+0000002157 00000 n 
+0000002280 00000 n 
+0000002409 00000 n 
+0000002541 00000 n 
+0000002677 00000 n 
+0000002805 00000 n 
+0000002932 00000 n 
+0000003061 00000 n 
+0000003194 00000 n 
+0000003296 00000 n 
+0000003640 00000 n 
+0000003726 00000 n 
 trailer
 <<
 /Size 21
 /Root 20 0 R
 /Info 19 0 R
-/ID [ <C0B4E16CE5BFC5D8171E4C461EC7D0E6> <C0B4E16CE5BFC5D8171E4C461EC7D0E6> ]
+/ID [ <0DE4395D0DF76205CEB86F577A63FFE0> <0DE4395D0DF76205CEB86F577A63FFE0> ]
 >>
 startxref
-4173
+3830
 %%EOF

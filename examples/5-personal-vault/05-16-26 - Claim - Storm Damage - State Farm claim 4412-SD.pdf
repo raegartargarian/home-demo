@@ -10,7 +10,7 @@
 endobj
 4 0 obj
 <<
-/Length 1418
+/Length 1855
 >>
 stream
 0.200025 w
@@ -34,7 +34,7 @@ BT
 10.3499999999999996 TL
 0.353 0.392 0.447 rg
 56. 724. Td
-(Home Profile) Tj
+(My Personal Home Info  ·  PRIVATE — not transferred at sale) Tj
 ET
 0.82 0.84 0.87 RG
 56. 702. m
@@ -45,49 +45,77 @@ BT
 19.5499999999999972 TL
 0.098 0.118 0.141 rg
 56. 674. Td
-(Original Construction) Tj
+(Storm Damage) Tj
 ET
 BT
 /F1 10 Tf
 11.5 TL
 0.353 0.392 0.447 rg
 56. 654. Td
-(Certificate  ·  September 11, 1998) Tj
+(Claim  ·  May 16, 2026) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.353 0.392 0.447 rg
+56. 642. Td
+(Linked event: Storm Damage – May 2026) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
-56. 624. Td
-(CERTIFICATE OF OCCUPANCY) Tj
+56. 612. Td
+(Property damage claim) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
-56. 608. Td
-(Issuing authority: City of Austin, Development Services) Tj
+56. 596. Td
+(Claim number: 78-KH-4412-9-SD01) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
-56. 592. Td
-(Permit reference: BP-1998-041872) Tj
+56. 580. Td
+(Date of loss: 14 May 2026) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
-56. 576. Td
-(Use group: R-3 single family residential) Tj
+56. 564. Td
+(Cause of loss: wind, hail, and falling limb) Tj
 ET
 BT
 /F5 10 Tf
 11.5 TL
 0.098 0.118 0.141 rg
-56. 560. Td
-(Final inspection passed: 11 September 1998) Tj
+56. 548. Td
+(Adjuster inspection: 22 May 2026) Tj
+ET
+BT
+/F5 10 Tf
+11.5 TL
+0.098 0.118 0.141 rg
+56. 532. Td
+(Approved replacement cost ................... $ 18,680.00) Tj
+ET
+BT
+/F5 10 Tf
+11.5 TL
+0.098 0.118 0.141 rg
+56. 516. Td
+(Less wind/hail deductible \(2%\) .............. \($ 10,240.00\)) Tj
+ET
+BT
+/F5 10 Tf
+11.5 TL
+0.098 0.118 0.141 rg
+56. 500. Td
+(Net claim payment ........................... $ 8,440.00) Tj
 ET
 BT
 /F1 7.5 Tf
@@ -101,7 +129,7 @@ BT
 8.625 TL
 0.478 0.518 0.573 rg
 56. 31. Td
-(091198 - Certificate - Original Construction - Certificate of Occupancy.pdf) Tj
+(05-16-26 - Claim - Storm Damage - State Farm claim 4412-SD.pdf) Tj
 ET
 endstream
 endobj
@@ -275,7 +303,7 @@ endobj
 19 0 obj
 <<
 /Producer (jsPDF 4.2.1)
-/CreationDate (D:20260817120104+03'00')
+/CreationDate (D:20260826135719+03'00')
 >>
 endobj
 20 0 obj
@@ -289,33 +317,33 @@ endobj
 xref
 0 21
 0000000000 65535 f 
-0000001590 00000 n 
-0000003407 00000 n 
+0000002027 00000 n 
+0000003844 00000 n 
 0000000015 00000 n 
 0000000120 00000 n 
-0000001647 00000 n 
-0000001772 00000 n 
-0000001902 00000 n 
-0000002035 00000 n 
-0000002172 00000 n 
-0000002295 00000 n 
-0000002424 00000 n 
-0000002556 00000 n 
-0000002692 00000 n 
-0000002820 00000 n 
-0000002947 00000 n 
-0000003076 00000 n 
-0000003209 00000 n 
-0000003311 00000 n 
-0000003655 00000 n 
-0000003741 00000 n 
+0000002084 00000 n 
+0000002209 00000 n 
+0000002339 00000 n 
+0000002472 00000 n 
+0000002609 00000 n 
+0000002732 00000 n 
+0000002861 00000 n 
+0000002993 00000 n 
+0000003129 00000 n 
+0000003257 00000 n 
+0000003384 00000 n 
+0000003513 00000 n 
+0000003646 00000 n 
+0000003748 00000 n 
+0000004092 00000 n 
+0000004178 00000 n 
 trailer
 <<
 /Size 21
 /Root 20 0 R
 /Info 19 0 R
-/ID [ <A8CE5C463601611DA8A05437B90B33A4> <A8CE5C463601611DA8A05437B90B33A4> ]
+/ID [ <F9A09FC7EE028185D71B8815E757417F> <F9A09FC7EE028185D71B8815E757417F> ]
 >>
 startxref
-3845
+4282
 %%EOF

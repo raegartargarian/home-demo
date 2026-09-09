@@ -1,19 +1,28 @@
 /**
  * The document naming convention:
  *
- *   MMDDYY - Type - Reason - Doc Name
- *   100725 - Receipt - New Carpeting - HOME DEPOT carpeting.pdf
+ *   MM-DD-YY - Type - Reason - Doc Name
+ *   10-07-25 - Receipt - New Carpeting - HOME DEPOT carpeting.pdf
  *
  * The convention is implemented as a *projection*, not a rule people follow.
  * Asking a homeowner to hand-type a four-part filename at upload time is asking
  * for four chances to get it wrong, and a vault full of near-misses is not
- * searchable. Every part is already structured data on the record manifest, so
- * the canonical name is derived from the manifest and the file the user picked
- * keeps its original name underneath.
+ * searchable. Every part is already structured data on the capture form, so the
+ * name is composed from those fields rather than typed.
  *
- * (The architecture sketch writes the example date as `10/07/2025`; slashes are
- * illegal in filenames on every platform the app targets, so MMDDYY is taken as
- * the governing form and the example as shorthand.)
+ * The projection reaches the files too, not just the record. The first three
+ * segments describe the upload and so are shared; each file supplies the last
+ * one, seeded from the name it arrived with. A record filed without touching
+ * that field still comes out named — which is the point, because the review
+ * that prompted this found every file inside a record still called
+ * `screenshot1241.png`.
+ *
+ * (The architecture sketch writes the example date as `10/07/2025`. Slashes are
+ * illegal in filenames on every platform the app targets, so the separator is a
+ * hyphen; the date is otherwise read exactly as written. An unpunctuated
+ * `100725` is six digits a reader has to decode, and the first review of the
+ * built form said so — `parseRecordDate` still accepts that older form, because
+ * files named under it are already filed.)
  */
 
 import { StreamCategoryCode } from "@/shared/constants/streams";
@@ -45,9 +54,16 @@ export const RECORD_DOC_TYPES = [
   "Statement",
   "Tax",
   "Mortgage",
+  // The escape hatch, offered last in every section. A homeowner holding
+  // something the list does not name should still be able to file it, rather
+  // than picking the nearest wrong type and making it unfindable.
+  "Other",
 ] as const;
 
 export type RecordDocType = (typeof RECORD_DOC_TYPES)[number];
+
+/** Always offered, always last. Not one of a section's own types. */
+export const OTHER_DOC_TYPE: RecordDocType = "Other";
 
 /**
  * Which document types belong in which section.
@@ -66,13 +82,24 @@ const DOC_TYPES_BY_SECTION: Record<StreamCategoryCode, RecordDocType[]> = {
   "personal-vault": ["Policy", "Claim", "Statement", "Tax", "Mortgage"],
 };
 
-/** Falls back to every type for a stream outside the five-section template. */
+/**
+ * The types a section offers, with `Other` appended.
+ *
+ * Falls back to every type for a stream outside the five-section template.
+ * `Other` is added here rather than written into each of the five lists so
+ * there is one place it can be removed from, and so it cannot drift out of
+ * last position in one section.
+ */
 export const docTypesForSection = (
   code?: string
-): readonly RecordDocType[] =>
-  code && code in DOC_TYPES_BY_SECTION
-    ? DOC_TYPES_BY_SECTION[code as StreamCategoryCode]
-    : RECORD_DOC_TYPES;
+): readonly RecordDocType[] => {
+  const own =
+    code && code in DOC_TYPES_BY_SECTION
+      ? DOC_TYPES_BY_SECTION[code as StreamCategoryCode]
+      : RECORD_DOC_TYPES;
+
+  return own.includes(OTHER_DOC_TYPE) ? own : [...own, OTHER_DOC_TYPE];
+};
 
 export interface RecordNameParts {
   /** Date the document is *about*, not the upload date. */
@@ -87,6 +114,10 @@ export interface RecordNameParts {
 }
 
 const SEGMENT_SEPARATOR = " - ";
+
+/** "Hill Country final invoice.pdf" → "Hill Country final invoice". */
+export const stripExtension = (filename: string): string =>
+  filename.replace(/\.[^./\\]+$/, "");
 
 /** Characters no major filesystem accepts, plus the separator itself. */
 const ILLEGAL_FILENAME_CHARS = /[/\\:*?"<>|]/g;
@@ -104,17 +135,44 @@ export const sanitizeSegment = (value: string): string =>
     .replace(/\s+/g, " ")
     .trim();
 
-/** MMDDYY — 7 October 2025 becomes "100725". */
+/** MM-DD-YY — 7 October 2025 becomes "10-07-25". */
 export const formatRecordDate = (date: Date): string => {
   const mm = `${date.getMonth() + 1}`.padStart(2, "0");
   const dd = `${date.getDate()}`.padStart(2, "0");
   const yy = `${date.getFullYear()}`.slice(-2);
-  return `${mm}${dd}${yy}`;
+  return `${mm}-${dd}-${yy}`;
 };
 
-/** Inverse of `formatRecordDate`. Two-digit years resolve to 2000-2099. */
+/**
+ * Which century a two-digit year belongs to.
+ *
+ * A house outlives the convention that names its paperwork. This app's own
+ * worked example opens with an original construction set from 1998, and reading
+ * `98` as 2098 filed the oldest documents in the vault seventy years into the
+ * future — at the top of every timeline, under a heading no reader could make
+ * sense of.
+ *
+ * So the window slides: a two-digit year lands in the most recent century that
+ * does not put the document in the future. One year of slack, because a permit
+ * dated slightly ahead is ordinary and a document dated eighty years ahead is
+ * not.
+ */
+const resolveYear = (yy: number, now = new Date()): number => {
+  const thisCentury = 2000 + yy;
+  return thisCentury > now.getFullYear() + 1 ? 1900 + yy : thisCentury;
+};
+
+/**
+ * Inverse of `formatRecordDate`.
+ *
+ * Accepts the unpunctuated `MMDDYY` the convention used first, so a vault
+ * filed before the hyphen went in still reads back — the whole point of
+ * parsing the name is that old files stay browsable, and a reader that only
+ * understood the newer form would quietly drop every one of them into
+ * "Unfiled".
+ */
 export const parseRecordDate = (value: string): Date | null => {
-  const match = /^(\d{2})(\d{2})(\d{2})$/.exec(value);
+  const match = /^(\d{2})-?(\d{2})-?(\d{2})$/.exec(value);
   if (!match) return null;
 
   const [, mm, dd, yy] = match;
@@ -122,8 +180,8 @@ export const parseRecordDate = (value: string): Date | null => {
   const day = Number(dd);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
-  const date = new Date(2000 + Number(yy), month - 1, day);
-  // Rejects overflow like 023125 (31 February), which Date would roll forward.
+  const date = new Date(resolveYear(Number(yy)), month - 1, day);
+  // Rejects overflow like 02-31-25 (31 February), which Date would roll forward.
   return date.getMonth() === month - 1 && date.getDate() === day ? date : null;
 };
 
@@ -137,6 +195,104 @@ export const buildRecordName = (parts: RecordNameParts): string => {
   ].join(SEGMENT_SEPARATOR);
 
   return parts.extension ? `${stem}.${parts.extension}` : stem;
+};
+
+/**
+ * Salvages a Document segment that is itself a collapsed canonical name.
+ *
+ * Records filed before `documentNameFrom` existed carry the whole of their
+ * previous name in the Document slot, separators flattened to spaces:
+ *
+ *   08-26-26 - Other - Kitchen - 053125 Photo Garden Landscaping Fire pit at dusk
+ *                                └──────────── one segment ─────────────────────┘
+ *
+ * The stored name cannot be repaired — the platform sets an attachment's name
+ * at creation and exposes no way to change it — so the only thing left is to
+ * read it better. The leading date and type are recoverable exactly: the date
+ * has to parse as one, and the word after it has to be a document type this
+ * app knows. Both must hold, which is what keeps a real document called
+ * "010125 Photo album" from being trimmed to "album".
+ *
+ * What cannot be recovered is where the old project ended and its document name
+ * began — "Garden Landscaping Fire pit at dusk" has no separator left to split
+ * on. So the salvage stops there and returns the pair, which is at least two
+ * true things about the file rather than six digits and a type the row already
+ * shows.
+ */
+export const readableDocName = (docName: string): string => {
+  const match = /^(\d{2}-?\d{2}-?\d{2})\s+(\S+)\s+(.+)$/.exec(docName.trim());
+  if (!match) return docName;
+
+  const [, date, type, rest] = match;
+  if (!parseRecordDate(date)) return docName;
+  if (!RECORD_DOC_TYPES.includes(type as RecordDocType)) return docName;
+
+  return rest;
+};
+
+/**
+ * Words that are how a device names a file, not what the file is.
+ *
+ * Kept deliberately tight. A token only belongs here if it says something about
+ * the *camera or app* that produced the file — never something about the
+ * document. "Final", "new" and "photo" are all things a person might genuinely
+ * call a document, so none of them are listed.
+ */
+const DEVICE_TOKENS = new Set([
+  "img", "image", "images", "imgs",
+  "dsc", "dscn", "dcim", "pxl", "mvimg", "gopro", "burst",
+  "screenshot", "screenshots", "screen", "capture",
+  "scan", "scanned", "scanner",
+  "untitled", "unnamed", "download", "downloads", "downloaded",
+  "copy", "whatsapp", "messenger", "snapchat", "facebook",
+  "file", "doc", "docs", "attachment", "unknown", "temp", "tmp",
+]);
+
+/**
+ * Whether a filename says anything a reader could use.
+ *
+ * `779842473_1597057791975426_6463832288154644721_n`, `IMG_0042` and
+ * `screenshot1241` are all names a device chose. Folding one of those into the
+ * convention produces `08-26-26 - Plan - Living Room - IMG_0042` — formally
+ * filed, and no more findable than it was before, which is the complaint the
+ * convention exists to answer. So the capture form leaves the Document field
+ * empty for these and asks, rather than pre-filling nonsense that a hurried
+ * person will accept.
+ *
+ * The test is simply whether any word survives: split on everything that is not
+ * a letter, drop anything shorter than three characters (`n`, `of`, `v2`) and
+ * anything a device would have put there. One real word is enough — "invoice"
+ * is a perfectly good document name.
+ */
+export const isMeaningfulFilename = (filename: string): boolean =>
+  stripExtension(filename)
+    .split(/[^a-zA-Z]+/)
+    .some(
+      (word) => word.length >= 3 && !DEVICE_TOKENS.has(word.toLowerCase()),
+    );
+
+/**
+ * What to put in a Document field for a file that was just picked.
+ *
+ * A file dropped into the capture form has often been through here before —
+ * re-filed from a previous export, or picked out of the examples folder — and
+ * already carries the convention. Seeding the field with its whole stem then
+ * applies the convention a second time: the old name lands in the Document
+ * slot, and `sanitizeSegment` flattens its separators to spaces on the way in,
+ * because a segment containing " - " would not round-trip. The result reads
+ * `05-03-25 - Photo - Garden Landscaping - 050325 Photo Garden Landscaping New
+ * turf and fence installed` — formally correct, and useless to a reader.
+ *
+ * So a name that already parses contributes only its own Document segment.
+ * Anything else keeps its stem — unless the stem is a device's own naming, in
+ * which case there is nothing worth carrying over and the field is left empty
+ * for a person to fill. See `isMeaningfulFilename`.
+ */
+export const documentNameFrom = (filename: string): string => {
+  const parsed = parseRecordName(filename);
+  if (parsed) return parsed.docName;
+
+  return isMeaningfulFilename(filename) ? stripExtension(filename) : "";
 };
 
 /**

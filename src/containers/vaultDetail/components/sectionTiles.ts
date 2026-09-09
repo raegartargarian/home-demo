@@ -1,4 +1,5 @@
 import { recordMeta } from "@/shared/utils/recordLens";
+import { parseRecordName, readableDocName } from "@/shared/utils/recordNaming";
 import { Attachment } from "../types";
 import { previewableFiles, type RecordFile } from "./recordFiles";
 
@@ -23,7 +24,7 @@ export interface SectionTile {
   key: string;
 }
 
-/** "100725 - Receipt - New Carpeting.pdf" → "100725 - Receipt - New Carpeting" */
+/** "10-07-25 - Receipt - New Carpeting.pdf" → "10-07-25 - Receipt - New Carpeting" */
 const stem = (filename: string): string =>
   filename.replace(/\.[^./\\]+$/, "").trim();
 
@@ -35,6 +36,14 @@ const stem = (filename: string): string =>
  * file ("scan001.pdf"). Where it holds several, the record's name describes all
  * of them equally and so distinguishes none — there the filename is the only
  * thing that says which document this tile is.
+ *
+ * Files inside a record now carry the convention themselves, which is what
+ * makes a set of screenshots readable — but the date, type and project in that
+ * name are the same three for every tile in the group, and the group's own
+ * heading has already said them. So a canonical filename shows only its last
+ * segment: four tiles reading "Condenser unit", "Line set", "Permit",
+ * "Invoice" rather than four copies of the same prefix, distinguished at the
+ * far right where nothing is scanning.
  */
 export const labelFor = (
   attachment: Attachment,
@@ -43,7 +52,13 @@ export const labelFor = (
 ): string => {
   const title = recordMeta(attachment).title;
   if (siblingCount <= 1) return title;
-  return stem(file.filename ?? "") || title;
+
+  const filename = file.filename ?? "";
+  const parsed = parseRecordName(filename);
+  // `readableDocName` is for records filed before the double-naming was fixed;
+  // it returns an ordinary document name untouched.
+  if (parsed) return readableDocName(parsed.docName) || title;
+  return stem(filename) || title;
 };
 
 /**

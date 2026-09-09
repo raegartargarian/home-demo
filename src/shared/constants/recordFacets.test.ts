@@ -1,4 +1,4 @@
-import { RECORD_DOC_TYPES } from "@/shared/utils/recordNaming";
+import { OTHER_DOC_TYPE, RECORD_DOC_TYPES } from "@/shared/utils/recordNaming";
 import { describe, expect, it } from "vitest";
 import {
   facetForType,
@@ -16,7 +16,12 @@ describe("record facets", () => {
   it("places each type in exactly one facet", () => {
     const seen = RECORD_FACETS.flatMap((facet) => facet.types);
     expect(seen).toHaveLength(new Set(seen).size);
-    expect(seen).toHaveLength(RECORD_DOC_TYPES.length);
+    // Every type but the `Other` escape hatch, which is deliberately unfaceted.
+    expect(seen).toHaveLength(RECORD_DOC_TYPES.length - 1);
+  });
+
+  it("leaves the escape hatch unfaceted", () => {
+    expect(facetForType(OTHER_DOC_TYPE)).toBeNull();
   });
 
   it("answers the question the filter exists for", () => {

@@ -13,6 +13,7 @@ import { useWalletAddress } from "@/shared/hooks/useWalletAddr";
 import {
   buildRecordName,
   docTypesForSection,
+  documentNameFrom,
   RecordDocType,
 } from "@/shared/utils/recordNaming";
 import { withRecordTags } from "@/shared/utils/recordTags";
@@ -29,6 +30,7 @@ import { uploadActions } from "../slice";
 import { uploadTargetFor } from "../target";
 import type { UploadTarget } from "../types";
 import FileDropZone from "./FileDropZone";
+import FileThumbnail from "./FileThumbnail";
 
 // One record is packed into a single deterministic zip, so cap what goes in it.
 const MAX_FILES = 50;
@@ -73,8 +75,24 @@ const fromDateInput = (value: string): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-/** "Hill Country final invoice.pdf" → "Hill Country final invoice". */
-const stripExtension = (filename: string) => filename.replace(/\.[^./\\]+$/, "");
+/**
+ * What to call a file whose own name said nothing and that nobody renamed.
+ *
+ * Keeping the device's name was the other option and it is the wrong one: a
+ * name not worth pre-filling is not worth filing either, and writing
+ * `776222620_2322108331861993_6267282462334264398_n` into the vault under the
+ * convention is the exact outcome the convention exists to prevent. Position
+ * within the record is not a description, but it is true, it is stable as other
+ * files are named around it, and it sorts.
+ */
+const positionalDocName = (type: RecordDocType, index: number) =>
+  `${type} ${index + 1}`;
+
+/** "photo.HEIC" → "HEIC". Empty for a file with no extension. */
+const extensionOf = (filename: string) => {
+  const dot = filename.lastIndexOf(".");
+  return dot > 0 && dot < filename.length - 1 ? filename.slice(dot + 1) : "";
+};
 
 /** A titled block of fields. The form is a full page, so it needs signposting. */
 const FieldGroup: React.FC<{
@@ -119,11 +137,18 @@ export const UploadRecordModal: React.FC = () => {
   const [date, setDate] = useState(() => toDateInput(new Date()));
   const [docType, setDocType] = useState<RecordDocType>("Invoice");
   const [project, setProject] = useState("");
-  const [docName, setDocName] = useState("");
   const [description, setDescription] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [contains, setContains] = useState<RecordFacet[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  // One Document name per file, positionally aligned with `files`.
+  //
+  // The convention names *documents*, and a record can hold several — the
+  // contractor's invoice and the photos of the finished work arrive together.
+  // Naming only the record left every file inside it still called
+  // `screenshot1241.png`, which is the thing the convention exists to stop.
+  // Seeded from the file's own name so the common case is already filled in.
+  const [fileNames, setFileNames] = useState<string[]>([]);
   const [fileError, setFileError] = useState("");
   // Zipping happens before the flow starts, and a large set takes a moment.
   const [isPacking, setIsPacking] = useState(false);
@@ -188,27 +213,82 @@ export const UploadRecordModal: React.FC = () => {
     [typedFacet],
   );
 
+  /**
+   * The Document segment of the record's *own* name.
+   *
+   * With one file the record and the document are the same thing, so it is that
+   * file's name — read straight from `fileNames`, not copied into a second
+   * field, because a copy is a thing that can disagree with what gets filed.
+   *
+   * With several there is no such thing as the record's document, and naming it
+   * after whichever file happened to be dropped first was the bug this replaced.
+   * It is derived instead: what lists actually show for a record is its project
+   * (`recordMeta.title` returns `reason`), so this segment only has to be true,
+   * and "3 files" is.
+   */
+  const recordDocName =
+    files.length > 1
+      ? `${files.length} files`
+      : files.length === 1
+        ? (fileNames[0] ?? "").trim() || positionalDocName(docType, 0)
+        : "";
+
+  // Files whose own name said nothing, so nothing was pre-filled for them.
+  // Not an error — a set can be filed with some of its photos unnamed — but
+  // worth saying out loud, because the boxes are empty rather than wrong and
+  // empty is easy to scroll past.
+  const unnamedCount = files.filter(
+    (_, index) => !(fileNames[index] ?? "").trim(),
+  ).length;
+
   const recordName = useMemo(() => {
     const parsed = fromDateInput(date);
-    if (!parsed || !project.trim() || !docName.trim()) return "";
+    if (!parsed || !project.trim() || !recordDocName.trim()) return "";
     return buildRecordName({
       date: parsed,
       type: docType,
       reason: project,
-      docName,
+      docName: recordDocName,
     });
-  }, [date, docType, project, docName]);
+  }, [date, docType, project, recordDocName]);
+
+  /**
+   * The picked files, renamed to the convention.
+   *
+   * Same three leading segments as the record — they describe the upload, not
+   * the individual document — with each file's own Document name last and its
+   * original extension kept. A file whose Document name is left empty falls
+   * back to the name it arrived with, so a set can be filed without naming
+   * every last screenshot by hand.
+   */
+  const namedFiles = useMemo(() => {
+    const parsed = fromDateInput(date);
+    if (!parsed || !project.trim()) return files;
+
+    return files.map((file, index) => {
+      const name = buildRecordName({
+        date: parsed,
+        type: docType,
+        reason: project,
+        docName:
+          (fileNames[index] ?? "").trim() || positionalDocName(docType, index),
+        extension: extensionOf(file.name) || undefined,
+      });
+
+      return name === file.name ? file : new File([file], name, { type: file.type });
+    });
+  }, [files, fileNames, date, docType, project]);
 
   useEffect(() => {
     if (!isOpen) return;
     setStreamId(target?.streamId ?? "");
     setDate(toDateInput(new Date()));
     setProject("");
-    setDocName("");
     setDescription("");
     setRooms([]);
     setContains([]);
     setFiles([]);
+    setFileNames([]);
     setFileError("");
     setIsPacking(false);
   }, [isOpen, target?.streamId]);
@@ -252,17 +332,28 @@ export const UploadRecordModal: React.FC = () => {
 
     setFileError("");
     setFiles(next);
-
     // The file the user picked already names itself; don't make them retype it.
-    if (!docName.trim() && next.length > 0) {
-      setDocName(stripExtension(next[0].name));
-    }
+    setFileNames((prev) => [
+      ...prev,
+      ...incoming.map((file) => documentNameFrom(file.name)),
+    ]);
   };
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    setFileNames((prev) => prev.filter((_, i) => i !== index));
     setFileError("");
   };
+
+  /**
+   * With one file, the record and the document are the same thing, so one field
+   * names both and no per-file box is shown. Adding a second file is what
+   * splits them apart.
+   */
+  const isSingleFile = files.length === 1;
+
+  const renameFile = (index: number, value: string) =>
+    setFileNames((prev) => prev.map((name, i) => (i === index ? value : name)));
 
   const canSubmit =
     !!destination?.streamId &&
@@ -282,14 +373,22 @@ export const UploadRecordModal: React.FC = () => {
 
     setIsPacking(true);
     try {
-      // A lone zip is uploaded as-is; anything else is packed into one.
-      // Deterministic, not just any zip: the same files must always produce the
-      // same bytes for an interrupted upload to be resumable.
+      // Every file inside carries the convention too, not just the record.
+      // `withFlatNames` runs *after* the rename so it de-duplicates the names
+      // the reader will actually see — two photos both called "After
+      // completion" become "…After completion" and "…After completion-2",
+      // rather than colliding silently.
+      const named = withFlatNames(namedFiles);
+
+      // A lone zip is already the package, so it is uploaded as it is — under
+      // the canonical name, same as the one packed below. Anything else is
+      // packed into one. Deterministic, not just any zip: the same files must
+      // always produce the same bytes for an interrupted upload to be resumable.
       const file =
         files.length === 1 && files[0].name.toLowerCase().endsWith(".zip")
-          ? files[0]
-          : await createDeterministicZip(withFlatNames(files), {
-              name: `${slugify(docName)}.zip`,
+          ? named[0]
+          : await createDeterministicZip(named, {
+              name: `${slugify(recordDocName)}.zip`,
             });
 
       dispatch(
@@ -429,7 +528,11 @@ export const UploadRecordModal: React.FC = () => {
 
                     <FieldGroup
                       title="What it is"
-                      hint="These four fields become the record's name, shown at the bottom right."
+                      hint={
+                          files.length > 1
+                            ? "These become the record's name. Each file takes the same three, then its own Document name."
+                            : "These four fields become the record's name, shown at the bottom right."
+                        }
                     >
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
@@ -495,18 +598,42 @@ export const UploadRecordModal: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label htmlFor="record-doc-name" className={LABEL_CLASS}>
-                          Document
-                        </label>
-                        <input
-                          id="record-doc-name"
-                          value={docName}
-                          onChange={(event) => setDocName(event.target.value)}
-                          placeholder="e.g. Summit Roofing final invoice"
-                          className={FIELD_CLASS}
-                        />
-                      </div>
+                      {/* Only while the record *is* one document. Past that,
+                          each file carries its own box beside the file it
+                          names, and there is nothing left for this one to
+                          mean. */}
+                      {files.length <= 1 && (
+                        <div className="space-y-1.5">
+                          <label
+                            htmlFor="record-doc-name"
+                            className={LABEL_CLASS}
+                          >
+                            Document
+                          </label>
+                          <input
+                            id="record-doc-name"
+                            value={fileNames[0] ?? ""}
+                            onChange={(event) =>
+                              renameFile(0, event.target.value)
+                            }
+                            disabled={files.length === 0}
+                            placeholder={
+                              files.length === 0
+                                ? "Add a file, and it names itself here"
+                                : "e.g. Summit Roofing final invoice"
+                            }
+                            autoFocus={files.length === 1 && !fileNames[0]}
+                            className={cn(
+                              FIELD_CLASS,
+                              files.length === 0 &&
+                                "cursor-not-allowed opacity-60",
+                            )}
+                          />
+                          <p className="text-xs text-ink-subtle">
+                            What the document is. Names the file too.
+                          </p>
+                        </div>
+                      )}
 
                       <div className="space-y-1.5">
                         <label
@@ -540,8 +667,8 @@ export const UploadRecordModal: React.FC = () => {
                       title="Also contains"
                       hint={`Optional. ${
                         typedFacet
-                          ? `This is filed under ${typedFacet.label} — tick anything else in the same files.`
-                          : "Tick what else is in these files."
+                          ? `This is filed under ${typedFacet.label}. Check other associated labels for future filtering of records.`
+                          : "Check the associated labels for future filtering of records."
                       }`}
                     >
                       <div
@@ -619,34 +746,78 @@ export const UploadRecordModal: React.FC = () => {
                       />
 
                       {files.length > 0 && (
-                        <ul className="max-h-72 space-y-1.5 overflow-y-auto">
+                        <ul className="max-h-[26rem] space-y-1.5 overflow-y-auto">
                           {files.map((file, index) => (
                             <li
                               key={`${file.name}-${index}`}
-                              className="flex items-center gap-2 rounded-lg border border-line bg-surface-raised px-3 py-2"
+                              className="rounded-lg border border-line bg-surface-raised px-3 py-2"
                             >
-                              <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                                {file.name}
-                              </span>
-                              <span className="shrink-0 text-xs tabular-nums text-ink-subtle">
-                                {formatFileSize(file.size)}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => removeFile(index)}
-                                aria-label={`Remove ${file.name}`}
-                                className="shrink-0"
-                              >
-                                <X aria-hidden />
-                              </Button>
+                              <div className="flex items-center gap-2.5">
+                                <FileThumbnail file={file} />
+                                <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                                  {file.name}
+                                </span>
+                                <span className="shrink-0 text-xs tabular-nums text-ink-subtle">
+                                  {formatFileSize(file.size)}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => removeFile(index)}
+                                  aria-label={`Remove ${file.name}`}
+                                  className="shrink-0"
+                                >
+                                  <X aria-hidden />
+                                </Button>
+                              </div>
+
+                              {/* With one file the record's own Document field
+                                  already names it, so this would be the same
+                                  box twice. Two or more and each file needs its
+                                  own name — shown against the file it names,
+                                  with the name it will be filed under below. */}
+                              {!isSingleFile && (
+                                <div className="mt-2 space-y-1">
+                                  <label
+                                    htmlFor={`file-name-${index}`}
+                                    className="text-xs font-medium text-ink-muted"
+                                  >
+                                    Document
+                                  </label>
+                                  <input
+                                    id={`file-name-${index}`}
+                                    value={fileNames[index] ?? ""}
+                                    onChange={(event) =>
+                                      renameFile(index, event.target.value)
+                                    }
+                                    placeholder={
+                                      documentNameFrom(file.name) ||
+                                      "Name this file"
+                                    }
+                                    className={cn(FIELD_CLASS, "py-1.5 text-xs")}
+                                  />
+                                  <p className="break-all font-mono text-[11px] text-ink-subtle">
+                                    {namedFiles[index]?.name ?? file.name}
+                                  </p>
+                                </div>
+                              )}
                             </li>
                           ))}
                         </ul>
                       )}
                     </FieldGroup>
 
+                    {unnamedCount > 0 && (
+                      <p className="text-xs text-ink-subtle">
+                        {unnamedCount} of {files.length} file
+                        {files.length !== 1 ? "s" : ""} unnamed. Filing now names
+                        {" "}
+                        {unnamedCount === 1 ? "it" : "them"} by position —{" "}
+                        {docType} 1, {docType} 2 — rather than keeping the name
+                        the device gave {unnamedCount === 1 ? "it" : "them"}.
+                      </p>
+                    )}
                     {recordName && (
                       <div className="rounded-lg border border-line bg-surface-raised px-3 py-2">
                         <p className="text-xs text-ink-subtle">Filed as</p>
