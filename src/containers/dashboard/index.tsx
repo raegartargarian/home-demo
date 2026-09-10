@@ -147,7 +147,7 @@ const Dashboard = () => (
                 <p className="mt-1 text-sm text-ink-muted">
                   {category.description}
                 </p>
-                <SectionFileGrid code={code} className="mt-4" />
+                <SectionFileGrid category={category} className="mt-4" />
                 {!category.transfersOnSale && (
                   <p className="mt-4 border-t border-line pt-3 text-xs text-ink-subtle">
                     Private — detached at sale

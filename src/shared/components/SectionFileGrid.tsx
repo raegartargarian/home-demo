@@ -12,7 +12,11 @@ import {
   TILE_GRID_CLASS,
   type FileTileSize,
 } from "@/shared/components/FileTile";
-import { StreamCategoryCode } from "@/shared/constants/streams";
+import {
+  isKnownSection,
+  StreamCategory,
+  StreamCategoryCode,
+} from "@/shared/constants/streams";
 import React from "react";
 
 /**
@@ -118,20 +122,47 @@ const TILES: Record<StreamCategoryCode, PreviewTile[]> = {
   ],
 };
 
+/**
+ * The set a section gets when the taxonomy does not name one.
+ *
+ * The five are specific because the architecture doc says what is in them; a
+ * section someone added is specific to their house and nothing here knows what
+ * that is. What *is* knowable is the paperwork any job leaves behind, so the
+ * template is the six document types every trade produces, carrying the
+ * section's own name so the grid reads as belonging to it rather than as a
+ * stock list dropped in.
+ *
+ * Same six every time, which is the point of a template: two rows of three, so
+ * a named section stands the same height as the five beside it.
+ */
+const standardTiles = (label: string): PreviewTile[] => [
+  { kind: "doc", label: `${label} photos`, format: "IMG" },
+  { kind: "doc", label: `${label} quote`, format: "PDF" },
+  { kind: "doc", label: `${label} invoice`, format: "PDF" },
+  { kind: "doc", label: `${label} warranty`, format: "PDF" },
+  { kind: "doc", label: `${label} permit`, format: "PDF" },
+  { kind: "doc", label: `${label} receipts`, format: "XLS" },
+];
+
 interface SectionFileGridProps {
-  code: StreamCategoryCode;
+  /** The section itself: one of the five has its own set, and so does anything
+   *  else, built from its name. */
+  category: StreamCategory;
   /** `sm` for the landing-page cards, `md` for the wider vault sections. */
   size?: FileTileSize;
   className?: string;
 }
 
 export const SectionFileGrid: React.FC<SectionFileGridProps> = ({
-  code,
+  category,
   size,
   className,
 }) => (
   <ul className={cn(TILE_GRID_CLASS, className)}>
-    {TILES[code].map((tile) => (
+    {(isKnownSection(category)
+      ? TILES[category.code]
+      : standardTiles(category.label)
+    ).map((tile) => (
       <li key={tile.label}>
         <FileTile
           label={tile.label}

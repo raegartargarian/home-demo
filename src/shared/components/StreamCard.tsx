@@ -56,7 +56,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     <section
       data-category={category?.code}
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-xl border border-line bg-surface-raised transition-colors",
+        "pane relative flex flex-col overflow-hidden rounded-xl transition-colors",
         onOpen && "hover:border-line-strong",
         className,
       )}
@@ -108,28 +108,25 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           // "no records yet", which tells the homeowner nothing actionable.
           // Same tiles the landing page uses, greyed back so a section you have
           // not filled yet cannot be mistaken for one you have.
-          // Only the five can teach: the taxonomy says what belongs in each,
-          // and the tiles show it. A section someone named has no canonical
-          // contents, so it says the one true thing instead — the sentence
-          // has to change with the tiles, or it promises a list and then
-          // shows nothing.
+          // The five can say what they hold, because the taxonomy defines it. A
+          // section someone named cannot, so it says what a section like it
+          // usually holds and shows the standard set — which is still worth
+          // more than the sentence it used to show on its own, under an
+          // otherwise empty card.
           <div className="rounded-lg border border-dashed border-line bg-surface-sunken p-4">
-            {isKnownSection(category) ? (
+            {category && (
               <>
                 <p className="text-xs font-medium text-ink-muted">
-                  Nothing filed here yet. This section holds:
+                  {isKnownSection(category)
+                    ? "Nothing filed here yet. This section holds:"
+                    : "Nothing filed here yet. A section like this usually holds:"}
                 </p>
                 <SectionFileGrid
-                  code={category.code}
+                  category={category}
                   size="md"
                   className="mt-3 opacity-60"
                 />
               </>
-            ) : (
-              <p className="text-xs font-medium text-ink-muted">
-                Nothing filed here yet. Add the first record to start this
-                section.
-              </p>
             )}
           </div>
         ) : (
