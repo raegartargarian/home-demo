@@ -44,73 +44,108 @@ const NAV_ITEMS = [
     // Clicking the nav is asking for the list, so it is not shortcut past even
     // when there is only one home. See `BROWSE_ALL_HOMES`.
     state: BROWSE_ALL_HOMES,
+    // There are no homes to list until there is an account to list them
+    // against, so signed out this asks for one instead of walking someone into
+    // an empty state that cannot explain itself.
+    needsAccount: true,
   },
 ];
 
+/**
+ * One shape for both, so a route and an invitation to sign in are the same
+ * control at the same size — only what happens on the click differs.
+ */
+const itemClass = (isActive: boolean) =>
+  [
+    "relative flex items-center justify-center gap-2 rounded-full",
+    "px-4 py-2 transition-colors",
+    // No wrap: the bottom pill is `fixed` and so sizes to its own content,
+    // which let "My Homes" break onto two lines and took the pill oval with it.
+    "whitespace-nowrap",
+    isActive
+      ? "text-ink-inverse"
+      : "text-ink-muted hover:bg-surface-inset/60 hover:text-ink",
+  ].join(" ");
+
 const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
   const reduceMotion = useReducedMotion();
+  const { isAuthenticated, login } = useWeb3Auth() || {};
 
   return (
     <ul className="flex items-center gap-1">
-      {NAV_ITEMS.map(({ to, label, icon: Icon, end, state }) => (
-        <li key={to}>
-          <NavLink
-            to={to}
-            end={end}
-            state={state}
-            // Before the route changes, not after.
-            //
-            // `ScrollToTop` resets the scroll in an effect once the navigation
-            // has committed. By then the sliding indicator has already been
-            // measured at the old scroll offset and is drawn at the new one,
-            // so it launches down the page and flies back — measured at ~870px
-            // of travel from a scroll position of 1200. Scrolling first costs
-            // nothing (the later reset becomes a no-op) and keeps the slide,
-            // because both measurements now happen at the same offset.
-            onClick={() => window.scrollTo(0, 0)}
-            className="block"
-          >
-            {({ isActive }) => (
-              <span
-                className={[
-                  "relative flex items-center justify-center gap-2 rounded-full",
-                  "px-4 py-2 transition-colors",
-                  // No wrap: the bottom pill is `fixed` and so sizes to its
-                  // own content, which let "My Homes" break onto two lines and
-                  // took the pill oval with it.
-                  "whitespace-nowrap",
-                  isActive
-                    ? "text-ink-inverse"
-                    : "text-ink-muted hover:bg-surface-inset/60 hover:text-ink",
-                ].join(" ")}
+      {NAV_ITEMS.map(({ to, label, icon: Icon, end, state, needsAccount }) => {
+        const content = (
+          <>
+            <Icon className="relative h-[18px] w-[18px]" />
+            <span className="relative text-sm font-medium">{label}</span>
+          </>
+        );
+
+        if (needsAccount && !isAuthenticated) {
+          return (
+            <li key={to}>
+              <button
+                type="button"
+                onClick={() => login?.()}
+                className={itemClass(false)}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId={layoutId}
-                    className="absolute inset-0 rounded-full bg-brand shadow-sm"
-                    // Spring, not ease — it should feel physical. Reduced
-                    // motion drops the slide entirely and cross-fades.
-                    transition={
-                      reduceMotion
-                        ? { duration: 0.15 }
-                        : { type: "spring", stiffness: 400, damping: 32 }
-                    }
-                  />
-                )}
-                <Icon className="relative h-[18px] w-[18px]" />
-                <span
-                  className={[
-                    "relative text-sm",
-                    isActive ? "font-semibold" : "font-medium",
-                  ].join(" ")}
-                >
-                  {label}
+                {content}
+              </button>
+            </li>
+          );
+        }
+
+        return (
+          <li key={to}>
+            <NavLink
+              to={to}
+              end={end}
+              state={state}
+              // Before the route changes, not after.
+              //
+              // `ScrollToTop` resets the scroll in an effect once the
+              // navigation has committed. By then the sliding indicator has
+              // already been measured at the old scroll offset and is drawn at
+              // the new one, so it launches down the page and flies back —
+              // measured at ~870px of travel from a scroll position of 1200.
+              // Scrolling first costs nothing (the later reset becomes a
+              // no-op) and keeps the slide, because both measurements now
+              // happen at the same offset.
+              onClick={() => window.scrollTo(0, 0)}
+              className="block"
+            >
+              {({ isActive }) => (
+                <span className={itemClass(isActive)}>
+                  {isActive && (
+                    <motion.span
+                      layoutId={layoutId}
+                      className="absolute inset-0 rounded-full bg-brand shadow-sm"
+                      // Spring, not ease — it should feel physical. Reduced
+                      // motion drops the slide entirely and cross-fades.
+                      transition={
+                        reduceMotion
+                          ? { duration: 0.15 }
+                          : { type: "spring", stiffness: 400, damping: 32 }
+                      }
+                    />
+                  )}
+                  {/* Semibold while active, so the chip does not only differ
+                      by colour. */}
+                  <Icon className="relative h-[18px] w-[18px]" />
+                  <span
+                    className={[
+                      "relative text-sm",
+                      isActive ? "font-semibold" : "font-medium",
+                    ].join(" ")}
+                  >
+                    {label}
+                  </span>
                 </span>
-              </span>
-            )}
-          </NavLink>
-        </li>
-      ))}
+              )}
+            </NavLink>
+          </li>
+        );
+      })}
     </ul>
   );
 };
