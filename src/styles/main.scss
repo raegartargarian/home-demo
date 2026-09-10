@@ -370,9 +370,26 @@
 // ---------------------------------------------------------------------------
 // Glass. The one place the design direction allows a moment of delight.
 //
-// Four layers, and the effect falls apart if any one is missing: blur, a
-// *semi-transparent* tint, a hairline plus top-edge highlight, and a wide soft
-// shadow so the bar hovers rather than sits.
+// Five layers, and the effect falls apart if any one is missing: blur, a
+// brightness pass, a *semi-transparent* tint, a hairline plus top-edge
+// highlight, and a wide soft shadow so the bar hovers rather than sits.
+//
+// THE BRIGHTNESS PASS is what lets the tint stay thin. The tint has one job —
+// hold `text-ink` legible whatever is behind it — and the only way a white veil
+// alone can do that over a dusk film is by being thick enough to erase it,
+// which is how a material meant to read as glass ends up reading as frosted
+// plastic. Lifting the backdrop instead keeps its picture and its colour and
+// merely raises its floor, so the veil can drop from 0.72 to 0.55 and the film
+// still shows through the header.
+//
+// It costs nothing on the warm ground, which is the part worth knowing: at
+// #F7F5F2 the lift clips to white and the result lands within two levels of
+// what the thick veil produced. So one material serves both, and it is the
+// dark backdrops that change. Contrast over the film goes from about 8:1 to
+// about 5.5:1 — still past AA, and now with a picture behind it.
+//
+// Dark mode lifts nothing; it *lowers*, because there the danger is a bright
+// backdrop under near-white text.
 //
 // WHERE IT GOES: only on surfaces that float *over* page content — the header
 // island, the mobile nav pill, menus, the upload tray. That is the whole rule.
@@ -397,9 +414,11 @@
 // ---------------------------------------------------------------------------
 @layer components {
   .glass {
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-    background: rgb(255 255 255 / 0.72);
+    // More blur than the veil used to need: with the backdrop showing through,
+    // it is the blur that keeps it from being busy behind text.
+    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.35);
+    backdrop-filter: blur(24px) saturate(180%) brightness(1.35);
+    background: rgb(255 255 255 / 0.55);
     border: 1px solid rgb(255 255 255 / 0.5);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.6),
@@ -408,7 +427,9 @@
   }
 
   .dark .glass {
-    background: rgb(36 35 31 / 0.72);
+    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(0.7);
+    backdrop-filter: blur(24px) saturate(180%) brightness(0.7);
+    background: rgb(36 35 31 / 0.55);
     border-color: rgb(255 255 255 / 0.08);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.06),
@@ -416,7 +437,9 @@
       0 8px 32px rgb(0 0 0 / 0.45);
   }
 
-  // Without blur support translucency just reads as a rendering bug.
+  // Without blur support there is no brightness pass either, so the veil has to
+  // do the whole job alone. Translucency without blur just reads as a rendering
+  // bug, so it goes nearly opaque rather than nearly transparent.
   @supports not (
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
