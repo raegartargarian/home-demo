@@ -29,6 +29,10 @@
  *                           who asked for reduced motion sees instead of the
  *                           film — the end of the story rather than the start
  *                           of it — and a far better ground for white type.
+ *                           The hero also fades to it when the film stops, so
+ *                           the picture that holds the fold for the rest of
+ *                           the visit is this still rather than the weakest
+ *                           frame of a crf 32 encode.
  *
  * The master is the source of truth, is never overwritten, and is never
  * imported, so Vite does not ship it. Run with `npm run hero:media`; ffmpeg is
@@ -74,10 +78,23 @@ const CUTS = [
 ];
 
 const STILLS = [
-  { name: "house-demo-open.jpg", at: "0" },
-  // A shade before the end: the very last frame of an encode can carry the
-  // heaviest compression of the clip.
-  { name: "house-demo-poster.jpg", at: "6.8" },
+  { name: "house-demo-open.jpg", at: "0", q: "4" },
+  // The last frame, and it has to be exactly that.
+  //
+  // This one picture does three jobs: it is what someone who asked for reduced
+  // motion sees instead of the film, it is what the hero fades to when the
+  // film stops, and it is therefore the only frame on this page that stays on
+  // screen for the whole visit. Taken a shade early — it used to come from
+  // 6.8s — it is a different picture from the one the film ends on (SSIM 0.51
+  // against it: the sun is still moving), so the swap at the end read as a cut
+  // rather than as the same frame sharpening.
+  //
+  // `-sseof` with `-update` overwrites one file across the last half second,
+  // which leaves the final frame in it whatever the clip's length — a fixed
+  // timestamp would go stale the moment the master is recut. And q 2 rather
+  // than 4, because a frame that is on screen for a whole session is the last
+  // place to save 60 KB.
+  { name: "house-demo-poster.jpg", tail: true, q: "2" },
 ];
 
 const has = async (bin) => {
@@ -123,22 +140,20 @@ async function main() {
 
   // Both stills come through the same upscale as the desktop cut, so a still
   // and the frame it stands in for are the same picture.
-  for (const { name, at } of STILLS) {
+  for (const { name, at, tail, q } of STILLS) {
     const out = join(VIDEO_DIR, name);
     await run("ffmpeg", [
       "-y",
       "-loglevel",
       "error",
-      "-ss",
-      at,
+      ...(tail ? ["-sseof", "-0.5"] : ["-ss", at]),
       "-i",
       MASTER,
-      "-frames:v",
-      "1",
+      ...(tail ? ["-update", "1"] : ["-frames:v", "1"]),
       "-vf",
       UPSCALE,
       "-q:v",
-      "4",
+      q,
       out,
     ]);
     console.log(`still   ${name} (${kb(out)})`);
