@@ -1,3 +1,4 @@
+import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { cn } from "@/lib/utils";
 import { appRoutes } from "@/shared/constants/routes";
 import { ArrowRight } from "lucide-react";
@@ -30,20 +31,45 @@ interface ViewHomesLinkProps {
   className?: string;
 }
 
-export const ViewHomesLink = ({ tone, className }: ViewHomesLinkProps) => (
-  <Link
-    to={appRoutes.vaults.path}
-    className={cn(
-      "group inline-flex items-center justify-center whitespace-nowrap",
-      "rounded-full px-8 py-4 text-base font-medium transition-colors",
-      TONE[tone],
-      className,
-    )}
-  >
-    View your homes
-    {/* The arrow leans the way the link goes, on hover. */}
+/**
+ * Two destinations, one control.
+ *
+ * Signed in, the homes are a page away and this is a link to them. Signed out
+ * there are no homes to view yet, so the same control offers the way in — and
+ * it is the only one the landing page has, since the page is now readable
+ * without an account. Sending a signed-out visitor to the vaults list instead
+ * would land them on an empty state that cannot explain itself.
+ */
+export const ViewHomesLink = ({ tone, className }: ViewHomesLinkProps) => {
+  const { isAuthenticated, login } = useWeb3Auth() || {};
+
+  const shape = cn(
+    "group inline-flex items-center justify-center whitespace-nowrap",
+    "rounded-full px-8 py-4 text-base font-medium transition-colors",
+    TONE[tone],
+    className,
+  );
+
+  /* The arrow leans the way the control goes, on hover. */
+  const arrow = (
     <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 motion-safe:group-hover:translate-x-1" />
-  </Link>
-);
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <button type="button" onClick={() => login?.()} className={shape}>
+        Get started
+        {arrow}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={appRoutes.vaults.path} className={shape}>
+      View your homes
+      {arrow}
+    </Link>
+  );
+};
 
 export default ViewHomesLink;

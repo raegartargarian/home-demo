@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { wellFor } from "@/shared/components/PageContainer";
 import { motion, useReducedMotion } from "framer-motion";
@@ -115,7 +116,7 @@ const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
 };
 
 export const Header = () => {
-  const { isAuthenticated } = useWeb3Auth() || {};
+  const { isAuthenticated, login } = useWeb3Auth() || {};
 
   return (
     <>
@@ -144,9 +145,12 @@ export const Header = () => {
               {isAuthenticated ? (
                 <ProfileMenu />
               ) : (
-                <span className="hidden pr-2 text-sm text-ink-subtle sm:inline">
-                  Verified home records
-                </span>
+                /* Where the account control goes once there is an account. The
+                   landing page makes the same offer in its own words; this is
+                   the one that follows you onto every other page. */
+                <Button size="sm" onClick={() => login?.()}>
+                  Get started
+                </Button>
               )}
             </div>
           </div>
