@@ -42,7 +42,9 @@ function App() {
         <Route
           path={appRoutes.dashboard.path}
           element={
-            <PageLayout>
+            /* The landing page opens on the film at full height, so the header
+               island floats on it rather than sitting in a band above it. */
+            <PageLayout bleed>
               <DashboardPage />
             </PageLayout>
           }

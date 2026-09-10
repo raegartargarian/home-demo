@@ -22,8 +22,15 @@ import React from "react";
  * Full-bleed elements (the vault hero) sit outside the container and take the
  * same measure for their own inner well, so the heading over a photograph lines
  * up with the content beneath it. Pass `measureFor(...)` for that.
+ *
+ * There is a fourth value, `inherit`, and it is deliberately not a width: it
+ * means *a layout above already owns the well*. The vault shell centres one
+ * `wide` well and divides it into a structure column and a content column, so a
+ * page inside it must not centre itself a second time. It keeps the page's
+ * vertical rhythm and gives up the horizontal one.
  */
 export type PageMeasure = "wide" | "standard" | "prose";
+export type PageWell = PageMeasure | "inherit";
 
 const MEASURE: Record<PageMeasure, string> = {
   wide: "max-w-6xl",
@@ -34,10 +41,23 @@ const MEASURE: Record<PageMeasure, string> = {
 /** The width class alone, for a full-bleed band's inner well. */
 export const measureFor = (measure: PageMeasure): string => MEASURE[measure];
 
+/**
+ * The rhythm of a landing-page band, as a class string.
+ *
+ * Exported for the same reason `measureFor` is: a band that runs full-bleed
+ * cannot *be* a `PageContainer` — the carousel has to escape the well to keep
+ * the next card peeking — but it still has to breathe at the same rate as the
+ * bands above and below it, or the page reads as sections bolted together.
+ */
+export const BAND_RHYTHM = "py-16 md:py-24";
+
 interface PageContainerProps {
-  measure?: PageMeasure;
-  /** Vertical rhythm. `none` for a band that sets its own. */
-  padding?: "page" | "none";
+  measure?: PageWell;
+  /**
+   * Vertical rhythm. `page` for a screen inside the app, `band` for a landing
+   * section, `none` for a wrapper that sets its own.
+   */
+  padding?: "page" | "band" | "none";
   as?: "div" | "main" | "section";
   children: React.ReactNode;
   className?: string;
@@ -52,9 +72,10 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 }) => (
   <Tag
     className={cn(
-      "mx-auto w-full px-4",
+      "w-full",
+      measure !== "inherit" && `mx-auto px-4 ${MEASURE[measure]}`,
       padding === "page" && "py-8",
-      MEASURE[measure],
+      padding === "band" && BAND_RHYTHM,
       className,
     )}
   >
