@@ -8,6 +8,7 @@ import { sortedSections } from "@/shared/utils/streamHelpers";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
+import AddSectionCard from "./AddSectionCard";
 import FileShelf from "./FileShelf";
 import { sectionTiles } from "./sectionTiles";
 
@@ -131,6 +132,9 @@ const StreamList: React.FC<StreamListProps> = ({ vaultId, streams }) => {
           </StreamCard>
         );
       })}
+
+      {/* Last in the grid, where the new section will appear. */}
+      <AddSectionCard vaultId={vaultId} />
     </div>
   );
 };

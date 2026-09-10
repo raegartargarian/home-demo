@@ -9,6 +9,7 @@ import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
 import { ServiceRecordPage } from "./containers/serviceRecord/loadable";
 import CreateProjectVaultModal from "./containers/projectVaults/components/CreateProjectVaultModal";
+import AddSectionModal from "./containers/vaultDetail/components/AddSectionModal";
 import UploadRecordModal from "./containers/upload/components/UploadRecordModal";
 import UploadTray from "./containers/upload/components/UploadTray";
 import AuthModal from "./shared/components/AuthModal";
@@ -30,6 +31,9 @@ function App() {
 
       {/* Likewise one form for starting a project, opened from a home's page. */}
       <CreateProjectVaultModal />
+
+      {/* And one for adding a section, opened from the sections grid. */}
+      <AddSectionModal />
 
       {/* Where an upload goes once the form hands it over, so filing a record
           never pins the homeowner to one page. */}

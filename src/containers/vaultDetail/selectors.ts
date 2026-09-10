@@ -16,6 +16,14 @@ export const vaultDetailSelectors = {
     selectVaultDetailState,
     (state) => state.ancestors.at(-1) ?? null,
   ),
+  addSectionModal: createSelector(
+    selectVaultDetailState,
+    (state) => state.addSectionModal,
+  ),
+  sectionCreation: createSelector(
+    selectVaultDetailState,
+    (state) => state.sectionCreation,
+  ),
   isLoading: createSelector(selectVaultDetailState, (state) => state.isLoading),
   error: createSelector(selectVaultDetailState, (state) => state.error),
 };

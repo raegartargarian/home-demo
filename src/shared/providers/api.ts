@@ -64,6 +64,8 @@ export const {
   getSingleTemplate,
   createTemplate,
   createVault,
+  /** Adds a section to a vault that already exists. */
+  addStreamToVault,
   uploadTemplateImage,
   updateVaultImageStatus,
 } = api;

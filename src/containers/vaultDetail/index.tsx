@@ -2,6 +2,7 @@ import { ProjectsSection } from "@/containers/projectVaults/components/ProjectsS
 import { PageContainer } from "@/shared/components/PageContainer";
 import { PROJECT_VAULTS_ENABLED } from "@/shared/constants/projectVaults";
 import { Layers } from "lucide-react";
+import AddSectionCard from "./components/AddSectionCard";
 import StreamList from "./components/StreamList";
 import { useVaultContext } from "./vaultContext";
 
@@ -35,6 +36,11 @@ const VaultDetail = () => {
             Home records will appear here once documentation is uploaded for
             this property.
           </p>
+          {/* The grid is where this offer normally lives; with no grid to put
+              it in, the empty state is the only place left to make it. */}
+          <div className="mx-auto mt-6 max-w-xs">
+            <AddSectionCard vaultId={vault.id} />
+          </div>
         </div>
       )}
 

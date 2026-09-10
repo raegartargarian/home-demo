@@ -7,6 +7,7 @@ import {
   uploadTemplateImage,
 } from "@/shared/providers/api";
 import { VaultDto } from "@/shared/types/vault";
+import { sleep } from "@/shared/utils/polling";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { eventChannel, SagaIterator } from "redux-saga";
 import { call, put, select, take, takeEvery } from "redux-saga/effects";
@@ -30,8 +31,6 @@ const VAULT_SYNCED_STATUSES: ReadonlySet<string> = new Set([
   "DLT_VAULT_ID_REQUESTED",
   "FILEDGR_IMAGE_UPLOADED",
 ]);
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** The slice of a template the create flow reads back. */
 interface TemplateDto {
