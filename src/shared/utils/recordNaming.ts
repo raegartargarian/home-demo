@@ -295,48 +295,43 @@ const DEVICE_TOKENS = new Set([
  * Two tests, and both have to pass. A word has to survive: split on everything
  * that is not a letter, drop anything shorter than three characters (`n`, `of`,
  * `v2`) and anything a device would have put there. One real word is enough —
- * "invoice" is a perfectly good document name. And no token may look generated,
- * because a real word standing next to a random key does not redeem it. See
- * `looksGenerated`.
+ * "invoice" is a perfectly good document name. And unless a person clearly
+ * typed it, no token may look generated, because a real word standing next to a
+ * key does not redeem it. See `looksGenerated`.
  */
-const caseFlips = (token: string): number => {
-  let flips = 0;
-  let wasLower: boolean | null = null;
-  for (const character of token) {
-    if (!/[a-zA-Z]/.test(character)) continue;
-    const isLower = character === character.toLowerCase();
-    if (wasLower !== null && isLower !== wasLower) flips += 1;
-    wasLower = isLower;
-  }
-  return flips;
-};
-
 /**
- * A token a machine chose: a hash, an id, or a random key.
+ * A token a machine chose: a hash, an id, or a key.
  *
  * The word test below is not enough on its own, because plenty of generated
  * names carry real words around the generated part —
- * `content-credentials-pfau-43-CzJwG5YE` reads as meaningful to it and lands in
- * the Document slot as `08-26-26 - Photo - Kitchen - content-credentials-pfau-
- * 43-CzJwG5YE`, which is the complaint the convention exists to answer, filed
- * neatly.
+ * `content-credentials-pfau-43-CzJwG5YE` and `ai-escrow-C6F-xlmL` both read as
+ * meaningful to it, and land in the Document slot as
+ * `08-26-26 - Photo - Kitchen - ai-escrow-C6F-xlmL`: the complaint the
+ * convention exists to answer, filed neatly.
  *
- * Three shapes, each conservative:
- *
- *   a long hex run    a hash or a CID fragment, `689b37ee6ea3b020`
- *   a long digit run  an id or a timestamp, `779842473`
- *   a mixed key       `CzJwG5YE` — has a digit, and its letters change case
- *                     three times or more, which written words do not do.
- *                     `Invoice2026Q3` flips once and survives.
+ * Three shapes: a long hex run (`689b37ee6ea3b020`), a long digit run
+ * (`779842473`), and any token carrying both letters and digits (`C6F`,
+ * `CzJwG5YE`). The last one is broad on purpose. An earlier, narrower version
+ * asked for six characters and three case changes, which caught `CzJwG5YE` and
+ * walked straight past `C6F` — and the point of the rule is that a person
+ * looking at their own vault should never meet a token like either.
  */
 const looksGenerated = (token: string): boolean =>
   /^[0-9a-f]{12,}$/i.test(token) ||
   /^\d{9,}$/.test(token) ||
-  (token.length >= 6 && /\d/.test(token) && caseFlips(token) >= 3);
+  (/[a-zA-Z]/.test(token) && /\d/.test(token));
 
 export const isMeaningfulFilename = (filename: string): boolean => {
   const stem = stripExtension(filename);
-  if (stem.split(/[^a-zA-Z0-9]+/).some(looksGenerated)) return false;
+
+  // A space is the tell. Someone naming a file reaches for the space bar and a
+  // machine almost never does, so `Roof invoice 2026Q3` keeps its digits where
+  // `ai-escrow-C6F-xlmL` loses everything. It is the one signal here that
+  // separates a person from a generator without guessing at what the words say.
+  const typedByHand = /\s/.test(stem);
+  if (!typedByHand && stem.split(/[^a-zA-Z0-9]+/).some(looksGenerated)) {
+    return false;
+  }
 
   return stem
     .split(/[^a-zA-Z]+/)

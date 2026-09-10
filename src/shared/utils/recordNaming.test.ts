@@ -143,15 +143,20 @@ describe("parseRecordName", () => {
 describe("isMeaningfulFilename", () => {
   it("keeps a name a person would recognise", () => {
     expect(isMeaningfulFilename("Summit Roofing invoice.pdf")).toBe(true);
-    expect(isMeaningfulFilename("Invoice2026Q3.pdf")).toBe(true);
+    expect(isMeaningfulFilename("kitchen-remodel-invoice.pdf")).toBe(true);
   });
 
   it("rejects a generated token even among real words", () => {
     expect(
       isMeaningfulFilename("content-credentials-pfau-43-CzJwG5YE.jpg"),
     ).toBe(false);
+    expect(isMeaningfulFilename("ai-escrow-C6F-xlmL.png")).toBe(false);
     expect(isMeaningfulFilename("689b37ee6ea3b020.pdf")).toBe(false);
     expect(isMeaningfulFilename("photo-779842473-of-the-roof.jpg")).toBe(false);
+  });
+
+  it("takes a space as proof a person typed it", () => {
+    expect(isMeaningfulFilename("Roof invoice 2026Q3.pdf")).toBe(true);
   });
 });
 
