@@ -29,7 +29,7 @@ apiClient.interceptors.request.use((config) => {
       // @filedgr/web-core classifies failures by status, and a string reaches
       // it as an unknown failure rather than an auth one.
       return Promise.reject(
-        Object.assign(new Error("Token expired"), { status: 401 })
+        Object.assign(new Error("Token expired"), { status: 401 }),
       );
     }
     config.headers.Authorization = `Bearer ${token.replace(/"/g, "")}`;
@@ -47,7 +47,7 @@ apiClient.interceptors.response.use(
       store.dispatch(globalActions.logOut());
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Every endpoint is web-core's, bound to the client above — the same wrappers
@@ -70,7 +70,15 @@ export const {
   updateVaultImageStatus,
 } = api;
 
-/** The homes seeded under the given templates, newest first. */
+/**
+ * The homes an account can see, newest first.
+ *
+ * `templateIds` narrows to vaults seeded under those templates; an empty list
+ * asks for everything the caller holds a permission on, which is what the
+ * homes list wants. web-core omits the query parameter entirely when the array
+ * is empty, so this is the backend's own default rather than a filter that
+ * matches everything.
+ */
 export const getVaults = (templateIds: string[], page: number = 1) =>
   api.getVaults(page, "", "created_at", "DESC", false, "ALL", templateIds);
 
@@ -101,5 +109,5 @@ export const getStreamAttachments = (
   streamCode: string,
   page: number = 1,
   pageSize: number = PAGE_SIZE,
-  archived?: boolean
+  archived?: boolean,
 ) => api.getTokenAttachments(streamCode, page, pageSize, archived);
