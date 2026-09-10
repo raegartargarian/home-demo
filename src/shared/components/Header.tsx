@@ -1,4 +1,5 @@
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
+import { measureFor } from "@/shared/components/PageContainer";
 import { motion, useReducedMotion } from "framer-motion";
 import { Home, Layers } from "lucide-react";
 import React from "react";
@@ -21,9 +22,15 @@ import { ProfileMenu } from "./ProfileMenu";
  * carries its own id: both are in the DOM at once behind media queries, and two
  * live elements sharing one `layoutId` would animate against each other.
  *
- * The indicator is filled with the blueprint accent. A white pill on white
- * glass was a shadow's worth of difference, and "which page am I on" is the one
- * question a nav has to answer without being studied.
+ * The indicator is filled with the brand near-black, the same token the primary
+ * button uses. A white pill on white glass was a shadow's worth of difference —
+ * "which page am I on" is the one question a nav has to answer without being
+ * studied — but the answer was the blueprint accent, which made the most
+ * persistent coloured element in the app a second brand. The palette is
+ * explicit that blue is retired as a decorative colour and that blueprint is a
+ * support colour for rings, hairlines and tints; this was the only place it was
+ * poured in solid. Near-black is louder, not quieter, and it inverts to
+ * near-white in dark mode on its own.
  */
 
 const NAV_ITEMS = [
@@ -67,15 +74,19 @@ const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
                 className={[
                   "relative flex items-center justify-center gap-2 rounded-full",
                   "px-4 py-2 transition-colors",
+                  // No wrap: the bottom pill is `fixed` and so sizes to its
+                  // own content, which let "My Homes" break onto two lines and
+                  // took the pill oval with it.
+                  "whitespace-nowrap",
                   isActive
-                    ? "text-ink"
+                    ? "text-ink-inverse"
                     : "text-ink-muted hover:bg-surface-inset/60 hover:text-ink",
                 ].join(" ")}
               >
                 {isActive && (
                   <motion.span
                     layoutId={layoutId}
-                    className="absolute inset-0 rounded-full bg-blueprint shadow-sm"
+                    className="absolute inset-0 rounded-full bg-brand shadow-sm"
                     // Spring, not ease — it should feel physical. Reduced
                     // motion drops the slide entirely and cross-fades.
                     transition={
@@ -109,7 +120,15 @@ export const Header = () => {
   return (
     <>
       <div className="fixed inset-x-3 top-3 z-50 md:inset-x-6 md:top-4">
-        <div className="glass mx-auto flex h-14 max-w-5xl items-center gap-2 rounded-full pl-5 pr-2.5">
+        {/* The same measure as the page under it, taken from the one place
+            that owns widths. It was capped a size narrower, which put the
+            island's edges inside the content's on any wide screen — the
+            structure column started to its left and the cards ran out past its
+            right, so the floating layer read as misaligned rather than as
+            floating. */}
+        <div
+          className={`glass mx-auto flex h-14 items-center gap-2 rounded-full pl-5 pr-2.5 ${measureFor("wide")}`}
+        >
           <Link
             to={appRoutes.dashboard.path}
             className="flex-shrink-0 text-base font-medium tracking-tight text-ink transition-opacity hover:opacity-70"
