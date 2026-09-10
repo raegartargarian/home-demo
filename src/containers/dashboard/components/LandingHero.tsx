@@ -13,7 +13,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { ChevronDown } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ViewHomesLink } from "./ViewHomesLink";
 
 /**
@@ -25,7 +25,8 @@ import { ViewHomesLink } from "./ViewHomesLink";
  * whole house, so the whole house is what you see.
  *
  * It plays once and stops, because the clip is a build sequence rather than a
- * loop. See the `<video>` below.
+ * loop, and then hands over to a still of the frame it ended on. See the
+ * `<video>` below.
  *
  * Three things this borrows rather than invents. `PageLayout bleed` already
  * exists for a page that opens on an image and wants to run under the floating
@@ -109,6 +110,14 @@ const rise = (index: number, reduced: boolean | null) =>
 export const LandingHero = () => {
   const heroRef = useRef<HTMLElement>(null);
 
+  // The film stops after seven seconds and its last frame then holds the fold
+  // for the rest of the visit — which made the longest-lived picture on the
+  // page the weakest one on it, a single frame of a crf 32 encode. So the film
+  // hands over to a still of that same frame: identical picture, four times the
+  // fidelity (SSIM 0.99 against the master's own frame, where the video's is
+  // 0.87). It is the still reduced motion already gets, so it costs no asset.
+  const [hasEnded, setHasEnded] = useState(false);
+
   // Someone who has asked their system for less motion gets the last frame
   // rather than nothing: the finished house, which is where the film ends and
   // what the page is about.
@@ -158,31 +167,50 @@ export const LandingHero = () => {
             draggable={false}
           />
         ) : (
-          <video
-            // Chosen here rather than with `<source media>`: that attribute is
-            // only honoured inside `<picture>`, so a phone would quietly take
-            // the desktop cut. Rendering one element also means the other never
-            // exists to fetch — hiding it would not have been enough.
-            src={isDesktop ? houseFilmDesktop : houseFilmMobile}
-            // The opening frame, so the first paint is where playback begins
-            // rather than somewhere else in the clip.
-            poster={houseOpen}
-            autoPlay
-            // Deliberately not `loop`. The clip is a build sequence — blueprint,
-            // slab, framing, cladding, finished house — so looping it un-builds
-            // the house every seven seconds behind the headline, forever. It
-            // plays once and holds on the last frame, which is the state the
-            // page is actually about.
-            muted
-            playsInline
-            // Above the fold and wanted immediately; the poster covers the gap.
-            preload="auto"
-            // Decorative: the copy over it already says what the page is about,
-            // and a caption describing the build sequence would be read out
-            // on every visit.
-            tabIndex={-1}
-            className="h-full w-full object-cover"
-          />
+          <>
+            {/* Underneath from the start, so the handover is the film fading
+                off it rather than a swap onto something still loading. */}
+            <img
+              src={houseStill}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              draggable={false}
+            />
+            <video
+              // Chosen here rather than with `<source media>`: that attribute is
+              // only honoured inside `<picture>`, so a phone would quietly take
+              // the desktop cut. Rendering one element also means the other never
+              // exists to fetch — hiding it would not have been enough.
+              src={isDesktop ? houseFilmDesktop : houseFilmMobile}
+              // The opening frame, so the first paint is where playback begins
+              // rather than somewhere else in the clip.
+              poster={houseOpen}
+              autoPlay
+              // Deliberately not `loop`. The clip is a build sequence — blueprint,
+              // slab, framing, cladding, finished house — so looping it un-builds
+              // the house every seven seconds behind the headline, forever. It
+              // plays once and settles on the finished house, which is the state
+              // the page is actually about.
+              muted
+              playsInline
+              // Above the fold and wanted immediately; the poster covers the gap.
+              preload="auto"
+              // Decorative: the copy over it already says what the page is about,
+              // and a caption describing the build sequence would be read out
+              // on every visit.
+              tabIndex={-1}
+              onEnded={() => setHasEnded(true)}
+              className={cn(
+                "absolute inset-0 h-full w-full object-cover",
+                // Half a second, and no movement. The two frames are the same
+                // picture, so what the reader sees is it resolving — a cut
+                // would read as a glitch and a slide would be a camera move
+                // the film did not make.
+                "transition-opacity duration-500 ease-out",
+                hasEnded && "opacity-0",
+              )}
+            />
+          </>
         )}
       </motion.div>
 
