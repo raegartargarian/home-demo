@@ -37,6 +37,7 @@ export interface AttachmentModel {
   file_count?: number;
   files?: AttachmentFileModel[];
   public_vault?: boolean;
+  archived?: boolean;
 }
 
 export interface ServiceRecordState {
@@ -45,4 +46,8 @@ export interface ServiceRecordState {
   isLoading: boolean;
   isProcessingZip: boolean;
   error: string | null;
+  /** An archive or restore request is in flight. */
+  isArchiving: boolean;
+  /** Why the last archive or restore failed; cleared when the next one starts. */
+  archiveError: string | null;
 }

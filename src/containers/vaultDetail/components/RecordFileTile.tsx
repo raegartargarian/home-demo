@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+import { Chip } from "@/shared/components/Chip";
 import { DocFace, FileTile } from "@/shared/components/FileTile";
 import { appRoutes } from "@/shared/constants/routes";
 import {
@@ -5,7 +7,7 @@ import {
   useAttachmentResolver,
 } from "@/shared/hooks/usePreview";
 import { FileThumbnail } from "@filedgr/web-core/preview";
-import { FileText } from "lucide-react";
+import { Archive, FileText } from "lucide-react";
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
@@ -17,6 +19,8 @@ interface RecordFileTileProps {
   attachment: Attachment;
   file: RecordFile;
   label: string;
+  /** Faded back and labelled, so it cannot pass for a live record. */
+  archived?: boolean;
   /**
    * Opens the file itself, in the preview modal. Where it is omitted the tile
    * falls back to opening the record that carries the file.
@@ -45,6 +49,7 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
   attachment,
   file,
   label,
+  archived = false,
   onOpen,
   interactive = true,
 }) => {
@@ -60,27 +65,40 @@ export const RecordFileTile: React.FC<RecordFileTileProps> = ({
 
   const face = (
     <FileTile
-        label={label}
-        format={formatOf(file) ?? undefined}
-        size="md"
-        className="transition-colors duration-200 group-hover:border-cat-line"
-      >
-        {source ? (
-          <FileThumbnail
-            source={source}
-            resolver={resolver}
-            className="h-full w-full"
-          />
-        ) : (
-          // Not pinned yet — the ruled document face beats an empty box, which
-          // reads as a failed load.
-          <div className="relative h-full">
-            <DocFace />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <FileText className="h-4 w-4 text-cat" aria-hidden />
-            </div>
+      label={label}
+      format={formatOf(file) ?? undefined}
+      size="md"
+      className={cn(
+        "transition-colors duration-200 group-hover:border-cat-line",
+        // Dimmed as a whole, chip included: the tile is still readable and
+        // still opens, it just cannot be mistaken for something in use.
+        archived && "opacity-60",
+      )}
+    >
+      {source ? (
+        <FileThumbnail
+          source={source}
+          resolver={resolver}
+          className="h-full w-full"
+        />
+      ) : (
+        // Not pinned yet — the ruled document face beats an empty box, which
+        // reads as a failed load.
+        <div className="relative h-full">
+          <DocFace />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <FileText className="h-4 w-4 text-cat" aria-hidden />
           </div>
-        )}
+        </div>
+      )}
+      {archived && (
+        <Chip
+          label="Archived"
+          tone="warn"
+          icon={Archive}
+          className="absolute left-1.5 top-1.5"
+        />
+      )}
     </FileTile>
   );
 

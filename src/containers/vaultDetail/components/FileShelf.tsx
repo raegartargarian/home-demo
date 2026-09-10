@@ -57,6 +57,7 @@ export const FileShelf: React.FC<FileShelfProps> = ({
               attachment={tile.attachment}
               file={tile.file}
               label={tile.label}
+              archived={tile.archived}
               interactive={interactive}
               onOpen={() =>
                 preview.openAt(

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { TransferBadge } from "@/shared/components/TransferBadge";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
 import { SectionFileGrid } from "@/shared/components/SectionFileGrid";
-import { StreamCategory } from "@/shared/constants/streams";
+import { isKnownSection, StreamCategory } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
 import { formatStreamName } from "@/shared/utils/streamHelpers";
 import { Layers } from "lucide-react";
@@ -56,7 +56,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     <section
       data-category={category?.code}
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-xl border border-line bg-surface-raised transition-colors",
+        "pane relative flex flex-col overflow-hidden rounded-xl transition-colors",
         onOpen && "hover:border-line-strong",
         className,
       )}
@@ -108,17 +108,26 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           // "no records yet", which tells the homeowner nothing actionable.
           // Same tiles the landing page uses, greyed back so a section you have
           // not filled yet cannot be mistaken for one you have.
+          // The five can say what they hold, because the taxonomy defines it. A
+          // section someone named cannot, so it says what a section like it
+          // usually holds and shows the standard set — which is still worth
+          // more than the sentence it used to show on its own, under an
+          // otherwise empty card.
           <div className="rounded-lg border border-dashed border-line bg-surface-sunken p-4">
-            <p className="text-xs font-medium text-ink-muted">
-              Nothing filed here yet. This section holds:
-            </p>
-            {category ? (
-              <SectionFileGrid
-                code={category.code}
-                size="md"
-                className="mt-3 opacity-60"
-              />
-            ) : null}
+            {category && (
+              <>
+                <p className="text-xs font-medium text-ink-muted">
+                  {isKnownSection(category)
+                    ? "Nothing filed here yet. This section holds:"
+                    : "Nothing filed here yet. A section like this usually holds:"}
+                </p>
+                <SectionFileGrid
+                  category={category}
+                  size="md"
+                  className="mt-3 opacity-60"
+                />
+              </>
+            )}
           </div>
         ) : (
           // Files on a shelf — see `FileShelf`. Deliberately *not* lifted above

@@ -13,6 +13,14 @@ import { useOutletContext } from "react-router-dom";
  */
 export interface VaultContext {
   vault: VaultDto;
+  /** The home this vault is a project of; null when the vault is the home. */
+  parent: VaultDto | null;
+  /**
+   * The whole chain above this vault, root-first and excluding itself. `[]`
+   * means the vault is the top of its own tree. `parent` is its last entry,
+   * kept separate because the header only ever names the immediate one.
+   */
+  ancestors: VaultDto[];
   facts: HomeFacts | null;
   /** The section being viewed, when the route names one. */
   stream: VaultStreamDto | null;

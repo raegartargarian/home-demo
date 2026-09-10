@@ -1,4 +1,6 @@
+import { Button } from "@/components/ui/button";
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
+import { wellFor } from "@/shared/components/PageContainer";
 import { motion, useReducedMotion } from "framer-motion";
 import { Home, Layers } from "lucide-react";
 import React from "react";
@@ -21,9 +23,15 @@ import { ProfileMenu } from "./ProfileMenu";
  * carries its own id: both are in the DOM at once behind media queries, and two
  * live elements sharing one `layoutId` would animate against each other.
  *
- * The indicator is filled with the blueprint accent. A white pill on white
- * glass was a shadow's worth of difference, and "which page am I on" is the one
- * question a nav has to answer without being studied.
+ * The indicator is filled with the brand near-black, the same token the primary
+ * button uses. A white pill on white glass was a shadow's worth of difference —
+ * "which page am I on" is the one question a nav has to answer without being
+ * studied — but the answer was the blueprint accent, which made the most
+ * persistent coloured element in the app a second brand. The palette is
+ * explicit that blue is retired as a decorative colour and that blueprint is a
+ * support colour for rings, hairlines and tints; this was the only place it was
+ * poured in solid. Near-black is louder, not quieter, and it inverts to
+ * near-white in dark mode on its own.
  */
 
 const NAV_ITEMS = [
@@ -36,86 +44,150 @@ const NAV_ITEMS = [
     // Clicking the nav is asking for the list, so it is not shortcut past even
     // when there is only one home. See `BROWSE_ALL_HOMES`.
     state: BROWSE_ALL_HOMES,
+    // There are no homes to list until there is an account to list them
+    // against, so signed out this asks for one instead of walking someone into
+    // an empty state that cannot explain itself.
+    needsAccount: true,
   },
 ];
 
+/**
+ * One shape for both, so a route and an invitation to sign in are the same
+ * control at the same size — only what happens on the click differs.
+ */
+const itemClass = (isActive: boolean) =>
+  [
+    "relative flex items-center justify-center gap-2 rounded-full",
+    "px-4 py-2 transition-colors",
+    // No wrap: the bottom pill is `fixed` and so sizes to its own content,
+    // which let "My Homes" break onto two lines and took the pill oval with it.
+    "whitespace-nowrap",
+    isActive
+      ? "text-ink-inverse"
+      : "text-ink-muted hover:bg-surface-inset/60 hover:text-ink",
+  ].join(" ");
+
 const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
   const reduceMotion = useReducedMotion();
+  const { isAuthenticated, login } = useWeb3Auth() || {};
 
   return (
     <ul className="flex items-center gap-1">
-      {NAV_ITEMS.map(({ to, label, icon: Icon, end, state }) => (
-        <li key={to}>
-          <NavLink to={to} end={end} state={state} className="block">
-            {({ isActive }) => (
-              <span
-                className={[
-                  "relative flex items-center justify-center gap-2 rounded-full",
-                  "px-4 py-2 transition-colors",
-                  isActive
-                    ? "text-ink"
-                    : "text-ink-muted hover:bg-surface-inset/60 hover:text-ink",
-                ].join(" ")}
+      {NAV_ITEMS.map(({ to, label, icon: Icon, end, state, needsAccount }) => {
+        const content = (
+          <>
+            <Icon className="relative h-[18px] w-[18px]" />
+            <span className="relative text-sm font-medium">{label}</span>
+          </>
+        );
+
+        if (needsAccount && !isAuthenticated) {
+          return (
+            <li key={to}>
+              <button
+                type="button"
+                onClick={() => login?.()}
+                className={itemClass(false)}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId={layoutId}
-                    className="absolute inset-0 rounded-full bg-blueprint shadow-sm"
-                    // Spring, not ease — it should feel physical. Reduced
-                    // motion drops the slide entirely and cross-fades.
-                    transition={
-                      reduceMotion
-                        ? { duration: 0.15 }
-                        : { type: "spring", stiffness: 400, damping: 32 }
-                    }
-                  />
-                )}
-                <Icon className="relative h-[18px] w-[18px]" />
-                <span
-                  className={[
-                    "relative text-sm",
-                    isActive ? "font-semibold" : "font-medium",
-                  ].join(" ")}
-                >
-                  {label}
+                {content}
+              </button>
+            </li>
+          );
+        }
+
+        return (
+          <li key={to}>
+            <NavLink
+              to={to}
+              end={end}
+              state={state}
+              // Before the route changes, not after.
+              //
+              // `ScrollToTop` resets the scroll in an effect once the
+              // navigation has committed. By then the sliding indicator has
+              // already been measured at the old scroll offset and is drawn at
+              // the new one, so it launches down the page and flies back —
+              // measured at ~870px of travel from a scroll position of 1200.
+              // Scrolling first costs nothing (the later reset becomes a
+              // no-op) and keeps the slide, because both measurements now
+              // happen at the same offset.
+              onClick={() => window.scrollTo(0, 0)}
+              className="block"
+            >
+              {({ isActive }) => (
+                <span className={itemClass(isActive)}>
+                  {isActive && (
+                    <motion.span
+                      layoutId={layoutId}
+                      className="absolute inset-0 rounded-full bg-brand shadow-sm"
+                      // Spring, not ease — it should feel physical. Reduced
+                      // motion drops the slide entirely and cross-fades.
+                      transition={
+                        reduceMotion
+                          ? { duration: 0.15 }
+                          : { type: "spring", stiffness: 400, damping: 32 }
+                      }
+                    />
+                  )}
+                  {/* Semibold while active, so the chip does not only differ
+                      by colour. */}
+                  <Icon className="relative h-[18px] w-[18px]" />
+                  <span
+                    className={[
+                      "relative text-sm",
+                      isActive ? "font-semibold" : "font-medium",
+                    ].join(" ")}
+                  >
+                    {label}
+                  </span>
                 </span>
-              </span>
-            )}
-          </NavLink>
-        </li>
-      ))}
+              )}
+            </NavLink>
+          </li>
+        );
+      })}
     </ul>
   );
 };
 
 export const Header = () => {
-  const { isAuthenticated } = useWeb3Auth() || {};
+  const { isAuthenticated, login } = useWeb3Auth() || {};
 
   return (
     <>
-      <div className="fixed inset-x-3 top-3 z-50 md:inset-x-6 md:top-4">
-        <div className="glass mx-auto flex h-14 max-w-5xl items-center gap-2 rounded-full pl-5 pr-2.5">
-          <Link
-            to={appRoutes.dashboard.path}
-            className="flex-shrink-0 text-base font-medium tracking-tight text-ink transition-opacity hover:opacity-70"
-          >
-            Home Record
-          </Link>
+      {/* The island sits in the page's own well — same measure and same gutter
+          — so its ends land exactly where the content's do. Capped at the
+          measure alone it was 16px wider on each side, and a size narrower than
+          the page on top of that, which is what had the structure column
+          starting to its left and the cards running out past its right. */}
+      <div className="fixed inset-x-0 top-3 z-50 md:top-4">
+        <div className={wellFor("wide")}>
+          <div className="glass flex h-14 items-center gap-2 rounded-full pl-5 pr-2.5">
+            <Link
+              to={appRoutes.dashboard.path}
+              className="flex-shrink-0 text-base font-medium tracking-tight text-ink transition-opacity hover:opacity-70"
+            >
+              Home Record
+            </Link>
 
-          {/* Routes ride in the island on desktop and in the thumb-reach pill
+            {/* Routes ride in the island on desktop and in the thumb-reach pill
               below on mobile, where the island has room for identity only. */}
-          <nav aria-label="Primary" className="ml-2 hidden md:block">
-            <NavItems layoutId="nav-pill-island" />
-          </nav>
+            <nav aria-label="Primary" className="ml-2 hidden md:block">
+              <NavItems layoutId="nav-pill-island" />
+            </nav>
 
-          <div className="ml-auto flex-shrink-0">
-            {isAuthenticated ? (
-              <ProfileMenu />
-            ) : (
-              <span className="hidden pr-2 text-sm text-ink-subtle sm:inline">
-                Verified home records
-              </span>
-            )}
+            <div className="ml-auto flex-shrink-0">
+              {isAuthenticated ? (
+                <ProfileMenu />
+              ) : (
+                /* Where the account control goes once there is an account. The
+                   landing page makes the same offer in its own words; this is
+                   the one that follows you onto every other page. */
+                <Button size="sm" onClick={() => login?.()}>
+                  Get started
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

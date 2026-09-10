@@ -61,6 +61,14 @@ describe("sectionTiles", () => {
   it("survives a record with no files at all", () => {
     expect(sectionTiles([{ id: "r1", name: "Empty" }])).toEqual([]);
   });
+
+  it("carries the record's archived flag onto every one of its tiles", () => {
+    const tiles = sectionTiles([
+      { ...record("r1", "Old", ["a.pdf", "b.pdf"]), archived: true },
+      record("r2", "Live", ["c.pdf"]),
+    ]);
+    expect(tiles.map((t) => t.archived)).toEqual([true, true, false]);
+  });
 });
 
 describe("labelFor", () => {

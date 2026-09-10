@@ -1,4 +1,4 @@
-import type { StreamCategoryCode } from "@/shared/constants/streams";
+import type { SectionAccent } from "@/shared/constants/streams";
 import type { UploadPhase } from "@filedgr/web-core/upload";
 import type { OriginRect } from "./originRect";
 
@@ -20,11 +20,12 @@ export interface UploadTarget {
   /** Section label ("Maintenance & Upgrades"), shown in the modal title. */
   streamLabel?: string;
   /**
-   * Which of the five sections this is, resolved once where the stream is still
-   * in hand. `assetCode` is a ledger identity and cannot be resolved back to a
-   * section, so the modal cannot work this out for itself.
+   * Which section this is, resolved once where the stream is still in hand.
+   * `assetCode` is a ledger identity and cannot be resolved back to a section,
+   * so the modal cannot work this out for itself. One of the five, or the
+   * spare accent slot a named section was given.
    */
-  sectionCode?: StreamCategoryCode;
+  sectionCode?: SectionAccent;
   ledger: string;
 }
 

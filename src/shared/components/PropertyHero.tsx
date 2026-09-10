@@ -2,7 +2,9 @@ import { cn } from "@/lib/utils";
 import { VaultImage } from "@/shared/components/VaultImage";
 import { HomeFacts } from "@/shared/types/home";
 import { VaultDto } from "@/shared/types/vault";
+import { DURATION, EASE_OUT, REDUCED } from "@/shared/constants/motion";
 import { factItems, formatLocation } from "@/shared/utils/homeFacts";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, LucideIcon, MapPin } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
@@ -72,6 +74,7 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
   innerClassName,
   className,
 }) => {
+  const reduceMotion = useReducedMotion();
   const location = facts ? formatLocation(facts) : "";
   const items = facts ? factItems(facts) : [];
 
@@ -113,16 +116,42 @@ export const PropertyHero: React.FC<PropertyHeroProps> = ({
             {backLabel}
           </Link>
 
-          <h1 className="mt-3 flex max-w-[24ch] items-center gap-3 text-3xl font-medium leading-tight tracking-tight text-white drop-shadow-sm md:text-4xl">
-            {Icon && (
-              <Icon className="h-7 w-7 shrink-0 opacity-90" aria-hidden />
-            )}
-            {title}
-          </h1>
+          {/* The subject rises a few pixels as it arrives.
+              Moving between a vault and its five sections keeps this header
+              mounted on purpose, so the photograph never reloads — but that
+              left the heading and its line beneath swapping in place, one
+              string replaced by another between frames. Keyed on the title, so
+              a new subject is a new element and gets the entrance; everything
+              else about the header stays exactly where it was.
+              Six pixels and 150ms: this is seen dozens of times in a session,
+              and anything more legible than a hint would be a tax on each. */}
+          <motion.div
+            key={title}
+            initial={
+              reduceMotion
+                ? { opacity: 0 }
+                : { opacity: 0, transform: "translateY(6px)" }
+            }
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            transition={
+              reduceMotion
+                ? REDUCED
+                : { duration: DURATION.swap, ease: EASE_OUT }
+            }
+          >
+            <h1 className="mt-3 flex max-w-[24ch] items-center gap-3 text-3xl font-medium leading-tight tracking-tight text-white drop-shadow-sm md:text-4xl">
+              {Icon && (
+                <Icon className="h-7 w-7 shrink-0 opacity-90" aria-hidden />
+              )}
+              {title}
+            </h1>
 
-          {subtitle && (
-            <p className="mt-2 max-w-prose text-sm text-white/80">{subtitle}</p>
-          )}
+            {subtitle && (
+              <p className="mt-2 max-w-prose text-sm text-white/80">
+                {subtitle}
+              </p>
+            )}
+          </motion.div>
 
           {location && (
             <p className="mt-2 flex items-center gap-1.5 text-sm text-white/80">
