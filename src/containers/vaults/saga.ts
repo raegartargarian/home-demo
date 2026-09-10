@@ -1,3 +1,5 @@
+import { withoutProjects } from "@/containers/projectVaults/api";
+import { PROJECT_VAULTS_ENABLED } from "@/shared/constants/projectVaults";
 import { getVaults } from "@/shared/providers/api";
 import { VaultDto } from "@/shared/types/vault";
 import { call, put, takeLatest } from "redux-saga/effects";
@@ -25,7 +27,13 @@ function* fetchVaultsSaga(
     const response = yield call(getVaults, [], page);
     const data = response.data;
 
-    const vaults: VaultDto[] = data.content;
+    // A project is a job rather than a house: it belongs under its home in the
+    // structure column, not beside it here. Only worth the template reads when
+    // there can be projects at all.
+    const visible: VaultDto[] = data.content;
+    const vaults: VaultDto[] = PROJECT_VAULTS_ENABLED
+      ? yield call(withoutProjects, visible)
+      : visible;
     const crPage = data.current_page;
     const tPages = data.total_pages;
     const hasMore = crPage < tPages;
