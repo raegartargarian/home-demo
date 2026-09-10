@@ -1,9 +1,12 @@
+import { wellFor } from "@/shared/components/PageContainer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FilterChip } from "@/shared/components/FilterChip";
 import {
   FIELD_CLASS,
   FieldGroup,
+  FormNote,
+  invalidIf,
   LABEL_CLASS,
 } from "@/shared/components/FormField";
 import {
@@ -16,10 +19,16 @@ import {
   toSectionSlug,
 } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
+import {
+  firstProblem,
+  revealProblem,
+  type FormProblem,
+  type RaisedProblem,
+} from "@/shared/utils/formProblems";
 import { categoryForStream } from "@/shared/utils/streamHelpers";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { vaultDetailSelectors } from "../selectors";
 import { vaultDetailActions } from "../slice";
@@ -51,11 +60,14 @@ export const AddSectionModal: React.FC = () => {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [problem, setProblem] = useState<RaisedProblem | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setName("");
     setDescription("");
+    setProblem(null);
   }, [isOpen]);
 
   const close = () => dispatch(vaultDetailActions.closeAddSectionModal());
@@ -110,12 +122,41 @@ export const AddSectionModal: React.FC = () => {
   const mapping = known ? known.code : slug;
   const preview = known ?? (slug ? customCategoryFor(slug) : null);
 
+  const PreviewIcon = preview?.icon;
+
   const isAdding = creation?.status === "running";
-  const canSubmit = !!vaultId && slug.length > 0 && !isDuplicate && !isAdding;
+
+  // In the order the form is read, so filling them in walks down the page.
+  const rules: FormProblem[] = [
+    {
+      key: "name",
+      unmet: slug.length === 0,
+      message: "Give the section a name first.",
+      field: nameRef,
+    },
+    {
+      key: "name",
+      unmet: isDuplicate,
+      message: known
+        ? `${known.label} is already one of this vault's sections.`
+        : "This vault already has a section by that name.",
+      field: nameRef,
+    },
+  ];
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canSubmit || !vaultId || !preview) return;
+    if (!vaultId || isAdding) return;
+
+    const found = firstProblem(rules);
+    if (found) {
+      setProblem({ key: found.key, message: found.message });
+      revealProblem(found);
+      return;
+    }
+    if (!preview) return;
+
+    setProblem(null);
     dispatch(
       vaultDetailActions.addSectionStart({
         vaultId,
@@ -146,25 +187,27 @@ export const AddSectionModal: React.FC = () => {
             aria-label="Add a section"
             className="relative flex h-full flex-col"
           >
-            <header className="pointer-events-none absolute inset-x-3 top-3 z-10 md:inset-x-6 md:top-4">
-              <div className="glass pointer-events-auto mx-auto flex max-w-3xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
-                <div className="min-w-0">
-                  <h2 className="text-base font-medium tracking-tight text-ink">
-                    Add a section
-                  </h2>
-                  <p className="truncate text-xs text-ink-muted">
-                    {vault?.name ?? "This vault"}
-                  </p>
+            <header className="pointer-events-none absolute inset-x-0 top-3 z-10 md:top-4">
+              <div className={wellFor("wide")}>
+                <div className="glass pointer-events-auto flex items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
+                  <div className="min-w-0">
+                    <h2 className="text-base font-medium tracking-tight text-ink">
+                      Add a section
+                    </h2>
+                    <p className="truncate text-xs text-ink-muted">
+                      {vault?.name ?? "This vault"}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={close}
+                    aria-label="Close"
+                  >
+                    <X aria-hidden />
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={close}
-                  aria-label="Close"
-                >
-                  <X aria-hidden />
-                </Button>
               </div>
             </header>
 
@@ -173,113 +216,171 @@ export const AddSectionModal: React.FC = () => {
               className="flex min-h-0 flex-1 flex-col"
             >
               <div className="min-h-0 flex-1 overflow-y-auto">
-                <div className="mx-auto max-w-3xl space-y-10 px-5 pb-28 pt-[6.5rem] sm:px-8">
-                  {missing.length > 0 && (
-                    <FieldGroup
-                      title="From the template"
-                      hint="Sections this vault was not seeded with. One tap fills the name in."
-                    >
-                      <div
-                        role="group"
-                        aria-label="Sections from the template"
-                        className="flex flex-wrap gap-1.5"
+                <div
+                  className={`${wellFor("wide")} grid grid-cols-1 gap-x-12 gap-y-10 pb-28 pt-[6.5rem] lg:grid-cols-[minmax(0,1fr)_380px]`}
+                >
+                  <div className="space-y-10">
+                    {missing.length > 0 && (
+                      <FieldGroup
+                        title="From the template"
+                        hint="Sections this vault was not seeded with. One tap fills the name in."
                       >
-                        {missing.map((category) => (
-                          <span
-                            key={category.code}
-                            data-category={category.code}
-                          >
-                            <FilterChip
-                              label={category.label}
-                              icon={category.icon}
-                              isActive={known?.code === category.code}
-                              onToggle={() =>
-                                setName(
-                                  known?.code === category.code
-                                    ? ""
-                                    : category.label,
-                                )
-                              }
-                            />
+                        <div
+                          role="group"
+                          aria-label="Sections from the template"
+                          className="flex flex-wrap gap-1.5"
+                        >
+                          {missing.map((category) => (
+                            <span
+                              key={category.code}
+                              data-category={category.code}
+                            >
+                              <FilterChip
+                                label={category.label}
+                                icon={category.icon}
+                                isActive={known?.code === category.code}
+                                onToggle={() =>
+                                  setName(
+                                    known?.code === category.code
+                                      ? ""
+                                      : category.label,
+                                  )
+                                }
+                              />
+                            </span>
+                          ))}
+                        </div>
+                      </FieldGroup>
+                    )}
+
+                    <FieldGroup
+                      title="The section"
+                      hint="What this part of the house is called, in the words you would use for it."
+                    >
+                      <div className="space-y-1.5">
+                        <label htmlFor="section-name" className={LABEL_CLASS}>
+                          Name
+                        </label>
+                        <input
+                          id="section-name"
+                          ref={nameRef}
+                          value={name}
+                          onChange={(event) => {
+                            setName(event.target.value);
+                            setProblem(null);
+                          }}
+                          maxLength={SECTION_SLUG_MAX_LENGTH * 2}
+                          placeholder="e.g. Landscaping"
+                          autoFocus
+                          {...invalidIf(problem?.key === "name", FIELD_CLASS)}
+                        />
+                        {isDuplicate ? (
+                          <p className="text-xs text-alert">
+                            {known
+                              ? `${known.label} is already one of this vault's sections.`
+                              : "This vault already has a section by that name."}
+                          </p>
+                        ) : slug.length > 0 ? (
+                          <p className="text-xs text-ink-subtle">
+                            {known
+                              ? `That is ${known.label}, one of the five the template names.`
+                              : `Filed as ${slug}.`}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-ink-subtle">
+                            A section is permanent. It travels with the
+                            property, and its records go with it.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label
+                          htmlFor="section-description"
+                          className={LABEL_CLASS}
+                        >
+                          Description
+                          <span className="ml-1.5 font-normal text-ink-subtle">
+                            optional
                           </span>
-                        ))}
+                        </label>
+                        <textarea
+                          id="section-description"
+                          value={description}
+                          onChange={(event) =>
+                            setDescription(event.target.value)
+                          }
+                          rows={3}
+                          placeholder="What belongs in here."
+                          className={cn(FIELD_CLASS, "resize-none")}
+                        />
                       </div>
                     </FieldGroup>
-                  )}
+                  </div>
 
-                  <FieldGroup
-                    title="The section"
-                    hint="What this part of the house is called, in the words you would use for it."
-                  >
-                    <div className="space-y-1.5">
-                      <label htmlFor="section-name" className={LABEL_CLASS}>
-                        Name
-                      </label>
-                      <input
-                        id="section-name"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        maxLength={SECTION_SLUG_MAX_LENGTH * 2}
-                        placeholder="e.g. Landscaping"
-                        autoFocus
-                        className={FIELD_CLASS}
-                      />
-                      {isDuplicate ? (
-                        <p className="text-xs text-alert">
-                          {known
-                            ? `${known.label} is already one of this vault's sections.`
-                            : "This vault already has a section by that name."}
-                        </p>
-                      ) : slug.length > 0 ? (
-                        <p className="text-xs text-ink-subtle">
-                          {known
-                            ? `That is ${known.label}, one of the five the template names.`
-                            : `Filed as ${slug}.`}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-ink-subtle">
-                          A section is permanent. It travels with the property,
-                          and its records go with it.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label
-                        htmlFor="section-description"
-                        className={LABEL_CLASS}
+                  {/* Where the project form puts its cover. A section has no
+                      photograph, so what it can show instead is itself: the
+                      accent and glyph it will be given, and the slug the
+                      backend will actually store. */}
+                  <div className="lg:sticky lg:top-8 lg:self-start">
+                    <FieldGroup
+                      title="How it will look"
+                      hint="The card this section gets on the vault page."
+                    >
+                      <div
+                        data-category={preview?.code}
+                        className="pane overflow-hidden rounded-xl"
                       >
-                        Description
-                        <span className="ml-1.5 font-normal text-ink-subtle">
-                          optional
-                        </span>
-                      </label>
-                      <textarea
-                        id="section-description"
-                        value={description}
-                        onChange={(event) => setDescription(event.target.value)}
-                        rows={3}
-                        placeholder="What belongs in here."
-                        className={cn(FIELD_CLASS, "resize-none")}
-                      />
-                    </div>
-                  </FieldGroup>
+                        <div className="h-1 w-full bg-cat" aria-hidden />
+                        <div className="flex items-start gap-3 p-4">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-cat-line bg-cat-surface">
+                            {PreviewIcon && (
+                              <PreviewIcon
+                                className="h-[18px] w-[18px] text-cat"
+                                aria-hidden
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-sm font-semibold text-ink">
+                              {preview?.label ?? "Your section"}
+                            </h3>
+                            <p className="mt-0.5 text-xs leading-relaxed text-ink-subtle">
+                              {preview?.description ||
+                                (slug
+                                  ? `Filed as ${slug}.`
+                                  : "Name it and it appears here.")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-ink-subtle">
+                        {known
+                          ? "One of the five the template names, so it keeps the taxonomy's own colour and copy."
+                          : "A section you named takes one of the spare accents, chosen from the name so it looks the same everywhere."}
+                      </p>
+                    </FieldGroup>
+                  </div>
                 </div>
               </div>
 
-              <footer className="pointer-events-none absolute inset-x-3 bottom-3 z-10 md:inset-x-6 md:bottom-4">
-                <div className="glass pointer-events-auto mx-auto flex max-w-3xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
-                  <p className="hidden text-xs text-ink-subtle sm:block">
-                    Anchoring takes a moment — it runs in the grid while you
-                    carry on.
-                  </p>
-                  <div className="flex flex-1 justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={close}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={!canSubmit}>
-                      Add section
-                    </Button>
+              <footer className="pointer-events-none absolute inset-x-0 bottom-3 z-10 md:bottom-4">
+                <div className={wellFor("wide")}>
+                  <div className="glass pointer-events-auto flex items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
+                    <FormNote problem={problem?.message}>
+                      Anchoring takes a moment — it runs in the grid while you
+                      carry on.
+                    </FormNote>
+                    <div className="flex flex-1 justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={close}>
+                        Cancel
+                      </Button>
+                      {/* Disabled only while a run is in flight. Not being
+                          filled in yet is what the click is for. */}
+                      <Button type="submit" disabled={isAdding}>
+                        Add section
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </footer>

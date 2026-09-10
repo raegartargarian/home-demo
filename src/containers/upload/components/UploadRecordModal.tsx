@@ -1,3 +1,4 @@
+import { wellFor } from "@/shared/components/PageContainer";
 import { Button } from "@/components/ui/button";
 import { vaultDetailSelectors } from "@/containers/vaultDetail/selectors";
 import { cn } from "@/lib/utils";
@@ -6,9 +7,19 @@ import {
   FIELD_CLASS,
   FieldGroup,
   LABEL_CLASS,
+  GROUP_INVALID_CLASS,
+  invalidIf,
   SELECT_CLASS,
+  DATE_CLASS,
+  DateShell,
   SelectShell,
 } from "@/shared/components/FormField";
+import {
+  firstProblem,
+  revealProblem,
+  type FormProblem,
+  type RaisedProblem,
+} from "@/shared/utils/formProblems";
 import {
   facetForType,
   RECORD_FACETS,
@@ -128,6 +139,11 @@ export const UploadRecordModal: React.FC = () => {
   const [isPacking, setIsPacking] = useState(false);
   // Measured at submit, so the tray card can fly out of the button that filed it.
   const submitRef = useRef<HTMLButtonElement>(null);
+  const [missing, setMissing] = useState<RaisedProblem | null>(null);
+  const sectionRef = useRef<HTMLSelectElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
+  const projectRef = useRef<HTMLInputElement>(null);
+  const filesRef = useRef<HTMLDivElement>(null);
 
   const isRunning = status !== "idle";
   const isOpen = target !== null;
@@ -307,6 +323,7 @@ export const UploadRecordModal: React.FC = () => {
     }
 
     setFileError("");
+    setMissing(null);
     setFiles(next);
     // The file the user picked already names itself; don't make them retype it.
     setFileNames((prev) => [
@@ -331,18 +348,49 @@ export const UploadRecordModal: React.FC = () => {
   const renameFile = (index: number, value: string) =>
     setFileNames((prev) => prev.map((name, i) => (i === index ? value : name)));
 
-  const canSubmit =
-    !!destination?.streamId &&
-    !!destination.assetCode &&
-    !!recordName &&
-    files.length > 0 &&
-    !!walletAddress &&
-    !isRunning &&
-    !isPacking;
+  // In the order the form is read, so filling them in walks down the page.
+  // The files come second rather than last: everything under "What it is"
+  // describes them, and one of those fields cannot even be typed into until
+  // there is a file to name.
+  const rules: FormProblem[] = [
+    {
+      key: "section",
+      unmet: !destination?.streamId || !destination.assetCode,
+      message: "Choose a section to file this into.",
+      field: sectionRef,
+    },
+    {
+      key: "files",
+      unmet: files.length === 0,
+      message: "Add at least one file — a record is the paperwork itself.",
+      field: filesRef,
+    },
+    {
+      key: "date",
+      unmet: !fromDateInput(date),
+      message: "Give the record a date: when the work happened.",
+      field: dateRef,
+    },
+    {
+      key: "project",
+      unmet: !project.trim(),
+      message: "Name the job this belongs to.",
+      field: projectRef,
+    },
+  ];
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canSubmit || !destination?.streamId || !destination.assetCode) return;
+    if (isRunning || isPacking || !walletAddress) return;
+
+    const found = firstProblem(rules);
+    if (found) {
+      setMissing({ key: found.key, message: found.message });
+      revealProblem(found);
+      return;
+    }
+    setMissing(null);
+    if (!destination?.streamId || !destination.assetCode || !recordName) return;
 
     // Taken before the form hides itself, while the button is still on screen.
     const originRect = captureRect(submitRef.current);
@@ -411,7 +459,9 @@ export const UploadRecordModal: React.FC = () => {
 
   // A failed run, a rejected file set, or a missing wallet — whichever is
   // blocking, shown in one place beside the files.
-  const problem = fileError || error;
+  // One line for anything standing between the reader and filing: a file that
+  // was refused, an upload that failed, or a box that has not been filled in.
+  const problem = fileError || error || missing?.message;
 
   return (
     <AnimatePresence>
@@ -444,27 +494,29 @@ export const UploadRecordModal: React.FC = () => {
                 scrolls underneath it, which is exactly the condition glass is
                 for. A flat band welded to the top of a full-page form was the
                 one piece of chrome still drawn the old way. */}
-            <header className="pointer-events-none absolute inset-x-3 top-3 z-10 md:inset-x-6 md:top-4">
-              <div className="glass pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
-                <div className="min-w-0">
-                  <h2 className="text-base font-medium tracking-tight text-ink">
-                    Add a record
-                  </h2>
-                  <p className="truncate text-xs text-ink-muted">
-                    {destination
-                      ? `Filed into ${destination.streamLabel}`
-                      : "Choose a section to file it into"}
-                  </p>
+            <header className="pointer-events-none absolute inset-x-0 top-3 z-10 md:top-4">
+              <div className={wellFor("wide")}>
+                <div className="glass pointer-events-auto flex items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
+                  <div className="min-w-0">
+                    <h2 className="text-base font-medium tracking-tight text-ink">
+                      Add a record
+                    </h2>
+                    <p className="truncate text-xs text-ink-muted">
+                      {destination
+                        ? `Filed into ${destination.streamLabel}`
+                        : "Choose a section to file it into"}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={close}
+                    aria-label="Close"
+                  >
+                    <X aria-hidden />
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={close}
-                  aria-label="Close"
-                >
-                  <X aria-hidden />
-                </Button>
               </div>
             </header>
 
@@ -474,7 +526,9 @@ export const UploadRecordModal: React.FC = () => {
             >
               <div className="min-h-0 flex-1 overflow-y-auto">
                 {/* Clears the floating header, which is out of flow. */}
-                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-12 gap-y-10 px-5 pb-28 pt-[6.5rem] sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+                <div
+                  className={`${wellFor("wide")} grid grid-cols-1 gap-x-12 gap-y-10 pb-28 pt-[6.5rem] lg:grid-cols-[minmax(0,1fr)_380px]`}
+                >
                   <div className="space-y-10">
                     <FieldGroup
                       title="Where it goes"
@@ -487,11 +541,16 @@ export const UploadRecordModal: React.FC = () => {
                         <SelectShell>
                           <select
                             id="record-section"
+                            ref={sectionRef}
                             value={destination?.streamId ?? ""}
-                            onChange={(event) =>
-                              setStreamId(event.target.value)
-                            }
-                            className={SELECT_CLASS}
+                            onChange={(event) => {
+                              setStreamId(event.target.value);
+                              setMissing(null);
+                            }}
+                            {...invalidIf(
+                              missing?.key === "section",
+                              SELECT_CLASS,
+                            )}
                           >
                             <option value="" disabled>
                               Choose a section…
@@ -519,13 +578,22 @@ export const UploadRecordModal: React.FC = () => {
                           <label htmlFor="record-date" className={LABEL_CLASS}>
                             Date
                           </label>
-                          <input
-                            id="record-date"
-                            type="date"
-                            value={date}
-                            onChange={(event) => setDate(event.target.value)}
-                            className={FIELD_CLASS}
-                          />
+                          <DateShell>
+                            <input
+                              id="record-date"
+                              ref={dateRef}
+                              type="date"
+                              value={date}
+                              onChange={(event) => {
+                                setDate(event.target.value);
+                                setMissing(null);
+                              }}
+                              {...invalidIf(
+                                missing?.key === "date",
+                                DATE_CLASS,
+                              )}
+                            />
+                          </DateShell>
                           <p className="text-xs text-ink-subtle">
                             When the work happened, not today.
                           </p>
@@ -563,11 +631,18 @@ export const UploadRecordModal: React.FC = () => {
                         </label>
                         <input
                           id="record-project"
+                          ref={projectRef}
                           value={project}
-                          onChange={(event) => setProject(event.target.value)}
+                          onChange={(event) => {
+                            setProject(event.target.value);
+                            setMissing(null);
+                          }}
                           placeholder="e.g. Roof Replacement"
                           autoFocus
-                          className={FIELD_CLASS}
+                          {...invalidIf(
+                            missing?.key === "project",
+                            FIELD_CLASS,
+                          )}
                         />
                         {/* No suggestions list: the only source for one was
                             every record in the vault, and the route that
@@ -720,14 +795,25 @@ export const UploadRecordModal: React.FC = () => {
                       title="Files"
                       hint="Everything here is filed as one record."
                     >
-                      <FileDropZone
-                        onFiles={acceptFiles}
-                        fileCount={files.length}
-                        totalBytes={totalSize(files)}
-                        maxFiles={MAX_FILES}
-                        maxTotalBytes={MAX_TOTAL_BYTES}
-                        disabled={isPacking}
-                      />
+                      {/* -1 so the form can send someone to the drop zone
+                          without putting a wrapper in the tab order. */}
+                      <div
+                        ref={filesRef}
+                        tabIndex={-1}
+                        className={cn(
+                          "rounded-xl outline-none",
+                          missing?.key === "files" && GROUP_INVALID_CLASS,
+                        )}
+                      >
+                        <FileDropZone
+                          onFiles={acceptFiles}
+                          fileCount={files.length}
+                          totalBytes={totalSize(files)}
+                          maxFiles={MAX_FILES}
+                          maxTotalBytes={MAX_TOTAL_BYTES}
+                          disabled={isPacking}
+                        />
+                      </div>
 
                       {files.length > 0 && (
                         <ul className="max-h-[26rem] space-y-1.5 overflow-y-auto">
@@ -837,22 +923,31 @@ export const UploadRecordModal: React.FC = () => {
 
               {/* Matching island at the other end. A floating header over a
                   welded footer reads as two different surfaces. */}
-              <footer className="pointer-events-none absolute inset-x-3 bottom-3 z-10 md:inset-x-6 md:bottom-4">
-                <div className="glass pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
-                  <p className="hidden text-xs text-ink-subtle sm:block">
-                    Filing keeps running in the corner — you can carry on
-                    browsing.
-                  </p>
-                  <div className="flex flex-1 justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={close}>
-                      Cancel
-                    </Button>
-                    <Button ref={submitRef} type="submit" disabled={!canSubmit}>
-                      {isPacking && (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      )}
-                      {isPacking ? "Packaging…" : "File record"}
-                    </Button>
+              <footer className="pointer-events-none absolute inset-x-0 bottom-3 z-10 md:bottom-4">
+                <div className={wellFor("wide")}>
+                  <div className="glass pointer-events-auto flex items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
+                    <p className="hidden text-xs text-ink-subtle sm:block">
+                      Filing keeps running in the corner — you can carry on
+                      browsing.
+                    </p>
+                    <div className="flex flex-1 justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={close}>
+                        Cancel
+                      </Button>
+                      {/* Disabled only for what a click cannot fix: work
+                          already in flight, or no wallet to file with. An
+                          empty box is what the click is for. */}
+                      <Button
+                        ref={submitRef}
+                        type="submit"
+                        disabled={isRunning || isPacking || !walletAddress}
+                      >
+                        {isPacking && (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        )}
+                        {isPacking ? "Packaging…" : "File record"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </footer>

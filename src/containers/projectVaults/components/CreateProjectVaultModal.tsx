@@ -1,3 +1,4 @@
+import { wellFor } from "@/shared/components/PageContainer";
 import { Button } from "@/components/ui/button";
 import { vaultDetailSelectors } from "@/containers/vaultDetail/selectors";
 import { cn } from "@/lib/utils";
@@ -5,6 +6,9 @@ import { FilterChip } from "@/shared/components/FilterChip";
 import {
   FIELD_CLASS,
   FieldGroup,
+  FormNote,
+  GROUP_INVALID_CLASS,
+  invalidIf,
   LABEL_CLASS,
 } from "@/shared/components/FormField";
 import { VaultImage } from "@/shared/components/VaultImage";
@@ -17,10 +21,16 @@ import {
   StreamCategoryCode,
   toSectionSlug,
 } from "@/shared/constants/streams";
+import {
+  firstProblem,
+  revealProblem,
+  type FormProblem,
+  type RaisedProblem,
+} from "@/shared/utils/formProblems";
 import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AlertCircle, ImagePlus, Plus, X } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { homeImageCid } from "../image";
 import { NV_LABEL_MAX_LENGTH, sanitizeNestedLabel } from "../naming";
@@ -69,6 +79,11 @@ export const CreateProjectVaultModal: React.FC = () => {
   const [photo, setPhoto] = useState<File | null>(null);
   const [useHomePhoto, setUseHomePhoto] = useState(true);
   const [photoError, setPhotoError] = useState("");
+  const [problem, setProblem] = useState<RaisedProblem | null>(null);
+  const labelRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const sectionsRef = useRef<HTMLDivElement>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
 
   const homeHasPhoto = !!(home && homeImageCid(home));
   const homeAddress = home ? (parseHomeFacts(home)?.address ?? home.name) : "";
@@ -82,6 +97,7 @@ export const CreateProjectVaultModal: React.FC = () => {
     setSectionDraft("");
     setPhoto(null);
     setPhotoError("");
+    setProblem(null);
   }, [isOpen]);
 
   // A home without a photo has nothing to hand down, so the choice is made.
@@ -160,18 +176,46 @@ export const CreateProjectVaultModal: React.FC = () => {
   const cleanLabel = sanitizeNestedLabel(label);
   const hasPhoto = useHomePhoto ? homeHasPhoto : photo !== null;
   const isCreating = creation?.status === "running";
-  const canSubmit =
-    !!parentVaultId &&
-    cleanLabel.length > 0 &&
-    description.trim().length > 0 &&
-    sections.length + customSections.length > 0 &&
-    hasPhoto &&
-    !isCreating;
+  // In the order the form is read, so filling them in walks down the page.
+  const rules: FormProblem[] = [
+    {
+      key: "label",
+      unmet: cleanLabel.length === 0,
+      message: "Name the job first — that is what the project is called.",
+      field: labelRef,
+    },
+    {
+      key: "description",
+      unmet: description.trim().length === 0,
+      message: "Say what the job covers.",
+      field: descriptionRef,
+    },
+    {
+      key: "sections",
+      unmet: sections.length + customSections.length === 0,
+      message: "A project needs at least one section.",
+      field: sectionsRef,
+    },
+    {
+      key: "cover",
+      unmet: !hasPhoto,
+      message: "Choose a cover photo — this home has none to hand down.",
+      field: coverRef,
+    },
+  ];
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canSubmit || !parentVaultId) return;
+    if (!parentVaultId || isCreating) return;
 
+    const found = firstProblem(rules);
+    if (found) {
+      setProblem({ key: found.key, message: found.message });
+      revealProblem(found);
+      return;
+    }
+
+    setProblem(null);
     dispatch(
       projectVaultsActions.createProject({
         parentVaultId,
@@ -212,27 +256,29 @@ export const CreateProjectVaultModal: React.FC = () => {
             aria-label="Start a project"
             className="relative flex h-full flex-col"
           >
-            <header className="pointer-events-none absolute inset-x-3 top-3 z-10 md:inset-x-6 md:top-4">
-              <div className="glass pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
-                <div className="min-w-0">
-                  <h2 className="text-base font-medium tracking-tight text-ink">
-                    Start a project
-                  </h2>
-                  <p className="truncate text-xs text-ink-muted">
-                    {homeAddress
-                      ? `A project of ${homeAddress}`
-                      : "Under this home"}
-                  </p>
+            <header className="pointer-events-none absolute inset-x-0 top-3 z-10 md:top-4">
+              <div className={wellFor("wide")}>
+                <div className="glass pointer-events-auto flex items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
+                  <div className="min-w-0">
+                    <h2 className="text-base font-medium tracking-tight text-ink">
+                      Start a project
+                    </h2>
+                    <p className="truncate text-xs text-ink-muted">
+                      {homeAddress
+                        ? `A project of ${homeAddress}`
+                        : "Under this home"}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={close}
+                    aria-label="Close"
+                  >
+                    <X aria-hidden />
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={close}
-                  aria-label="Close"
-                >
-                  <X aria-hidden />
-                </Button>
               </div>
             </header>
 
@@ -241,7 +287,9 @@ export const CreateProjectVaultModal: React.FC = () => {
               className="flex min-h-0 flex-1 flex-col"
             >
               <div className="min-h-0 flex-1 overflow-y-auto">
-                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-12 gap-y-10 px-5 pb-28 pt-[6.5rem] sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+                <div
+                  className={`${wellFor("wide")} grid grid-cols-1 gap-x-12 gap-y-10 pb-28 pt-[6.5rem] lg:grid-cols-[minmax(0,1fr)_380px]`}
+                >
                   <div className="space-y-10">
                     <FieldGroup
                       title="What the job is"
@@ -253,12 +301,16 @@ export const CreateProjectVaultModal: React.FC = () => {
                         </label>
                         <input
                           id="project-name"
+                          ref={labelRef}
                           value={label}
-                          onChange={(event) => setLabel(event.target.value)}
+                          onChange={(event) => {
+                            setLabel(event.target.value);
+                            setProblem(null);
+                          }}
                           maxLength={NV_LABEL_MAX_LENGTH}
                           placeholder="e.g. Kitchen Remodel – 2024"
                           autoFocus
-                          className={FIELD_CLASS}
+                          {...invalidIf(problem?.key === "label", FIELD_CLASS)}
                         />
                         <p className="text-xs text-ink-subtle">
                           How you would say it out loud — the job and the year.
@@ -274,13 +326,18 @@ export const CreateProjectVaultModal: React.FC = () => {
                         </label>
                         <textarea
                           id="project-description"
+                          ref={descriptionRef}
                           value={description}
-                          onChange={(event) =>
-                            setDescription(event.target.value)
-                          }
+                          onChange={(event) => {
+                            setDescription(event.target.value);
+                            setProblem(null);
+                          }}
                           rows={3}
                           placeholder="Who is doing the work, what it covers, when it started."
-                          className={cn(FIELD_CLASS, "resize-none")}
+                          {...invalidIf(
+                            problem?.key === "description",
+                            cn(FIELD_CLASS, "resize-none"),
+                          )}
                         />
                       </div>
                     </FieldGroup>
@@ -290,9 +347,14 @@ export const CreateProjectVaultModal: React.FC = () => {
                       hint="The same sections the home has. Tick the ones this job will produce paperwork for."
                     >
                       <div
+                        ref={sectionsRef}
+                        tabIndex={-1}
                         role="group"
                         aria-label="Sections the project will have"
-                        className="flex flex-wrap gap-1.5"
+                        className={cn(
+                          "flex flex-wrap gap-1.5 rounded-lg outline-none",
+                          problem?.key === "sections" && GROUP_INVALID_CLASS,
+                        )}
                       >
                         {ALL_STREAM_CODES.map((code) => {
                           const category = STREAM_CATEGORIES[code];
@@ -399,9 +461,14 @@ export const CreateProjectVaultModal: React.FC = () => {
                       hint="What the project's card shows. The home's own photo, unless a picture of the work says it better."
                     >
                       <div
+                        ref={coverRef}
+                        tabIndex={-1}
                         role="radiogroup"
                         aria-label="Cover photo"
-                        className="space-y-2"
+                        className={cn(
+                          "space-y-2 rounded-lg outline-none",
+                          problem?.key === "cover" && GROUP_INVALID_CLASS,
+                        )}
                       >
                         <label
                           className={cn(
@@ -510,19 +577,23 @@ export const CreateProjectVaultModal: React.FC = () => {
                 </div>
               </div>
 
-              <footer className="pointer-events-none absolute inset-x-3 bottom-3 z-10 md:inset-x-6 md:bottom-4">
-                <div className="glass pointer-events-auto mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
-                  <p className="hidden text-xs text-ink-subtle sm:block">
-                    Setting up takes a minute or two — it runs in the grid while
-                    you carry on.
-                  </p>
-                  <div className="flex flex-1 justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={close}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={!canSubmit}>
-                      Start project
-                    </Button>
+              <footer className="pointer-events-none absolute inset-x-0 bottom-3 z-10 md:bottom-4">
+                <div className={wellFor("wide")}>
+                  <div className="glass pointer-events-auto flex items-center justify-between gap-4 rounded-full py-2.5 pl-6 pr-2.5">
+                    <FormNote problem={problem?.message}>
+                      Setting up takes a minute or two — it runs in the grid
+                      while you carry on.
+                    </FormNote>
+                    <div className="flex flex-1 justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={close}>
+                        Cancel
+                      </Button>
+                      {/* Disabled only while a run is in flight. Not being
+                          filled in yet is what the click is for. */}
+                      <Button type="submit" disabled={isCreating}>
+                        Start project
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </footer>
