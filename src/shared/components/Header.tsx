@@ -1,5 +1,5 @@
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
-import { measureFor } from "@/shared/components/PageContainer";
+import { wellFor } from "@/shared/components/PageContainer";
 import { motion, useReducedMotion } from "framer-motion";
 import { Home, Layers } from "lucide-react";
 import React from "react";
@@ -119,37 +119,36 @@ export const Header = () => {
 
   return (
     <>
-      <div className="fixed inset-x-3 top-3 z-50 md:inset-x-6 md:top-4">
-        {/* The same measure as the page under it, taken from the one place
-            that owns widths. It was capped a size narrower, which put the
-            island's edges inside the content's on any wide screen — the
-            structure column started to its left and the cards ran out past its
-            right, so the floating layer read as misaligned rather than as
-            floating. */}
-        <div
-          className={`glass mx-auto flex h-14 items-center gap-2 rounded-full pl-5 pr-2.5 ${measureFor("wide")}`}
-        >
-          <Link
-            to={appRoutes.dashboard.path}
-            className="flex-shrink-0 text-base font-medium tracking-tight text-ink transition-opacity hover:opacity-70"
-          >
-            Home Record
-          </Link>
+      {/* The island sits in the page's own well — same measure and same gutter
+          — so its ends land exactly where the content's do. Capped at the
+          measure alone it was 16px wider on each side, and a size narrower than
+          the page on top of that, which is what had the structure column
+          starting to its left and the cards running out past its right. */}
+      <div className="fixed inset-x-0 top-3 z-50 md:top-4">
+        <div className={wellFor("wide")}>
+          <div className="glass flex h-14 items-center gap-2 rounded-full pl-5 pr-2.5">
+            <Link
+              to={appRoutes.dashboard.path}
+              className="flex-shrink-0 text-base font-medium tracking-tight text-ink transition-opacity hover:opacity-70"
+            >
+              Home Record
+            </Link>
 
-          {/* Routes ride in the island on desktop and in the thumb-reach pill
+            {/* Routes ride in the island on desktop and in the thumb-reach pill
               below on mobile, where the island has room for identity only. */}
-          <nav aria-label="Primary" className="ml-2 hidden md:block">
-            <NavItems layoutId="nav-pill-island" />
-          </nav>
+            <nav aria-label="Primary" className="ml-2 hidden md:block">
+              <NavItems layoutId="nav-pill-island" />
+            </nav>
 
-          <div className="ml-auto flex-shrink-0">
-            {isAuthenticated ? (
-              <ProfileMenu />
-            ) : (
-              <span className="hidden pr-2 text-sm text-ink-subtle sm:inline">
-                Verified home records
-              </span>
-            )}
+            <div className="ml-auto flex-shrink-0">
+              {isAuthenticated ? (
+                <ProfileMenu />
+              ) : (
+                <span className="hidden pr-2 text-sm text-ink-subtle sm:inline">
+                  Verified home records
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

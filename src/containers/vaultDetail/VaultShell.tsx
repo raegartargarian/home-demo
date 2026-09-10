@@ -6,6 +6,7 @@ import { uploadTargetFor } from "@/containers/upload/target";
 import { Chip } from "@/shared/components/Chip";
 import {
   measureFor,
+  wellFor,
   type PageMeasure,
 } from "@/shared/components/PageContainer";
 import { PropertyHero } from "@/shared/components/PropertyHero";
@@ -109,7 +110,7 @@ const VaultShell = () => {
   // projects themselves: with nothing nested to show, a tree of one home and
   // its five sections is chrome that earns nothing.
   const showStructure = PROJECT_VAULTS_ENABLED;
-  const wellClass = `mx-auto w-full px-4 ${measureFor(measure)}`;
+  const wellClass = wellFor(measure);
   const gridClass = cn(
     showStructure &&
       "md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-8",

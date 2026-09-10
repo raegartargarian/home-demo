@@ -42,6 +42,20 @@ const MEASURE: Record<PageMeasure, string> = {
 export const measureFor = (measure: PageMeasure): string => MEASURE[measure];
 
 /**
+ * The whole well: the measure *and* the page gutter.
+ *
+ * Chrome that floats over a page has to line up with the page, and lining up
+ * means sharing an edge rather than a maximum. `measureFor` alone gives the
+ * cap; the content inside it is then indented by `px-4`, so a floating bar
+ * capped at the same measure sits 16px wider on each side — which is what had
+ * the header island's ends hanging past the cards underneath it.
+ *
+ * Anything that wants to agree with page content takes this.
+ */
+export const wellFor = (measure: PageMeasure): string =>
+  `mx-auto w-full px-4 ${MEASURE[measure]}`;
+
+/**
  * The rhythm of a landing-page band, as a class string.
  *
  * Exported for the same reason `measureFor` is: a band that runs full-bleed
