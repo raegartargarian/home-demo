@@ -73,9 +73,10 @@ const withFreshFiles = (
   });
 };
 
+/** Project first, because it is what the section now opens on. */
 const GROUPINGS: { value: StreamGrouping; label: string }[] = [
-  { value: "date", label: "By date" },
   { value: "project", label: "By project" },
+  { value: "date", label: "By date" },
 ];
 
 const StreamDetail = () => {
@@ -231,11 +232,15 @@ const StreamDetail = () => {
   const [filter, setFilter] = useRecordFilter();
   const filtering = isFilterActive(filter);
 
-  // Time, or the job the work belonged to. Time is the default because it is
-  // what a person remembers about a single document; a project is what they
-  // remember about a whole piece of work, and its paperwork is otherwise
-  // scattered down as many headings as the work took months.
-  const [grouping, setGrouping] = useState<StreamGrouping>("date");
+  // The job the work belonged to, or time. The job leads: a person looking for
+  // one document remembers when it happened, but a person opening a section is
+  // usually after a whole piece of work, and by date its paperwork is scattered
+  // down as many headings as the work took months.
+  //
+  // Held as "not chosen yet" rather than as a default value, because whether
+  // the job even *can* lead depends on data that arrives after the first
+  // render. Once someone picks, their pick stands whatever loads next.
+  const [chosen, setChosen] = useState<StreamGrouping | null>(null);
   const reduceMotion = useReducedMotion();
 
   const visible = useMemo(
@@ -260,6 +265,10 @@ const StreamDetail = () => {
   // heading that says "3 files" over a section still loading page two is a
   // count the next page disproves — worse than a date heading getting longer,
   // because the reader takes it as the whole job.
+  // One project — or none — is one heading over everything, so date leads
+  // there: the switch is not even drawn.
+  const grouping: StreamGrouping = chosen ?? (hasProjects ? "project" : "date");
+
   const pendingPins = useMemo(() => awaitingPins(attachments), [attachments]);
 
   useEffect(() => {
@@ -336,7 +345,7 @@ const StreamDetail = () => {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setGrouping(option.value)}
+                    onClick={() => setChosen(option.value)}
                     aria-pressed={isActive}
                     className={cn(
                       "relative rounded-full px-3 py-1 text-xs font-medium transition-colors",
