@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
+import {
+  VAULT_CARD_HEIGHT,
+  VAULT_CARD_MIN_HEIGHT,
+  VAULT_GRID_CLASS,
+} from "@/shared/components/VaultCard";
 import { VaultDto } from "@/shared/types/vault";
 import { RootState } from "@/store/types";
 import { AlertCircle, Plus } from "lucide-react";
@@ -10,8 +15,6 @@ import { projectVaultsSelectors } from "../selectors";
 import { projectVaultsActions } from "../slice";
 import { ProjectCreationCard } from "./ProjectCreationCard";
 import { ProjectVaultCard } from "./ProjectVaultCard";
-
-const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4";
 
 /**
  * The home's projects, under its five sections.
@@ -54,7 +57,7 @@ export const ProjectsSection: React.FC<{ home: VaultDto }> = ({ home }) => {
       type="button"
       onClick={openCreate}
       disabled={isCreating}
-      className="flex min-h-[14rem] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-surface-sunken p-4 text-sm font-medium text-ink-muted transition-colors hover:border-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+      className={`${VAULT_CARD_MIN_HEIGHT} flex h-full w-full max-w-[400px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-surface-sunken p-4 text-sm font-medium text-ink-muted transition-colors hover:border-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`}
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface-raised">
         <Plus className="h-4 w-4" aria-hidden />
@@ -79,11 +82,11 @@ export const ProjectsSection: React.FC<{ home: VaultDto }> = ({ home }) => {
       </div>
 
       {isLoading && !hasLoaded ? (
-        <div className={GRID_CLASS}>
+        <div className={VAULT_GRID_CLASS}>
           {Array.from({ length: 2 }).map((_, i) => (
             <Skeleton
               key={i}
-              className="h-56 w-full rounded-xl bg-surface-inset"
+              className={`${VAULT_CARD_HEIGHT} w-full max-w-[400px] rounded-xl bg-surface-inset`}
             />
           ))}
         </div>
@@ -111,7 +114,7 @@ export const ProjectsSection: React.FC<{ home: VaultDto }> = ({ home }) => {
               paperwork there as it arrives.
             </p>
           )}
-          <div className={GRID_CLASS}>
+          <div className={VAULT_GRID_CLASS}>
             {creationHere && <ProjectCreationCard creation={creationHere} />}
             {projects.map((project) => (
               <ProjectVaultCard key={project.id} project={project} />

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { VAULT_CARD_MIN_HEIGHT } from "@/shared/components/VaultCard";
 import { vaultDetailPath } from "@/shared/constants/routes";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import React from "react";
@@ -30,7 +31,7 @@ export const ProjectCreationCard: React.FC<{ creation: ProjectCreation }> = ({
     <div
       role="status"
       aria-live="polite"
-      className="flex h-full min-h-[14rem] flex-col justify-between rounded-xl border border-line bg-surface-raised p-4"
+      className={`${VAULT_CARD_MIN_HEIGHT} flex h-full w-full max-w-[400px] flex-col justify-between gap-4 rounded-xl border border-line bg-surface-raised p-4`}
     >
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-inset text-ink-muted">

@@ -13,9 +13,10 @@ import { vaultsActions } from "./slice";
 import { PageContainer } from "@/shared/components/PageContainer";
 import { PageHeader } from "@/shared/components/PageHeader";
 import {
-  BROWSE_ALL_HOMES,
-  vaultDetailPath,
-} from "@/shared/constants/routes";
+  VAULT_CARD_HEIGHT,
+  VAULT_GRID_CLASS,
+} from "@/shared/components/VaultCard";
+import { BROWSE_ALL_HOMES, vaultDetailPath } from "@/shared/constants/routes";
 
 const Vaults = () => {
   const dispatch = useDispatch();
@@ -86,17 +87,17 @@ const Vaults = () => {
 
         {/* Home Grid */}
         {isFirstLoading ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
+          <div className={VAULT_GRID_CLASS}>
             {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton
-                className="h-[300px] w-full max-w-[400px] rounded-xl bg-surface-inset"
+                className={`${VAULT_CARD_HEIGHT} w-full max-w-[400px] rounded-xl bg-surface-inset`}
                 key={index}
               />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
+            <div className={VAULT_GRID_CLASS}>
               {vaults.map((vault) => (
                 <div key={vault.id}>
                   <VaultItem vault={vault} />
