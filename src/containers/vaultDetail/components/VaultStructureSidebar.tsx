@@ -247,7 +247,7 @@ export const VaultStructureSidebar: React.FC<VaultStructureSidebarProps> = ({
       {/* Docked. Not glass: it sits *in* the page, so it is a surface with a
           hairline, which is what the rest of the app's structure uses.
           `self-start` is load-bearing — a stretched grid item cannot stick. */}
-      <aside className="sticky top-20 mt-8 hidden max-h-[calc(100svh-7rem)] flex-col self-start overflow-hidden rounded-xl border border-line bg-surface-raised md:flex">
+      <aside className="pane sticky top-20 mt-8 hidden max-h-[calc(100svh-7rem)] flex-col self-start overflow-hidden rounded-xl md:flex">
         <p className="shrink-0 border-b border-line px-3 py-2.5 text-xs text-ink-subtle">
           Structure
         </p>

@@ -374,22 +374,31 @@
 // brightness pass, a *semi-transparent* tint, a hairline plus top-edge
 // highlight, and a wide soft shadow so the bar hovers rather than sits.
 //
-// THE BRIGHTNESS PASS is what lets the tint stay thin. The tint has one job —
+// THE CONTRAST PASS is what lets the tint stay thin. The tint has one job —
 // hold `text-ink` legible whatever is behind it — and the only way a white veil
 // alone can do that over a dusk film is by being thick enough to erase it,
 // which is how a material meant to read as glass ends up reading as frosted
-// plastic. Lifting the backdrop instead keeps its picture and its colour and
-// merely raises its floor, so the veil can drop from 0.72 to 0.55 and the film
-// still shows through the header.
+// plastic. Pulling the backdrop toward mid-grey does the same job while keeping
+// its picture, so the veil can drop from 0.72 to 0.5 and the film still shows
+// through the header.
 //
-// It costs nothing on the warm ground, which is the part worth knowing: at
-// #F7F5F2 the lift clips to white and the result lands within two levels of
-// what the thick veil produced. So one material serves both, and it is the
-// dark backdrops that change. Contrast over the film goes from about 8:1 to
-// about 5.5:1 — still past AA, and now with a picture behind it.
+// Contrast rather than brightness, and the modal is what settles it. A
+// brightness lift solves the film and ruins everything else: on the warm ground
+// it clips to white, so the form scrolling under the footer bar is washed away
+// and the bar reads as a plain white strip — no glass at all, which is exactly
+// the complaint. Contrast works in both directions at once. It lifts what is
+// too dark and lowers what is too light, so the film shows through the header
+// *and* the paragraph passing under the footer stays as a soft grey ghost.
 //
-// Dark mode lifts nothing; it *lowers*, because there the danger is a bright
-// backdrop under near-white text.
+// How far to pull is set by the flat case, not the film. At a gentler setting
+// the surface over `--surface-sunken` landed ten levels off it — technically
+// translucent, and invisible. Pulled to 0.45 it sits around #D9D9D9 on that
+// ground, which reads as a pane resting on the page, while a pure black
+// backdrop still lands near #A2A2A2, about 5.7:1 under `text-ink` and past AA.
+//
+// No brightness lift in light mode: it undoes the pull on exactly the flat
+// grounds that need it. Dark mode mirrors the whole thing with brightness below
+// 1, because there the danger is a bright backdrop under near-white text.
 //
 // WHERE IT GOES: only on surfaces that float *over* page content — the header
 // island, the mobile nav pill, menus, the upload tray. That is the whole rule.
@@ -399,8 +408,22 @@
 // WHERE IT DOES NOT: anything that sits *in* the page. Section cards, page
 // headers, list rows, the upload form. Blur behind content that is not moving
 // buys nothing, translucency over arbitrary page content hurts contrast, and
-// once everything is glass the floating layer stops reading as one. Those use
-// `bg-surface-raised` with a `border-line` hairline.
+// once everything is glass the floating layer stops reading as one. Those get
+// `.pane` below, which is the same family at rest.
+//
+// THE SECOND TIER, and why it is not a thinner glass. The obvious way to relate
+// the two would be to give cards the same translucency at a lower dose. It does
+// nothing: the page ground is #F7F5F2 and a card is #FFFFFF, eight levels
+// apart, so a card at 72% white over it lands within two levels of the opaque
+// one. Rendered side by side the two are indistinguishable. Blur has even less
+// to work with, since nothing moves behind a card.
+//
+// What the two tiers can share is depth. Glass hovers on a wide soft shadow;
+// `.pane` takes the same shadow at about half the weight, so a card reads as a
+// surface resting on the ground rather than as a rectangle drawn on it, and the
+// floating layer above it is still unmistakably higher. The lit top edge comes
+// with it and pays off in dark mode, where a white hairline against #242320 is
+// finally something you can see.
 //
 // RADIUS: three sizes and a pill, everywhere.
 //   rounded-lg  (12px) — elements inside a surface: icon tiles, inputs, file
@@ -415,10 +438,14 @@
 @layer components {
   .glass {
     // More blur than the veil used to need: with the backdrop showing through,
-    // it is the blur that keeps it from being busy behind text.
-    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.35);
-    backdrop-filter: blur(24px) saturate(180%) brightness(1.35);
-    background: rgb(255 255 255 / 0.55);
+    // it is the blur that keeps it from being busy behind text. Less saturation
+    // than it used to have, for the same reason — 180% was compensating for a
+    // thick veil washing the colour out, and over a lawn it drove the whole
+    // pill green. The small brightness lift is a thumb on the scale for dark
+    // backdrops, which are the harder half.
+    -webkit-backdrop-filter: blur(24px) saturate(140%) contrast(0.45);
+    backdrop-filter: blur(24px) saturate(140%) contrast(0.45);
+    background: rgb(255 255 255 / 0.5);
     border: 1px solid rgb(255 255 255 / 0.5);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.6),
@@ -427,14 +454,33 @@
   }
 
   .dark .glass {
-    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(0.7);
-    backdrop-filter: blur(24px) saturate(180%) brightness(0.7);
-    background: rgb(36 35 31 / 0.55);
+    -webkit-backdrop-filter: blur(24px) saturate(140%) contrast(0.45)
+      brightness(0.9);
+    backdrop-filter: blur(24px) saturate(140%) contrast(0.45) brightness(0.9);
+    background: rgb(36 35 31 / 0.5);
     border-color: rgb(255 255 255 / 0.08);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.06),
       0 1px 2px rgb(0 0 0 / 0.3),
       0 8px 32px rgb(0 0 0 / 0.45);
+  }
+
+  // The second tier: surfaces at rest. Same family, no backdrop work — see the
+  // note above for why a thinner glass would have been invisible here.
+  .pane {
+    background: rgb(var(--surface-raised));
+    border: 1px solid rgb(var(--line));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.6),
+      0 1px 2px rgb(0 0 0 / 0.03),
+      0 6px 20px rgb(0 0 0 / 0.05);
+  }
+
+  .dark .pane {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.04),
+      0 1px 2px rgb(0 0 0 / 0.25),
+      0 6px 20px rgb(0 0 0 / 0.35);
   }
 
   // Without blur support there is no brightness pass either, so the veil has to

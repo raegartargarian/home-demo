@@ -64,7 +64,7 @@ export const VaultCard: React.FC<VaultCardProps> = ({
       type="button"
       onClick={onOpen}
       aria-label={`Open ${name}`}
-      className="group flex h-full w-full min-w-[280px] max-w-[400px] cursor-pointer flex-col overflow-hidden rounded-xl border border-line bg-surface-raised text-left transition-colors duration-200 hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="pane group flex h-full w-full min-w-[280px] max-w-[400px] cursor-pointer flex-col overflow-hidden rounded-xl text-left transition-colors duration-200 hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="relative flex aspect-[3/2] items-center justify-center overflow-hidden bg-surface-inset">
         <VaultImage

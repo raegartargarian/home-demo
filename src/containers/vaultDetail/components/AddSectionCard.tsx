@@ -7,8 +7,7 @@ import { vaultDetailSelectors } from "../selectors";
 import { vaultDetailActions } from "../slice";
 
 /** Shaped like a section card, so the grid keeps its rhythm either way. */
-const CARD_CLASS =
-  "flex min-h-[14rem] w-full flex-col rounded-xl border border-line bg-surface-raised p-4";
+const CARD_CLASS = "pane flex min-h-[14rem] w-full flex-col rounded-xl p-4";
 
 /**
  * The end of the sections grid: a section being added, or the offer to add one.
