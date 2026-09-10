@@ -18,6 +18,8 @@ import {
   vaultDetailPath,
 } from "@/shared/constants/routes";
 import { PROJECT_VAULTS_ENABLED } from "@/shared/constants/projectVaults";
+import { projectVaultsSelectors } from "@/containers/projectVaults/selectors";
+import { projectVaultsActions } from "@/containers/projectVaults/slice";
 import { cn } from "@/lib/utils";
 import { generateVaultProofPdf } from "./components/generateVaultProofPdf";
 import {
@@ -40,6 +42,7 @@ import {
   Download,
   ExternalLink,
   FolderKanban,
+  FolderPlus,
   Layers,
   Loader2,
   Plus,
@@ -78,6 +81,7 @@ const VaultShell = () => {
   const ancestors = useSelector(vaultDetailSelectors.ancestors);
   const isLoading = useSelector(vaultDetailSelectors.isLoading);
   const isFiling = useSelector(uploadSelectors.isFiling);
+  const projectCreation = useSelector(projectVaultsSelectors.creation);
   const { isAuthenticated } = useWeb3Auth() || {};
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isStructureOpen, setIsStructureOpen] = useState(false);
@@ -201,6 +205,18 @@ const VaultShell = () => {
     return { vaultId: vault.id, ledger: vault.ledger || "" };
   }, [isAuthenticated, vault, stream]);
 
+  // Starting a project belongs to the home, and only on the home's own page:
+  // under an open section it would mean something else, and under a project it
+  // would nest a job inside a job. The same conditions the Projects block puts
+  // on its own card — this is the second way into that one modal, put where
+  // the page's other action already is rather than at the foot of the grid.
+  const canStartProject =
+    PROJECT_VAULTS_ENABLED &&
+    isAuthenticated &&
+    !stream &&
+    ancestors.length === 0;
+  const isCreatingProject = projectCreation?.status === "running";
+
   const handleDownloadProof = async () => {
     if (!vault || isGeneratingPdf) return;
     setIsGeneratingPdf(true);
@@ -322,17 +338,34 @@ const VaultShell = () => {
                 : []),
             ]}
             actions={
-              uploadTarget && (
-                <Button
-                  size="sm"
-                  disabled={isFiling}
-                  onClick={() =>
-                    dispatch(uploadActions.openUpload(uploadTarget))
-                  }
-                >
-                  <Plus />
-                  Add record
-                </Button>
+              (canStartProject || uploadTarget) && (
+                <>
+                  {canStartProject && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isCreatingProject}
+                      onClick={() =>
+                        dispatch(projectVaultsActions.openCreateModal(vault.id))
+                      }
+                    >
+                      <FolderPlus />
+                      New project
+                    </Button>
+                  )}
+                  {uploadTarget && (
+                    <Button
+                      size="sm"
+                      disabled={isFiling}
+                      onClick={() =>
+                        dispatch(uploadActions.openUpload(uploadTarget))
+                      }
+                    >
+                      <Plus />
+                      Add record
+                    </Button>
+                  )}
+                </>
               )
             }
             detailActions={
