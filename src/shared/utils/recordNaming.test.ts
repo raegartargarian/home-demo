@@ -53,7 +53,7 @@ describe("parseRecordDate", () => {
 
 describe("sanitizeSegment", () => {
   it("strips characters that are illegal in filenames", () => {
-    expect(sanitizeSegment('HVAC: repair/service?')).toBe("HVAC repairservice");
+    expect(sanitizeSegment("HVAC: repair/service?")).toBe("HVAC repairservice");
   });
 
   it("collapses the spaced hyphen that would break parsing", () => {
@@ -74,7 +74,7 @@ describe("buildRecordName", () => {
         reason: "New Carpeting",
         docName: "HOME DEPOT carpeting",
         extension: "pdf",
-      })
+      }),
     ).toBe("10-07-25 - Receipt - New Carpeting - HOME DEPOT carpeting.pdf");
   });
 
@@ -85,7 +85,7 @@ describe("buildRecordName", () => {
         type: "Permit",
         reason: "Roof Replacement",
         docName: "City of Austin permit",
-      })
+      }),
     ).toBe("03-14-26 - Permit - Roof Replacement - City of Austin permit");
   });
 });
@@ -116,25 +116,42 @@ describe("parseRecordName", () => {
 
   it("returns null for an unrecognised document type", () => {
     expect(
-      parseRecordName("10-07-25 - Thingummy - New Carpeting - receipt.pdf")
+      parseRecordName("10-07-25 - Thingummy - New Carpeting - receipt.pdf"),
     ).toBeNull();
   });
 
   it("assigns surplus separators to the document name", () => {
     const parsed = parseRecordName(
-      "10-07-25 - Receipt - New Carpeting - HOME DEPOT - order 44.pdf"
+      "10-07-25 - Receipt - New Carpeting - HOME DEPOT - order 44.pdf",
     );
     expect(parsed?.docName).toBe("HOME DEPOT - order 44");
   });
 
   it("handles a name with no extension", () => {
-    expect(parseRecordName("10-07-25 - Deed - Purchase - Warranty deed")).toEqual({
+    expect(
+      parseRecordName("10-07-25 - Deed - Purchase - Warranty deed"),
+    ).toEqual({
       date: new Date(2025, 9, 7),
       type: "Deed",
       reason: "Purchase",
       docName: "Warranty deed",
       extension: undefined,
     });
+  });
+});
+
+describe("isMeaningfulFilename", () => {
+  it("keeps a name a person would recognise", () => {
+    expect(isMeaningfulFilename("Summit Roofing invoice.pdf")).toBe(true);
+    expect(isMeaningfulFilename("Invoice2026Q3.pdf")).toBe(true);
+  });
+
+  it("rejects a generated token even among real words", () => {
+    expect(
+      isMeaningfulFilename("content-credentials-pfau-43-CzJwG5YE.jpg"),
+    ).toBe(false);
+    expect(isMeaningfulFilename("689b37ee6ea3b020.pdf")).toBe(false);
+    expect(isMeaningfulFilename("photo-779842473-of-the-roof.jpg")).toBe(false);
   });
 });
 
@@ -189,14 +206,16 @@ describe("documentNameFrom", () => {
 describe("readableDocName", () => {
   it("drops the date and type a legacy double-named record repeats", () => {
     expect(
-      readableDocName("053125 Photo Garden Landscaping Fire pit detail at dusk"),
+      readableDocName(
+        "053125 Photo Garden Landscaping Fire pit detail at dusk",
+      ),
     ).toBe("Garden Landscaping Fire pit detail at dusk");
   });
 
   it("handles the hyphenated date the same way", () => {
-    expect(readableDocName("05-31-25 Photo Garden Landscaping Rear garden")).toBe(
-      "Garden Landscaping Rear garden",
-    );
+    expect(
+      readableDocName("05-31-25 Photo Garden Landscaping Rear garden"),
+    ).toBe("Garden Landscaping Rear garden");
   });
 
   it("leaves an ordinary document name alone", () => {

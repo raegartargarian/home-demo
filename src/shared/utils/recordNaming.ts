@@ -78,7 +78,14 @@ const DOC_TYPES_BY_SECTION: Record<StreamCategoryCode, RecordDocType[]> = {
   "home-profile": ["Plan", "Spec", "Certificate", "Survey"],
   "maintenance-upgrades": ["Estimate", "Invoice", "Receipt", "Report", "Photo"],
   "systems-warranties": ["Manual", "Warranty", "Spec", "Report"],
-  "property-records": ["Deed", "Permit", "Zoning", "HOA", "Compliance", "Survey"],
+  "property-records": [
+    "Deed",
+    "Permit",
+    "Zoning",
+    "HOA",
+    "Compliance",
+    "Survey",
+  ],
   "personal-vault": ["Policy", "Claim", "Statement", "Tax", "Mortgage"],
 };
 
@@ -90,9 +97,7 @@ const DOC_TYPES_BY_SECTION: Record<StreamCategoryCode, RecordDocType[]> = {
  * there is one place it can be removed from, and so it cannot drift out of
  * last position in one section.
  */
-export const docTypesForSection = (
-  code?: string
-): readonly RecordDocType[] => {
+export const docTypesForSection = (code?: string): readonly RecordDocType[] => {
   const own =
     code && code in DOC_TYPES_BY_SECTION
       ? DOC_TYPES_BY_SECTION[code as StreamCategoryCode]
@@ -239,13 +244,41 @@ export const readableDocName = (docName: string): string => {
  * call a document, so none of them are listed.
  */
 const DEVICE_TOKENS = new Set([
-  "img", "image", "images", "imgs",
-  "dsc", "dscn", "dcim", "pxl", "mvimg", "gopro", "burst",
-  "screenshot", "screenshots", "screen", "capture",
-  "scan", "scanned", "scanner",
-  "untitled", "unnamed", "download", "downloads", "downloaded",
-  "copy", "whatsapp", "messenger", "snapchat", "facebook",
-  "file", "doc", "docs", "attachment", "unknown", "temp", "tmp",
+  "img",
+  "image",
+  "images",
+  "imgs",
+  "dsc",
+  "dscn",
+  "dcim",
+  "pxl",
+  "mvimg",
+  "gopro",
+  "burst",
+  "screenshot",
+  "screenshots",
+  "screen",
+  "capture",
+  "scan",
+  "scanned",
+  "scanner",
+  "untitled",
+  "unnamed",
+  "download",
+  "downloads",
+  "downloaded",
+  "copy",
+  "whatsapp",
+  "messenger",
+  "snapchat",
+  "facebook",
+  "file",
+  "doc",
+  "docs",
+  "attachment",
+  "unknown",
+  "temp",
+  "tmp",
 ]);
 
 /**
@@ -259,17 +292,56 @@ const DEVICE_TOKENS = new Set([
  * empty for these and asks, rather than pre-filling nonsense that a hurried
  * person will accept.
  *
- * The test is simply whether any word survives: split on everything that is not
- * a letter, drop anything shorter than three characters (`n`, `of`, `v2`) and
- * anything a device would have put there. One real word is enough — "invoice"
- * is a perfectly good document name.
+ * Two tests, and both have to pass. A word has to survive: split on everything
+ * that is not a letter, drop anything shorter than three characters (`n`, `of`,
+ * `v2`) and anything a device would have put there. One real word is enough —
+ * "invoice" is a perfectly good document name. And no token may look generated,
+ * because a real word standing next to a random key does not redeem it. See
+ * `looksGenerated`.
  */
-export const isMeaningfulFilename = (filename: string): boolean =>
-  stripExtension(filename)
+const caseFlips = (token: string): number => {
+  let flips = 0;
+  let wasLower: boolean | null = null;
+  for (const character of token) {
+    if (!/[a-zA-Z]/.test(character)) continue;
+    const isLower = character === character.toLowerCase();
+    if (wasLower !== null && isLower !== wasLower) flips += 1;
+    wasLower = isLower;
+  }
+  return flips;
+};
+
+/**
+ * A token a machine chose: a hash, an id, or a random key.
+ *
+ * The word test below is not enough on its own, because plenty of generated
+ * names carry real words around the generated part —
+ * `content-credentials-pfau-43-CzJwG5YE` reads as meaningful to it and lands in
+ * the Document slot as `08-26-26 - Photo - Kitchen - content-credentials-pfau-
+ * 43-CzJwG5YE`, which is the complaint the convention exists to answer, filed
+ * neatly.
+ *
+ * Three shapes, each conservative:
+ *
+ *   a long hex run    a hash or a CID fragment, `689b37ee6ea3b020`
+ *   a long digit run  an id or a timestamp, `779842473`
+ *   a mixed key       `CzJwG5YE` — has a digit, and its letters change case
+ *                     three times or more, which written words do not do.
+ *                     `Invoice2026Q3` flips once and survives.
+ */
+const looksGenerated = (token: string): boolean =>
+  /^[0-9a-f]{12,}$/i.test(token) ||
+  /^\d{9,}$/.test(token) ||
+  (token.length >= 6 && /\d/.test(token) && caseFlips(token) >= 3);
+
+export const isMeaningfulFilename = (filename: string): boolean => {
+  const stem = stripExtension(filename);
+  if (stem.split(/[^a-zA-Z0-9]+/).some(looksGenerated)) return false;
+
+  return stem
     .split(/[^a-zA-Z]+/)
-    .some(
-      (word) => word.length >= 3 && !DEVICE_TOKENS.has(word.toLowerCase()),
-    );
+    .some((word) => word.length >= 3 && !DEVICE_TOKENS.has(word.toLowerCase()));
+};
 
 /**
  * What to put in a Document field for a file that was just picked.
