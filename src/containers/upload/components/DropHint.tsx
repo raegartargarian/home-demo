@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { EASE_OUT } from "@/shared/constants/motion";
 import React from "react";
 
 interface DropHintProps {
@@ -82,7 +83,12 @@ export const DropHint: React.FC<DropHintProps> = ({
                 : {
                     x: [page.x, page.x, page.x, page.x],
                     y: [-22, -22, 0, 0],
-                    rotate: [page.rotate - 10, page.rotate - 10, page.rotate, page.rotate],
+                    rotate: [
+                      page.rotate - 10,
+                      page.rotate - 10,
+                      page.rotate,
+                      page.rotate,
+                    ],
                     opacity: [0, 0, 1, 0],
                   }
             }
@@ -94,7 +100,7 @@ export const DropHint: React.FC<DropHintProps> = ({
                     times: [0, page.start, land, 1],
                     // Each page lands with the app's own settle curve; the rest
                     // of the cycle is it simply waiting to be cleared.
-                    ease: ["linear", [0.22, 1, 0.36, 1], "easeIn"],
+                    ease: ["linear", EASE_OUT, "easeIn"],
                   }
             }
           >
@@ -139,7 +145,13 @@ export const DropHint: React.FC<DropHintProps> = ({
             ? { duration: 0.25 }
             : {
                 ...loop,
-                times: [0, PAGES[0].start, PAGES[0].start + 0.16, CLEAR_FROM, 1],
+                times: [
+                  0,
+                  PAGES[0].start,
+                  PAGES[0].start + 0.16,
+                  CLEAR_FROM,
+                  1,
+                ],
               }
         }
       />

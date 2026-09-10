@@ -4,6 +4,7 @@ import { GlobalState } from "../containers/global/types";
 import { VaultDetailState } from "@/containers/vaultDetail/types";
 import { ServiceRecordState } from "@/containers/serviceRecord/types";
 import { UploadState } from "@/containers/upload/types";
+import { ProjectVaultsState } from "@/containers/projectVaults/types";
 
 export interface RootState {
   global: GlobalState;
@@ -12,4 +13,5 @@ export interface RootState {
   vaultDetail: VaultDetailState;
   serviceRecord: ServiceRecordState;
   upload: UploadState;
+  projectVaults: ProjectVaultsState;
 }

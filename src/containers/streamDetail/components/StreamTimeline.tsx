@@ -1,13 +1,18 @@
+import { cn } from "@/lib/utils";
 import FileShelf from "@/containers/vaultDetail/components/FileShelf";
 import { sectionTiles } from "@/containers/vaultDetail/components/sectionTiles";
 import { Attachment } from "@/containers/vaultDetail/types";
 import { LoadingIndicator } from "@/shared/components/LoadingIndicator";
 import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll";
-import { groupByPeriod } from "@/shared/utils/recordLens";
+import { groupByPeriod, groupByProject } from "@/shared/utils/recordLens";
 import React, { useMemo } from "react";
+
+/** Which axis the section is split along. */
+export type StreamGrouping = "date" | "project";
 
 interface StreamTimelineProps {
   records: Attachment[];
+  grouping: StreamGrouping;
   hasMore: boolean;
   isLoading: boolean;
   onLoadMore: () => void;
@@ -31,9 +36,17 @@ interface StreamTimelineProps {
  * row and tells the reader nothing. `groupByPeriod` reads the spread and picks
  * the granularity — years where there are years, months inside a single year,
  * days inside a single month.
+ *
+ * Time is the default, not the only axis. A section that has collected four
+ * years of work answers "when was the roof done" well and "show me the kitchen
+ * remodel" badly, because the remodel's estimate, invoice, photos and permit
+ * are scattered down four separate headings. Switching to `project` regroups
+ * the same files under the job that produced them — the shelves and the viewer
+ * are untouched, only the headings change.
  */
 export const StreamTimeline: React.FC<StreamTimelineProps> = ({
   records,
+  grouping,
   hasMore,
   isLoading,
   onLoadMore,
@@ -42,12 +55,15 @@ export const StreamTimeline: React.FC<StreamTimelineProps> = ({
   // it arrived in, so the year is settled before the files are unpacked.
   const periods = useMemo(
     () =>
-      groupByPeriod(records).map((group) => ({
+      (grouping === "project"
+        ? groupByProject(records)
+        : groupByPeriod(records)
+      ).map((group) => ({
         key: group.key,
         label: group.label,
         tiles: sectionTiles(group.records),
       })),
-    [records],
+    [records, grouping],
   );
 
   // The viewer pages through the whole section in reading order, which is the
@@ -63,7 +79,14 @@ export const StreamTimeline: React.FC<StreamTimelineProps> = ({
     <div>
       {periods.map(({ key, label, tiles }) => (
         <section key={key ?? "undated"} className="mb-6 last:mb-0">
-          <h3 className="sticky top-16 z-10 -mx-1 mb-3 bg-surface/90 px-1 py-2 text-sm font-medium tabular-nums text-ink-subtle backdrop-blur-sm">
+          <h3
+            className={cn(
+              "sticky top-16 z-10 -mx-1 mb-3 bg-surface/90 px-1 py-2 text-sm font-medium text-ink-subtle backdrop-blur-sm",
+              // Dates line up in a column; project names are prose and should
+              // not be forced into monospaced figures.
+              grouping === "date" && "tabular-nums",
+            )}
+          >
             {label}
             <span className="ml-2 text-ink-subtle/70">
               {tiles.length} file{tiles.length !== 1 ? "s" : ""}

@@ -1,6 +1,8 @@
 import { Chip } from "@/shared/components/Chip";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import HomeRecordVisualization from "@/shared/components/HomeRecordVisualization";
 import { formatFileSize } from "@/shared/utils/fileHelpers";
@@ -10,14 +12,16 @@ import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import {
   AlertCircle,
+  Archive,
   ExternalLink,
   FileText,
   HardDrive,
   Loader2,
   MapPin,
+  RotateCcw,
 } from "lucide-react";
 import { parseRoomTags } from "@/shared/utils/recordTags";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import FileViewer from "./components/FileViewer";
@@ -34,6 +38,23 @@ const ServiceRecord = () => {
   const isLoading = useSelector(serviceRecordSelectors.isLoading);
   const isProcessingZip = useSelector(serviceRecordSelectors.isProcessingZip);
   const error = useSelector(serviceRecordSelectors.error);
+  const isArchiving = useSelector(serviceRecordSelectors.isArchiving);
+  const archiveError = useSelector(serviceRecordSelectors.archiveError);
+  const { isAuthenticated } = useWeb3Auth() || {};
+
+  // Archiving asks first, because it takes the record out of its section;
+  // restoring only puts it back, so it does not.
+  const [isConfirmingArchive, setIsConfirmingArchive] = useState(false);
+  const setArchived = (archived: boolean) => {
+    if (!attachment?.id) return;
+    dispatch(serviceRecordActions.archiveStart({ id: attachment.id, archived }));
+  };
+
+  // Close the question once the answer has landed — or failed, in which case
+  // the error line under the header says why.
+  useEffect(() => {
+    if (!isArchiving) setIsConfirmingArchive(false);
+  }, [isArchiving]);
 
   const rooms = useMemo(
     () => parseRoomTags(attachment?.description),
@@ -106,6 +127,14 @@ const ServiceRecord = () => {
                   {attachment?.name || "Home Record"}
                 </h1>
                 <div className="flex flex-wrap items-center gap-3 mt-2">
+                  {attachment?.archived && (
+                    <Chip
+                      label="Archived"
+                      tone="warn"
+                      icon={Archive}
+                      title="Out of sight in its section, but still here and still verified."
+                    />
+                  )}
                   {attachment?.file_count != null && (
                     <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
                       <HardDrive className="w-3.5 h-3.5" />
@@ -165,24 +194,70 @@ const ServiceRecord = () => {
                 : []),
             ]}
             detailActions={
-              attachment?.tx_hash && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    viewTXInExplorer(
-                      attachment.tx_hash!,
-                      attachment.ledger as NETWORK_SERVER_NAMES,
-                    )
-                  }
-                >
-                  <ExternalLink />
-                  Explorer
-                </Button>
-              )
+              <>
+                {attachment?.tx_hash && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      viewTXInExplorer(
+                        attachment.tx_hash!,
+                        attachment.ledger as NETWORK_SERVER_NAMES,
+                      )
+                    }
+                  >
+                    <ExternalLink />
+                    Explorer
+                  </Button>
+                )}
+                {/* Archiving is a write, so it is offered to whoever can
+                    file records — a visitor to a public vault only reads. */}
+                {isAuthenticated && attachment?.id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isArchiving}
+                    onClick={() =>
+                      attachment.archived
+                        ? setArchived(false)
+                        : setIsConfirmingArchive(true)
+                    }
+                  >
+                    {isArchiving ? (
+                      <Loader2 className="animate-spin" />
+                    ) : attachment.archived ? (
+                      <RotateCcw />
+                    ) : (
+                      <Archive />
+                    )}
+                    {attachment.archived ? "Restore record" : "Archive record"}
+                  </Button>
+                )}
+              </>
             }
           />
+
+          {archiveError && (
+            <p
+              role="alert"
+              className="mt-3 flex items-center gap-2 text-sm text-alert"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+              {archiveError}
+            </p>
+          )}
         </header>
+
+        <ConfirmDialog
+          isOpen={isConfirmingArchive}
+          title="Archive this record?"
+          body="It leaves its section but stays in the vault, still verified, and can be restored from this page at any time."
+          confirmLabel="Archive record"
+          confirmVariant="destructive"
+          isLoading={isArchiving}
+          onConfirm={() => setArchived(true)}
+          onClose={() => setIsConfirmingArchive(false)}
+        />
 
         {/* Processing state */}
         {isProcessingZip && (

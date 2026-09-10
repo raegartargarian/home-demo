@@ -5,15 +5,15 @@ Every file is synthetic demo content, watermarked SAMPLE. Do not treat any of
 it as a genuine record.
 
 Folders follow the five-section architecture, numbered in reading order.
-Filenames follow the convention `MMDDYY - Type - Reason - Doc Name`.
+Filenames follow the convention `MM-DD-YY - Type - Reason - Doc Name`.
 
 ## Sections
 
 - `1-home-profile` — Home Profile (4 files, transfers at sale)
-- `2-maintenance-upgrades` — Maintenance & Upgrades (7 files, transfers at sale)
-- `3-systems-warranties` — Systems & Warranties (4 files, transfers at sale)
+- `2-maintenance-upgrades` — Maintenance and Upgrades (7 files, transfers at sale)
+- `3-systems-warranties` — Home Systems and Appliances (4 files, transfers at sale)
 - `4-property-records` — Property Records (3 files, transfers at sale)
-- `5-personal-vault` — Personal Vault (4 files, **private — detached at sale**)
+- `5-personal-vault` — My Personal Home Info (4 files, **private — detached at sale**)
 
 ## Linked events
 
@@ -22,17 +22,17 @@ single chronological view. No document is duplicated to achieve it.
 
 ### Kitchen Remodel – 2024
 
-- Maintenance & Upgrades — `021924 - Estimate - Kitchen Remodel - Hill Country Kitchens estimate.pdf`
-- Maintenance & Upgrades — `062824 - Invoice - Kitchen Remodel - Hill Country Kitchens final invoice.pdf`
-- Maintenance & Upgrades — `030424 - Photo - Kitchen Remodel - Before demolition.pdf`
-- Maintenance & Upgrades — `062624 - Photo - Kitchen Remodel - After completion.pdf`
+- Maintenance and Upgrades — `02-19-24 - Estimate - Kitchen Remodel - Hill Country Kitchens estimate.pdf`
+- Maintenance and Upgrades — `06-28-24 - Invoice - Kitchen Remodel - Hill Country Kitchens final invoice.pdf`
+- Maintenance and Upgrades — `03-04-24 - Photo - Kitchen Remodel - Before demolition.pdf`
+- Maintenance and Upgrades — `06-26-24 - Photo - Kitchen Remodel - After completion.pdf`
 
 ### Storm Damage – May 2026
 
-- Maintenance & Upgrades — `053026 - Invoice - Roof Replacement - Summit Roofing invoice.pdf`
-- Systems & Warranties — `053026 - Warranty - Roof Replacement - Summit Roofing 25-year warranty.pdf`
-- Property Records — `052126 - Permit - Roof Replacement - City of Austin permit.pdf`
-- Personal Vault — `051626 - Claim - Storm Damage - State Farm claim 4412-SD.pdf`
+- Maintenance and Upgrades — `05-30-26 - Invoice - Roof Replacement - Summit Roofing invoice.pdf`
+- Home Systems and Appliances — `05-30-26 - Warranty - Roof Replacement - Summit Roofing 25-year warranty.pdf`
+- Property Records — `05-21-26 - Permit - Roof Replacement - City of Austin permit.pdf`
+- My Personal Home Info — `05-16-26 - Claim - Storm Damage - State Farm claim 4412-SD.pdf`
 
 
 ## The media set — `6-media`

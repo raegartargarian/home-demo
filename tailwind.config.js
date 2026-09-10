@@ -126,7 +126,13 @@ module.exports = {
     // it rather than to Inter, which was declared here but never loaded.
     fontFamily: {
       sans: ["grotesk", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
-      grotesk: ["grotesk", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
+      grotesk: [
+        "grotesk",
+        "Helvetica Neue",
+        "Helvetica",
+        "Arial",
+        "sans-serif",
+      ],
     },
     container: {
       center: "true",
@@ -147,6 +153,12 @@ module.exports = {
       ...BREAKPOINTS,
     },
     extend: {
+      // The app's one curve, as `ease-ui`. Tailwind's built-in `ease-out` is
+      // too weak to read as deliberate; this is the same curve the framer
+      // transitions use, so CSS and JS motion match.
+      transitionTimingFunction: {
+        ui: "var(--ease-ui)",
+      },
       fontWeight: {
         light: 300,
         normal: 400,

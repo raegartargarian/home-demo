@@ -1,62 +1,93 @@
 // Define any additional fonts here
+//
+// Every face ships as `woff2` with the original `.ttf` behind it: Neue Haas is
+// licensed to us as TrueType, and the six grotesk weights were 272–308 KB each
+// in that form — 1.7 MB of blocking download for a page whose headline is the
+// largest thing on it. `scripts/` does not generate these; they were converted
+// once with `fonttools ttLib.woff2 compress` and committed beside the sources.
+//
+// `font-display: swap` is not cosmetic here. Without it the browser holds text
+// invisible while the face loads and then lays every heading out twice, which
+// is the layout jump `Header.tsx` documents on the nav pill and which the
+// landing hero would show at 88px. Swapping means one reflow instead of a
+// blank hero, and the fallback stack in `tailwind.config.js` is Helvetica —
+// close enough in metrics that the reflow is small.
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NeueHaasDisplay-XXThin.ttf') format('truetype');
-  font-weight: 100; 
+  src: url('../assets/fonts/NeueHaasDisplay-XXThin.woff2') format('woff2'),
+       url('../assets/fonts/NeueHaasDisplay-XXThin.ttf') format('truetype');
+  font-weight: 100;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NeueHaasDisplay-Thin.ttf') format('truetype');
-  font-weight: 200; 
+  src: url('../assets/fonts/NeueHaasDisplay-Thin.woff2') format('woff2'),
+       url('../assets/fonts/NeueHaasDisplay-Thin.ttf') format('truetype');
+  font-weight: 200;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NeueHaasDisplay-Light.ttf') format('truetype');
-  font-weight: 300; 
+  src: url('../assets/fonts/NeueHaasDisplay-Light.woff2') format('woff2'),
+       url('../assets/fonts/NeueHaasDisplay-Light.ttf') format('truetype');
+  font-weight: 300;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NHaasGroteskTXPro-55Rg.ttf') format('truetype');
-  font-weight: 400; 
+  src: url('../assets/fonts/NHaasGroteskTXPro-55Rg.woff2') format('woff2'),
+       url('../assets/fonts/NHaasGroteskTXPro-55Rg.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NHaasGroteskTXPro-56It.ttf') format('truetype');
-  font-weight: 400; 
+  src: url('../assets/fonts/NHaasGroteskTXPro-56It.woff2') format('woff2'),
+       url('../assets/fonts/NHaasGroteskTXPro-56It.ttf') format('truetype');
+  font-weight: 400;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NHaasGroteskTXPro-65Md.ttf') format('truetype');
+  src: url('../assets/fonts/NHaasGroteskTXPro-65Md.woff2') format('woff2'),
+       url('../assets/fonts/NHaasGroteskTXPro-65Md.ttf') format('truetype');
   font-weight: 500; /* Medium */
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NHaasGroteskTXPro-66MdIt.ttf') format('truetype');
+  src: url('../assets/fonts/NHaasGroteskTXPro-66MdIt.woff2') format('woff2'),
+       url('../assets/fonts/NHaasGroteskTXPro-66MdIt.ttf') format('truetype');
   font-weight: 500; /* Medium */
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NHaasGroteskTXPro-75Bd.ttf') format('truetype');
+  src: url('../assets/fonts/NHaasGroteskTXPro-75Bd.woff2') format('woff2'),
+       url('../assets/fonts/NHaasGroteskTXPro-75Bd.ttf') format('truetype');
   font-weight: 700; /* Bold */
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'grotesk';
-  src: url('../assets/fonts/NHaasGroteskTXPro-76BdIt.ttf') format('truetype');
+  src: url('../assets/fonts/NHaasGroteskTXPro-76BdIt.woff2') format('woff2'),
+       url('../assets/fonts/NHaasGroteskTXPro-76BdIt.ttf') format('truetype');
   font-weight: 700; /* Bold */
   font-style: italic;
+  font-display: swap;
 }
 
 @layer base {

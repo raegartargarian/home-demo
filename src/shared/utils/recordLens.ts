@@ -5,7 +5,7 @@ import { parseRecordName, RecordDocType } from "./recordNaming";
  *
  * A record is stored in one of the five sections — that is a transfer fact, not
  * a display choice (see `constants/streams.ts`). Everything here is derived
- * from `MMDDYY - Type - Reason - Doc Name` via `parseRecordName`, so reading it
+ * from `MM-DD-YY - Type - Reason - Doc Name` via `parseRecordName`, so reading it
  * costs no extra requests, and a record whose name predates the convention
  * still appears — dated by `created_at` and titled by its raw name. This
  * degrades; it never hides.
@@ -138,6 +138,48 @@ export const groupByPeriod = <T extends LensRecord>(
       groups.set(key, {
         key,
         label: date ? periodLabel(date, granularity) : "Undated",
+        records: [record],
+      });
+    }
+  }
+
+  return [...groups.values()];
+};
+
+/**
+ * The same records grouped by the project they belong to, newest project first.
+ *
+ * Time is what a person remembers *about a document*; the project is what they
+ * remember about a *job*. "Show me the kitchen remodel" is one question, and
+ * answering it from a timeline means reading four years of headings and picking
+ * the kitchen rows out of each. Both axes are already in the name, so this
+ * costs no extra request — it reads `reason`, the same segment the record's
+ * title comes from.
+ *
+ * A record whose name predates the convention has no project. Those collect at
+ * the end under one group rather than disappearing, exactly as undated records
+ * do above.
+ */
+export const groupByProject = <T extends LensRecord>(
+  records: T[]
+): PeriodGroup<T>[] => {
+  const groups = new Map<string | null, PeriodGroup<T>>();
+
+  for (const record of [...records].sort(byDateDesc)) {
+    const project = recordMeta(record).project?.trim() || null;
+    // Keyed case-insensitively so "Kitchen Remodel" and "Kitchen remodel" are
+    // one project, not two — the capture form asks people to reuse the wording,
+    // and this is what makes reusing it *nearly* right still work.
+    const key = project ? project.toLowerCase() : null;
+    const existing = groups.get(key);
+
+    if (existing) existing.records.push(record);
+    else {
+      groups.set(key, {
+        key,
+        // The first spelling seen wins the heading, and because the records are
+        // sorted newest-first that is the most recent one.
+        label: project ?? "No project",
         records: [record],
       });
     }

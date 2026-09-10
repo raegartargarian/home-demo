@@ -1,4 +1,4 @@
-import { getSingleAttachment } from "@/shared/providers/api";
+import { getSingleAttachment, updateAttachment } from "@/shared/providers/api";
 import {
   getIPFSIMGAddr,
   getIPFSIMGAddrPrivate,
@@ -9,7 +9,7 @@ import {
   processHomeZipFile,
   processIndividualHomeFiles,
 } from "@/shared/utils/zipHandler";
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 import { call, put, takeLatest } from "redux-saga/effects";
 import { serviceRecordActions } from "./slice";
 import { AttachmentModel } from "./types";
@@ -118,9 +118,54 @@ function* fetchServiceRecordSaga(
   }
 }
 
+/**
+ * The server's own reason when it gives one — FastAPI puts validation and
+ * permission messages in `detail`, as a string or a list of `{ msg }` — else
+ * null, so the caller can fall back to its own sentence.
+ */
+const serverDetail = (error: unknown): string | null => {
+  const detail: unknown = (error as AxiosError<{ detail?: unknown }>)?.response
+    ?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((entry: { msg?: string }) => entry?.msg ?? JSON.stringify(entry))
+      .join("; ");
+  }
+  return null;
+};
+
+/** Archive or restore, then re-read the record so the page shows the result. */
+function* archiveServiceRecordSaga(
+  action: ReturnType<typeof serviceRecordActions.archiveStart>
+) {
+  const { id, archived } = action.payload;
+  try {
+    yield call(updateAttachment, id, { archived });
+    const response: { data: AttachmentModel } = yield call(
+      getSingleAttachment,
+      id
+    );
+    yield put(serviceRecordActions.archiveSuccess(response.data));
+  } catch (error) {
+    yield put(
+      serviceRecordActions.archiveFailure(
+        serverDetail(error) ??
+          (archived
+            ? "This record could not be archived. Please try again."
+            : "This record could not be restored. Please try again.")
+      )
+    );
+  }
+}
+
 export function* serviceRecordSaga() {
   yield takeLatest(
     serviceRecordActions.fetchStart.type,
     fetchServiceRecordSaga
+  );
+  yield takeLatest(
+    serviceRecordActions.archiveStart.type,
+    archiveServiceRecordSaga
   );
 }

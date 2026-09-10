@@ -35,6 +35,14 @@ jobs:
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci || npm install
+        env:
+          # `@filedgr/web-core` is published to GitHub Packages, private to the
+          # org, and `.npmrc` reads this token to authenticate against
+          # npm.pkg.github.com. Without it every install here ends in
+          # `401 Unauthorized`, so the gate has been failing on setup rather
+          # than on the tests it exists to run — as it does in this repo's
+          # `cd-*` siblings, which have always passed it.
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_GHCR_TOKEN }}
 
       - name: Run unit tests
         run: npm test

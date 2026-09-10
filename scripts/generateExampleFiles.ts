@@ -179,7 +179,7 @@ const main = async () => {
     "it as a genuine record.",
     "",
     "Folders follow the five-section architecture, numbered in reading order.",
-    "Filenames follow the convention `MMDDYY - Type - Reason - Doc Name`.",
+    "Filenames follow the convention `MM-DD-YY - Type - Reason - Doc Name`.",
     "",
     "## Sections",
     "",

@@ -263,21 +263,59 @@ exactly what the tokens exist to prevent.
 `text-ink-muted`, `border-line`, `text-brand`). Raw palette utilities are a
 smell.
 
+### The display scale
+
+The UI scale in `tailwind-theme.js` stops at `4xl` (36px), and for a while the
+landing page simply reached past it — `text-[2.75rem]`, `md:text-6xl`,
+`lg:text-[4.2rem]`, the only sizes above `4xl` in the app, each spelling out its
+own leading and tracking at the call site. There are now three `display-*` sizes
+above it, and each is a triple rather than a size:
+
+| | Size | Leading | Tracking |
+| --- | --- | --- | --- |
+| `text-display-sm` | `clamp(2rem, 1.4rem + 2.4vw, 2.75rem)` — 32→44px | 1.1 | `-0.02em` |
+| `text-display-md` | `clamp(2.5rem, 1.5rem + 4vw, 4rem)` — 40→64px | 1.06 | `-0.025em` |
+| `text-display-lg` | `clamp(3rem, 1.5rem + 6vw, 5.5rem)` — 48→88px | 1.02 | `-0.03em` |
+
+Bundling the tracking with the size is what makes §3's "negative tracking on
+anything above 2.4rem" a property of the token instead of a rule people have to
+remember. `rem + vw` rather than bare `vw`, so the type still answers to browser
+zoom.
+
+These are for the landing page and anything else that opens on a statement. App
+screens stay on the UI scale — a page title is `text-3xl md:text-4xl`, and
+`PageHeader` still owns that recipe.
+
+### Fixed since these notes were written
+
+- **Hero** — the landing page opens on the house at `100svh`, full-bleed under
+  the glass island, type on a two-part scrim.
+  `containers/dashboard/components/LandingHero.tsx`.
+
+  The film **plays once and holds**. It is not a background loop: the seven
+  seconds are a build sequence — blueprint, slab, framing, cladding, finished
+  house at dusk — so looping it un-builds the house behind the headline every
+  seven seconds. Played once it is §5B's sketch → result reveal, at the scale of
+  the whole page, using footage we already had. `scripts/generateHeroVideo.mjs`
+  upscales the 720p master to 1080p with lanczos and a light unsharp pass first,
+  because leaving the upscale to the browser is what made it look cheap.
+- **Header** — the flat white bar is gone; it is the floating glass island
+  described in §2.
+- **Fonts** — `sans` resolves to Neue Haas Grotesk. Every face now ships as
+  `woff2` with the `.ttf` behind it (1.7 MB → ~370 KB across the nine weights)
+  and carries `font-display: swap`.
+- **Page ground** — `--surface` is `#F7F5F2`.
+
 ### Known gaps
 
-- **Hero** — `src/containers/dashboard/index.tsx:80` is still a lucide `Home`
-  icon inside a gradient box. Needs a real photograph.
-- **Header** — currently a flat white bar with a `border-b` and a 2px underline
-  for the active route. This is what the glass tab bar replaces.
-- **Fonts** — config declares `Inter`, but `src/assets/fonts/` already ships
-  Neue Haas Display and Neue Haas Grotesk. **Switch to Neue Haas Grotesk as
-  the primary face.** It's the Diatype lineage, it's Cover's own declared
-  fallback, and we already own it. Add Instrument Serif as the accent face if
-  we take the serif pairing.
-- **Page ground** — everything is `bg-white`. Moving to `#F7F5F2` / `#F4F4F4`
-  is the single highest-impact change on this list.
+- **Weights 100/200/300** (`NeueHaasDisplay-*`) are declared in
+  `_typography.scss` and requested by nothing. Three `@font-face` blocks to
+  delete once someone confirms no design wants them.
 - **`preflight` is disabled** in the Tailwind config, so base element styles
   come from elsewhere. Check `main.scss` before assuming a default.
+- **The element defaults in `_typography.scss`** (`h1`→`text-3xl`, and so on)
+  are overridden by utilities at nearly every call site. Either the screens
+  should stop restating them or the defaults should go.
 
 ---
 

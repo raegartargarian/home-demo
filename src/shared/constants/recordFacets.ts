@@ -1,4 +1,8 @@
-import { RECORD_DOC_TYPES, RecordDocType } from "@/shared/utils/recordNaming";
+import {
+  OTHER_DOC_TYPE,
+  RECORD_DOC_TYPES,
+  RecordDocType,
+} from "@/shared/utils/recordNaming";
 import {
   Camera,
   FileText,
@@ -20,9 +24,12 @@ import {
  * name (`recordNaming.ts`); a facet is the coarser handle the filter bar
  * offers over it.
  *
- * Every type belongs to exactly one facet. `recordFacets.test.ts` asserts the
- * mapping is total, so adding a doc type without placing it here fails the
- * suite rather than silently dropping it out of every filter.
+ * Every type belongs to exactly one facet, with one deliberate exception:
+ * `Other` is the escape hatch for a document the list does not name, so there
+ * is nothing coarser to group it under — a chip reading "Other" would answer no
+ * question a person actually asks. `recordFacets.test.ts` asserts the mapping is
+ * otherwise total, so adding a doc type without placing it here fails the suite
+ * rather than silently dropping it out of every filter.
  */
 
 export type FacetCode =
@@ -108,7 +115,10 @@ export const sortFacets = (facets: RecordFacet[]): RecordFacet[] =>
       RECORD_FACETS.findIndex((facet) => facet.code === b.code),
   );
 
-/** Exposed for the coverage test — every doc type must map somewhere. */
+/**
+ * Exposed for the coverage test — every doc type must map somewhere, except
+ * the `Other` escape hatch, which has nothing coarser to sit under.
+ */
 export const UNFACETED_DOC_TYPES = RECORD_DOC_TYPES.filter(
-  (type) => !FACET_FOR_TYPE.has(type),
+  (type) => type !== OTHER_DOC_TYPE && !FACET_FOR_TYPE.has(type),
 );

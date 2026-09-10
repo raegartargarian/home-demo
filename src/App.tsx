@@ -8,6 +8,8 @@ import { StreamDetailPage } from "./containers/streamDetail/loadable";
 import { VaultsPage } from "./containers/vaults/loadable";
 import { DashboardPage } from "./containers/dashboard/loadable";
 import { ServiceRecordPage } from "./containers/serviceRecord/loadable";
+import CreateProjectVaultModal from "./containers/projectVaults/components/CreateProjectVaultModal";
+import AddSectionModal from "./containers/vaultDetail/components/AddSectionModal";
 import UploadRecordModal from "./containers/upload/components/UploadRecordModal";
 import UploadTray from "./containers/upload/components/UploadTray";
 import AuthModal from "./shared/components/AuthModal";
@@ -27,6 +29,12 @@ function App() {
           page both open it, and both learn it finished the same way. */}
       <UploadRecordModal />
 
+      {/* Likewise one form for starting a project, opened from a home's page. */}
+      <CreateProjectVaultModal />
+
+      {/* And one for adding a section, opened from the sections grid. */}
+      <AddSectionModal />
+
       {/* Where an upload goes once the form hands it over, so filing a record
           never pins the homeowner to one page. */}
       <UploadTray />
@@ -38,7 +46,9 @@ function App() {
         <Route
           path={appRoutes.dashboard.path}
           element={
-            <PageLayout>
+            /* The landing page opens on the film at full height, so the header
+               island floats on it rather than sitting in a band above it. */
+            <PageLayout bleed>
               <DashboardPage />
             </PageLayout>
           }

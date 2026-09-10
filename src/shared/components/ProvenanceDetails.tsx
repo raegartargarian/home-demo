@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DURATION, EASE_OUT } from "@/shared/constants/motion";
 import { cn } from "@/lib/utils";
 import { CopyableHash } from "@/shared/components/CopyableHash";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
@@ -28,6 +29,12 @@ interface ProvenanceDetailsProps {
   createdLabel?: string;
   /** Anything else worth identifying — a stream's asset code, for instance. */
   rows?: ProvenanceRow[];
+  /**
+   * Put before the verification badge: navigation for the subject this bar
+   * describes, which is the vault shell's mobile "Structure" trigger today.
+   * Kept off the right-hand side so it never competes with `actions`.
+   */
+  leading?: React.ReactNode;
   /**
    * The page's own action, kept in the collapsed row — the one thing someone
    * came here to do.
@@ -61,6 +68,7 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
   createdAt,
   createdLabel = "Registered",
   rows = [],
+  leading,
   actions,
   detailActions,
   className,
@@ -73,26 +81,36 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
   // that overshoots reads as decoration.
   const reveal = reduceMotion
     ? { duration: 0.15, ease: "easeOut" as const }
-    : { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const };
+    : { duration: DURATION.reveal, ease: EASE_OUT };
 
   const detail: ProvenanceRow[] = [
-    ...(txHash ? [{ label: "Transaction", value: txHash, copyable: true }] : []),
+    ...(txHash
+      ? [{ label: "Transaction", value: txHash, copyable: true }]
+      : []),
     ...rows,
     ...(ledger
-      ? [{ label: "Network", value: getLedgerNameFromServerName(ledger) || ledger }]
+      ? [
+          {
+            label: "Network",
+            value: getLedgerNameFromServerName(ledger) || ledger,
+          },
+        ]
       : []),
-    ...(createdAt ? [{ label: createdLabel, value: formatDate(createdAt) }] : []),
+    ...(createdAt
+      ? [{ label: createdLabel, value: formatDate(createdAt) }]
+      : []),
   ];
 
   const hasPanel = detail.length > 0 || !!detailActions;
 
   // Nothing to prove and nothing to do with it: render nothing rather than an
   // empty disclosure that opens onto a blank panel.
-  if (!hasPanel && !actions) return null;
+  if (!hasPanel && !actions && !leading) return null;
 
   return (
     <div className={className}>
       <div className="flex flex-wrap items-center gap-2">
+        {leading}
         <VerificationBadge txHash={txHash ?? undefined} />
 
         {hasPanel && (

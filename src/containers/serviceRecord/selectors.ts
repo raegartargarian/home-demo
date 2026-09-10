@@ -11,4 +11,6 @@ export const serviceRecordSelectors = {
   isLoading: createSelector(selectState, (s) => s.isLoading),
   isProcessingZip: createSelector(selectState, (s) => s.isProcessingZip),
   error: createSelector(selectState, (s) => s.error),
+  isArchiving: createSelector(selectState, (s) => s.isArchiving),
+  archiveError: createSelector(selectState, (s) => s.archiveError),
 };
