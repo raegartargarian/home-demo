@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { EASE_OUT } from "@/shared/constants/motion";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import React, { useEffect, useId } from "react";
 
@@ -73,7 +74,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
             transition={{
               duration: reduceMotion ? 0.1 : 0.2,
-              ease: [0.22, 1, 0.36, 1],
+              ease: EASE_OUT,
             }}
             onClick={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-xl border border-line bg-surface-raised p-5 shadow-lg"

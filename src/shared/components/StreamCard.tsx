@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { TransferBadge } from "@/shared/components/TransferBadge";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
 import { SectionFileGrid } from "@/shared/components/SectionFileGrid";
-import { StreamCategory } from "@/shared/constants/streams";
+import { isKnownSection, StreamCategory } from "@/shared/constants/streams";
 import { VaultStreamDto } from "@/shared/types/vault";
 import { formatStreamName } from "@/shared/utils/streamHelpers";
 import { Layers } from "lucide-react";
@@ -108,17 +108,29 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           // "no records yet", which tells the homeowner nothing actionable.
           // Same tiles the landing page uses, greyed back so a section you have
           // not filled yet cannot be mistaken for one you have.
+          // Only the five can teach: the taxonomy says what belongs in each,
+          // and the tiles show it. A section someone named has no canonical
+          // contents, so it says the one true thing instead — the sentence
+          // has to change with the tiles, or it promises a list and then
+          // shows nothing.
           <div className="rounded-lg border border-dashed border-line bg-surface-sunken p-4">
-            <p className="text-xs font-medium text-ink-muted">
-              Nothing filed here yet. This section holds:
-            </p>
-            {category ? (
-              <SectionFileGrid
-                code={category.code}
-                size="md"
-                className="mt-3 opacity-60"
-              />
-            ) : null}
+            {isKnownSection(category) ? (
+              <>
+                <p className="text-xs font-medium text-ink-muted">
+                  Nothing filed here yet. This section holds:
+                </p>
+                <SectionFileGrid
+                  code={category.code}
+                  size="md"
+                  className="mt-3 opacity-60"
+                />
+              </>
+            ) : (
+              <p className="text-xs font-medium text-ink-muted">
+                Nothing filed here yet. Add the first record to start this
+                section.
+              </p>
+            )}
           </div>
         ) : (
           // Files on a shelf — see `FileShelf`. Deliberately *not* lifted above

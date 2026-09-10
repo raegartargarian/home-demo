@@ -6,6 +6,8 @@ import {
   FIELD_CLASS,
   FieldGroup,
   LABEL_CLASS,
+  SELECT_CLASS,
+  SelectShell,
 } from "@/shared/components/FormField";
 import {
   facetForType,
@@ -13,7 +15,7 @@ import {
   RecordFacet,
 } from "@/shared/constants/recordFacets";
 import { Room, ROOMS } from "@/shared/constants/rooms";
-import { STREAM_CATEGORIES } from "@/shared/constants/streams";
+import { knownSectionFor } from "@/shared/constants/streams";
 import { useWalletAddress } from "@/shared/hooks/useWalletAddr";
 import {
   buildRecordName,
@@ -168,9 +170,9 @@ export const UploadRecordModal: React.FC = () => {
     [streams, target],
   );
 
-  const section = destination?.sectionCode
-    ? STREAM_CATEGORIES[destination.sectionCode]
-    : null;
+  // Null for a section someone named: it has an accent but no doc types of
+  // its own, so the picker falls back to the generic set.
+  const section = knownSectionFor(destination?.sectionCode);
   const docTypes = useMemo(
     () => docTypesForSection(section?.code),
     [section?.code],
@@ -247,7 +249,9 @@ export const UploadRecordModal: React.FC = () => {
         extension: extensionOf(file.name) || undefined,
       });
 
-      return name === file.name ? file : new File([file], name, { type: file.type });
+      return name === file.name
+        ? file
+        : new File([file], name, { type: file.type });
     });
   }, [files, fileNames, date, docType, project]);
 
@@ -480,31 +484,35 @@ export const UploadRecordModal: React.FC = () => {
                         <label htmlFor="record-section" className={LABEL_CLASS}>
                           Section
                         </label>
-                        <select
-                          id="record-section"
-                          value={destination?.streamId ?? ""}
-                          onChange={(event) => setStreamId(event.target.value)}
-                          className={FIELD_CLASS}
-                        >
-                          <option value="" disabled>
-                            Choose a section…
-                          </option>
-                          {sectionOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.label}
+                        <SelectShell>
+                          <select
+                            id="record-section"
+                            value={destination?.streamId ?? ""}
+                            onChange={(event) =>
+                              setStreamId(event.target.value)
+                            }
+                            className={SELECT_CLASS}
+                          >
+                            <option value="" disabled>
+                              Choose a section…
                             </option>
-                          ))}
-                        </select>
+                            {sectionOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </SelectShell>
                       </div>
                     </FieldGroup>
 
                     <FieldGroup
                       title="What it is"
                       hint={
-                          files.length > 1
-                            ? "These become the record's name. Each file takes the same three, then its own Document name."
-                            : "These four fields become the record's name, shown at the bottom right."
-                        }
+                        files.length > 1
+                          ? "These become the record's name. Each file takes the same three, then its own Document name."
+                          : "These four fields become the record's name, shown at the bottom right."
+                      }
                     >
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
@@ -527,20 +535,22 @@ export const UploadRecordModal: React.FC = () => {
                           <label htmlFor="record-type" className={LABEL_CLASS}>
                             Type
                           </label>
-                          <select
-                            id="record-type"
-                            value={docType}
-                            onChange={(event) =>
-                              setDocType(event.target.value as RecordDocType)
-                            }
-                            className={FIELD_CLASS}
-                          >
-                            {docTypes.map((type) => (
-                              <option key={type} value={type}>
-                                {type}
-                              </option>
-                            ))}
-                          </select>
+                          <SelectShell>
+                            <select
+                              id="record-type"
+                              value={docType}
+                              onChange={(event) =>
+                                setDocType(event.target.value as RecordDocType)
+                              }
+                              className={SELECT_CLASS}
+                            >
+                              {docTypes.map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
+                            </select>
+                          </SelectShell>
                           <p className="truncate text-xs text-ink-subtle">
                             Types filed in {section?.label ?? "this section"}.
                           </p>
@@ -693,7 +703,9 @@ export const UploadRecordModal: React.FC = () => {
                             onToggle={() =>
                               setRooms((current) =>
                                 current.some((it) => it.code === room.code)
-                                  ? current.filter((it) => it.code !== room.code)
+                                  ? current.filter(
+                                      (it) => it.code !== room.code,
+                                    )
                                   : [...current, room],
                               )
                             }
@@ -767,7 +779,10 @@ export const UploadRecordModal: React.FC = () => {
                                       documentNameFrom(file.name) ||
                                       "Name this file"
                                     }
-                                    className={cn(FIELD_CLASS, "py-1.5 text-xs")}
+                                    className={cn(
+                                      FIELD_CLASS,
+                                      "py-1.5 text-xs",
+                                    )}
                                   />
                                   <p className="break-all font-mono text-[11px] text-ink-subtle">
                                     {namedFiles[index]?.name ?? file.name}
@@ -783,9 +798,8 @@ export const UploadRecordModal: React.FC = () => {
                     {unnamedCount > 0 && (
                       <p className="text-xs text-ink-subtle">
                         {unnamedCount} of {files.length} file
-                        {files.length !== 1 ? "s" : ""} unnamed. Filing now names
-                        {" "}
-                        {unnamedCount === 1 ? "it" : "them"} by position —{" "}
+                        {files.length !== 1 ? "s" : ""} unnamed. Filing now
+                        names {unnamedCount === 1 ? "it" : "them"} by position —{" "}
                         {docType} 1, {docType} 2 — rather than keeping the name
                         the device gave {unnamedCount === 1 ? "it" : "them"}.
                       </p>
@@ -830,18 +844,10 @@ export const UploadRecordModal: React.FC = () => {
                     browsing.
                   </p>
                   <div className="flex flex-1 justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={close}
-                    >
+                    <Button type="button" variant="outline" onClick={close}>
                       Cancel
                     </Button>
-                    <Button
-                      ref={submitRef}
-                      type="submit"
-                      disabled={!canSubmit}
-                    >
+                    <Button ref={submitRef} type="submit" disabled={!canSubmit}>
                       {isPacking && (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       )}

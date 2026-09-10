@@ -4,7 +4,7 @@ import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { VaultDto } from "@/shared/types/vault";
 import { RootState } from "@/store/types";
 import { AlertCircle, Plus } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { projectVaultsSelectors } from "../selectors";
 import { projectVaultsActions } from "../slice";
@@ -28,14 +28,26 @@ export const ProjectsSection: React.FC<{ home: VaultDto }> = ({ home }) => {
     (state: RootState) => projectVaultsSelectors.forParent(state, home.id),
   );
   const creation = useSelector(projectVaultsSelectors.creation);
-  const creationHere = creation?.input.parentVaultId === home.id ? creation : null;
+  const creationHere =
+    creation?.input.parentVaultId === home.id ? creation : null;
   const isCreating = creation?.status === "running";
 
+  // Asked for at most once per home per mount, and not at all when the store
+  // already has it. The structure sidebar opens this home's node and asks for
+  // the same thing, and discovery is a paged template scan that the saga takes
+  // every one of — so whichever of the two gets there first, only one request
+  // goes out. The ref is what keeps this from firing again when `isLoading`
+  // flips back to false.
+  const requestedFor = useRef<string | null>(null);
   useEffect(() => {
+    if (requestedFor.current === home.id) return;
+    requestedFor.current = home.id;
+    if (isLoading || hasLoaded) return;
     dispatch(projectVaultsActions.fetchProjects({ parentVaultId: home.id }));
-  }, [dispatch, home.id]);
+  }, [dispatch, home.id, isLoading, hasLoaded]);
 
-  const openCreate = () => dispatch(projectVaultsActions.openCreateModal(home.id));
+  const openCreate = () =>
+    dispatch(projectVaultsActions.openCreateModal(home.id));
 
   const newProjectCard = isAuthenticated && (
     <button
@@ -69,7 +81,10 @@ export const ProjectsSection: React.FC<{ home: VaultDto }> = ({ home }) => {
       {isLoading && !hasLoaded ? (
         <div className={GRID_CLASS}>
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-56 w-full rounded-xl bg-surface-inset" />
+            <Skeleton
+              key={i}
+              className="h-56 w-full rounded-xl bg-surface-inset"
+            />
           ))}
         </div>
       ) : error && !hasLoaded ? (

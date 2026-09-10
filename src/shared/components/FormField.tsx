@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 import React from "react";
 
 /**
@@ -20,6 +22,34 @@ export const FIELD_CLASS = [
 ].join(" ");
 
 export const LABEL_CLASS = "text-sm font-medium text-ink";
+
+/**
+ * A select, with the browser's own arrow turned off.
+ *
+ * Left native, the chevron is drawn by the platform and pinned to the field's
+ * outer edge with the platform's inset — around 8px against the 12px every
+ * other field indents its content by. On a full-width field that reads as an
+ * arrow belonging to the window rather than to the form. `appearance-none`
+ * takes it away and `SelectShell` puts ours back on the field's own padding.
+ */
+export const SELECT_CLASS = cn(
+  FIELD_CLASS,
+  "cursor-pointer appearance-none pr-9",
+);
+
+/** Positions the chevron for a `SELECT_CLASS` select. Wrap one of these. */
+export const SelectShell: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className }) => (
+  <div className={cn("relative", className)}>
+    {children}
+    <ChevronDown
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
+      aria-hidden
+    />
+  </div>
+);
 
 /** A titled block of fields. The form is a full page, so it needs signposting. */
 export const FieldGroup: React.FC<{

@@ -10,12 +10,16 @@ import {
 import { VaultImage } from "@/shared/components/VaultImage";
 import {
   ALL_STREAM_CODES,
+  customCategoryFor,
+  knownSectionForTypedName,
+  SECTION_SLUG_MAX_LENGTH,
   STREAM_CATEGORIES,
   StreamCategoryCode,
+  toSectionSlug,
 } from "@/shared/constants/streams";
 import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AlertCircle, ImagePlus, X } from "lucide-react";
+import { AlertCircle, ImagePlus, Plus, X } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { homeImageCid } from "../image";
@@ -56,7 +60,12 @@ export const CreateProjectVaultModal: React.FC = () => {
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
-  const [sections, setSections] = useState<StreamCategoryCode[]>(DEFAULT_SECTIONS);
+  const [sections, setSections] =
+    useState<StreamCategoryCode[]>(DEFAULT_SECTIONS);
+  // Sections someone typed, as slugs. Kept apart from the five so the taxonomy
+  // still submits in its own order and these follow it.
+  const [customSections, setCustomSections] = useState<string[]>([]);
+  const [sectionDraft, setSectionDraft] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [useHomePhoto, setUseHomePhoto] = useState(true);
   const [photoError, setPhotoError] = useState("");
@@ -69,6 +78,8 @@ export const CreateProjectVaultModal: React.FC = () => {
     setLabel("");
     setDescription("");
     setSections(DEFAULT_SECTIONS);
+    setCustomSections([]);
+    setSectionDraft("");
     setPhoto(null);
     setPhotoError("");
   }, [isOpen]);
@@ -80,7 +91,10 @@ export const CreateProjectVaultModal: React.FC = () => {
 
   // Revoked on the way out: a preview held open for a form that may be closed
   // without submitting is a file the tab cannot let go of.
-  const photoUrl = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
+  const photoUrl = useMemo(
+    () => (photo ? URL.createObjectURL(photo) : null),
+    [photo],
+  );
   useEffect(() => {
     return () => {
       if (photoUrl) URL.revokeObjectURL(photoUrl);
@@ -92,7 +106,8 @@ export const CreateProjectVaultModal: React.FC = () => {
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") dispatch(projectVaultsActions.closeCreateModal());
+      if (event.key === "Escape")
+        dispatch(projectVaultsActions.closeCreateModal());
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -104,6 +119,32 @@ export const CreateProjectVaultModal: React.FC = () => {
         ? current.filter((it) => it !== code)
         : [...current, code],
     );
+
+  const draftSlug = toSectionSlug(sectionDraft);
+  // Typing the name of one of the five ticks that chip instead of making a
+  // near-duplicate beside it, which would file the same paperwork twice.
+  // Matched on the name as shown, not only the slug: three of the five have a
+  // label that does not slugify onto their code.
+  const draftIsKnown = knownSectionForTypedName(sectionDraft);
+  const canAddSection =
+    draftSlug.length > 0 &&
+    !customSections.includes(draftSlug) &&
+    !(
+      draftIsKnown && sections.includes(draftIsKnown.code as StreamCategoryCode)
+    );
+
+  const addSection = () => {
+    if (!canAddSection) return;
+    if (draftIsKnown) {
+      toggleSection(draftIsKnown.code as StreamCategoryCode);
+    } else {
+      setCustomSections((current) => [...current, draftSlug]);
+    }
+    setSectionDraft("");
+  };
+
+  const removeSection = (slug: string) =>
+    setCustomSections((current) => current.filter((it) => it !== slug));
 
   const acceptPhoto = (file: File | undefined) => {
     if (!file) return;
@@ -123,7 +164,7 @@ export const CreateProjectVaultModal: React.FC = () => {
     !!parentVaultId &&
     cleanLabel.length > 0 &&
     description.trim().length > 0 &&
-    sections.length > 0 &&
+    sections.length + customSections.length > 0 &&
     hasPhoto &&
     !isCreating;
 
@@ -136,10 +177,16 @@ export const CreateProjectVaultModal: React.FC = () => {
         parentVaultId,
         label: cleanLabel,
         description: description.trim(),
-        // In the taxonomy's own order, whatever order they were ticked in.
-        sections: ALL_STREAM_CODES.filter((code) => sections.includes(code)),
+        // The taxonomy in its own order first, whatever order they were
+        // ticked in, then the typed ones in the order they were added.
+        sections: [
+          ...ALL_STREAM_CODES.filter((code) => sections.includes(code)),
+          ...customSections,
+        ],
         image:
-          useHomePhoto || !photo ? { kind: "home" } : { kind: "file", file: photo },
+          useHomePhoto || !photo
+            ? { kind: "home" }
+            : { kind: "file", file: photo },
       }),
     );
     close();
@@ -172,7 +219,9 @@ export const CreateProjectVaultModal: React.FC = () => {
                     Start a project
                   </h2>
                   <p className="truncate text-xs text-ink-muted">
-                    {homeAddress ? `A project of ${homeAddress}` : "Under this home"}
+                    {homeAddress
+                      ? `A project of ${homeAddress}`
+                      : "Under this home"}
                   </p>
                 </div>
                 <Button
@@ -187,7 +236,10 @@ export const CreateProjectVaultModal: React.FC = () => {
               </div>
             </header>
 
-            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <form
+              onSubmit={handleSubmit}
+              className="flex min-h-0 flex-1 flex-col"
+            >
               <div className="min-h-0 flex-1 overflow-y-auto">
                 <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-12 gap-y-10 px-5 pb-28 pt-[6.5rem] sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px]">
                   <div className="space-y-10">
@@ -214,13 +266,18 @@ export const CreateProjectVaultModal: React.FC = () => {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label htmlFor="project-description" className={LABEL_CLASS}>
+                        <label
+                          htmlFor="project-description"
+                          className={LABEL_CLASS}
+                        >
                           Description
                         </label>
                         <textarea
                           id="project-description"
                           value={description}
-                          onChange={(event) => setDescription(event.target.value)}
+                          onChange={(event) =>
+                            setDescription(event.target.value)
+                          }
                           rows={3}
                           placeholder="Who is doing the work, what it covers, when it started."
                           className={cn(FIELD_CLASS, "resize-none")}
@@ -251,7 +308,84 @@ export const CreateProjectVaultModal: React.FC = () => {
                           );
                         })}
                       </div>
-                      {sections.length === 0 && (
+                      {customSections.length > 0 && (
+                        <div
+                          role="group"
+                          aria-label="Sections you named"
+                          className="mt-2 flex flex-wrap gap-1.5"
+                        >
+                          {customSections.map((slug) => {
+                            const category = customCategoryFor(slug);
+                            return (
+                              <span key={slug} data-category={category.code}>
+                                <FilterChip
+                                  label={category.label}
+                                  icon={category.icon}
+                                  isActive
+                                  onToggle={() => removeSection(slug)}
+                                />
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* A job produces paperwork the five sections do not
+                          name. The slug is what the backend stores, so it is
+                          shown as it is typed rather than after the fact. */}
+                      {/* `items-end` rather than a hand-tuned top margin: the
+                          label sits above the input, so aligning the bottoms
+                          is what puts the button on the field's own line. */}
+                      <div className="mt-3 flex items-end gap-2">
+                        <div className="min-w-0 flex-1">
+                          <label
+                            htmlFor="project-section"
+                            className={LABEL_CLASS}
+                          >
+                            Add your own
+                          </label>
+                          <input
+                            id="project-section"
+                            value={sectionDraft}
+                            onChange={(event) =>
+                              setSectionDraft(event.target.value)
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter") return;
+                              // The form's own submit is the Create button.
+                              event.preventDefault();
+                              addSection();
+                            }}
+                            maxLength={SECTION_SLUG_MAX_LENGTH * 2}
+                            placeholder="Landscaping"
+                            className={FIELD_CLASS}
+                          />
+                        </div>
+                        {/* Default size, not `sm`: the field is `py-2` on
+                            `text-sm`, which is 36px, and that is exactly the
+                            default button height. `sm` is 32px and would sit
+                            four pixels short of the field it belongs to. */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addSection}
+                          disabled={!canAddSection}
+                          className="shrink-0"
+                        >
+                          <Plus />
+                          Add
+                        </Button>
+                      </div>
+
+                      {draftSlug.length > 0 && (
+                        <p className="text-xs text-ink-subtle">
+                          {draftIsKnown
+                            ? `That is ${draftIsKnown.label}. Adding it will tick it above.`
+                            : `Filed as ${draftSlug}.`}
+                        </p>
+                      )}
+
+                      {sections.length + customSections.length === 0 && (
                         <p className="text-xs text-alert">
                           A project needs at least one section.
                         </p>
@@ -264,7 +398,11 @@ export const CreateProjectVaultModal: React.FC = () => {
                       title="Cover"
                       hint="What the project's card shows. The home's own photo, unless a picture of the work says it better."
                     >
-                      <div role="radiogroup" aria-label="Cover photo" className="space-y-2">
+                      <div
+                        role="radiogroup"
+                        aria-label="Cover photo"
+                        className="space-y-2"
+                      >
                         <label
                           className={cn(
                             "flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors",
@@ -327,7 +465,10 @@ export const CreateProjectVaultModal: React.FC = () => {
                                 draggable={false}
                               />
                             ) : (
-                              <ImagePlus className="h-5 w-5 text-ink-subtle" aria-hidden />
+                              <ImagePlus
+                                className="h-5 w-5 text-ink-subtle"
+                                aria-hidden
+                              />
                             )}
                           </span>
                           <span className="min-w-0 flex-1">
@@ -335,7 +476,9 @@ export const CreateProjectVaultModal: React.FC = () => {
                               Choose a photo
                             </span>
                             <span className="block truncate text-xs text-ink-subtle">
-                              {photo ? photo.name : "A picture of the work, from your device."}
+                              {photo
+                                ? photo.name
+                                : "A picture of the work, from your device."}
                             </span>
                           </span>
                         </label>
@@ -345,7 +488,9 @@ export const CreateProjectVaultModal: React.FC = () => {
                             type="file"
                             accept="image/*,.heic"
                             aria-label="Choose a cover photo"
-                            onChange={(event) => acceptPhoto(event.target.files?.[0])}
+                            onChange={(event) =>
+                              acceptPhoto(event.target.files?.[0])
+                            }
                             className="block w-full text-xs text-ink-muted file:mr-3 file:rounded-full file:border file:border-line file:bg-surface-raised file:px-3.5 file:py-1.5 file:text-xs file:font-medium file:text-ink hover:file:bg-surface-inset"
                           />
                         )}
@@ -354,7 +499,10 @@ export const CreateProjectVaultModal: React.FC = () => {
 
                     {photoError && (
                       <div className="flex items-start gap-2 rounded-lg border border-alert-line bg-alert-surface p-3 text-sm text-alert">
-                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                        <AlertCircle
+                          className="mt-0.5 h-4 w-4 shrink-0"
+                          aria-hidden
+                        />
                         <span>{photoError}</span>
                       </div>
                     )}

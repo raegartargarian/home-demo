@@ -1,4 +1,3 @@
-import type { StreamCategoryCode } from "@/shared/constants/streams";
 import type { VaultDto } from "@/shared/types/vault";
 
 /** One project under a home: the vault, and the label its template carried. */
@@ -28,8 +27,15 @@ export interface CreateProjectInput {
   parentVaultId: string;
   label: string;
   description: string;
-  /** Section codes, which double as the project's stream names. */
-  sections: StreamCategoryCode[];
+  /**
+   * The project's stream names, already in the backend's format.
+   *
+   * One of the five taxonomy codes, or a slug made from a name someone typed
+   * (`toSectionSlug`). The backend does not validate these at all — each one
+   * is copied verbatim into a stream's `mapping` — so the format is enforced
+   * here, on the way in, and nowhere else.
+   */
+  sections: string[];
   image: ProjectImageSource;
 }
 

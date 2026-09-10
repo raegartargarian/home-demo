@@ -14,13 +14,15 @@ import { useVaultContext } from "./vaultContext";
  * content that changes.
  */
 const VaultDetail = () => {
-  const { vault, parent } = useVaultContext();
+  const { vault, ancestors } = useVaultContext();
 
-  // A project is one level down and stays there: no projects under projects.
-  const showProjects = PROJECT_VAULTS_ENABLED && parent === null;
+  // Starting a project stays a home's action. The structure sidebar renders a
+  // project under a project happily enough, but nothing here offers to make
+  // one, so the tree only ever goes as deep as the data already does.
+  const showProjects = PROJECT_VAULTS_ENABLED && ancestors.length === 0;
 
   return (
-    <PageContainer measure="wide">
+    <PageContainer measure="inherit">
       {vault.streams && vault.streams.length > 0 ? (
         <StreamList vaultId={vault.id} streams={vault.streams} />
       ) : (

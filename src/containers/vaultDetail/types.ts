@@ -2,8 +2,17 @@ import { VaultDto } from "@/shared/types/vault";
 
 export interface VaultDetailState {
   vault: VaultDto | null;
-  /** The home this vault is a project of, or null for a home itself. */
-  parent: VaultDto | null;
+  /**
+   * Every vault above this one, root-first, excluding itself — so a home is
+   * `[]`, a project of a home is `[home]`, and a project of that project is
+   * `[home, project]`. The immediate parent is the last entry; read it through
+   * `vaultDetailSelectors.parent` rather than indexing here.
+   *
+   * Resolved best-effort by the saga: a broken template link truncates the
+   * chain rather than failing the page, so this can be shorter than the truth
+   * but never longer.
+   */
+  ancestors: VaultDto[];
   isLoading: boolean;
   error: string | null;
   /** Every record in the vault, for the Timeline and Projects lenses. Paged

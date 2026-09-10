@@ -83,6 +83,11 @@
     --alert-surface: 246 235 233;
     --alert-line: 230 203 199;
 
+    // -- motion ---------------------------------------------------------------
+    // The app's one curve, matching EASE_OUT in shared/constants/motion.ts.
+    // Tailwind exposes it as `ease-ui`.
+    --ease-ui: cubic-bezier(0.22, 1, 0.36, 1);
+
     // -- category accent (defaults to brand; overridden per [data-category]) --
     --cat-solid: var(--brand);
     --cat-ink: var(--brand-ink);
@@ -214,6 +219,61 @@
     --cat-line: 220 216 209;
   }
 
+  // -------------------------------------------------------------------------
+  // Spare accents, for a section someone named themselves.
+  //
+  // The taxonomy above is five and does not grow. A typed section is not part
+  // of it, but it still has records in it and still has to be told apart from
+  // its neighbours, so it borrows one of these. Assignment is by a hash of the
+  // section's own slug (`customCategoryFor`), so the same name is always the
+  // same colour and nothing has to be stored to keep it that way.
+  //
+  // Pitched deliberately quieter than the five: these label sections nobody
+  // designed, and they should read as "another section" rather than compete
+  // with the taxonomy for attention.
+  // -------------------------------------------------------------------------
+  [data-category="custom-1"] {
+    --cat-solid: 96 104 118;
+    --cat-ink: 76 84 97;
+    --cat-surface: 238 240 243;
+    --cat-line: 217 221 227;
+  }
+
+  [data-category="custom-2"] {
+    --cat-solid: 133 106 92;
+    --cat-ink: 107 85 73;
+    --cat-surface: 243 238 235;
+    --cat-line: 226 216 210;
+  }
+
+  [data-category="custom-3"] {
+    --cat-solid: 92 120 112;
+    --cat-ink: 73 96 89;
+    --cat-surface: 236 241 239;
+    --cat-line: 212 224 220;
+  }
+
+  [data-category="custom-4"] {
+    --cat-solid: 124 100 128;
+    --cat-ink: 99 80 102;
+    --cat-surface: 242 238 243;
+    --cat-line: 224 216 226;
+  }
+
+  [data-category="custom-5"] {
+    --cat-solid: 132 114 78;
+    --cat-ink: 106 91 62;
+    --cat-surface: 244 240 231;
+    --cat-line: 228 220 202;
+  }
+
+  [data-category="custom-6"] {
+    --cat-solid: 88 111 124;
+    --cat-ink: 70 89 99;
+    --cat-surface: 235 240 243;
+    --cat-line: 210 221 227;
+  }
+
   .dark {
     [data-category="home-profile"] {
       --cat-solid: 148 170 196;
@@ -244,6 +304,42 @@
       --cat-ink: 195 190 181;
       --cat-surface: 44 42 38;
       --cat-line: 68 65 59;
+    }
+    [data-category="custom-1"] {
+      --cat-solid: 160 170 186;
+      --cat-ink: 194 203 216;
+      --cat-surface: 35 40 48;
+      --cat-line: 60 68 80;
+    }
+    [data-category="custom-2"] {
+      --cat-solid: 190 165 150;
+      --cat-ink: 213 194 182;
+      --cat-surface: 45 38 34;
+      --cat-line: 76 64 57;
+    }
+    [data-category="custom-3"] {
+      --cat-solid: 150 182 172;
+      --cat-ink: 186 211 203;
+      --cat-surface: 31 42 39;
+      --cat-line: 55 72 67;
+    }
+    [data-category="custom-4"] {
+      --cat-solid: 180 160 184;
+      --cat-ink: 206 191 209;
+      --cat-surface: 42 36 44;
+      --cat-line: 71 61 74;
+    }
+    [data-category="custom-5"] {
+      --cat-solid: 190 172 128;
+      --cat-ink: 212 199 166;
+      --cat-surface: 45 40 27;
+      --cat-line: 77 68 46;
+    }
+    [data-category="custom-6"] {
+      --cat-solid: 148 172 186;
+      --cat-ink: 184 202 213;
+      --cat-surface: 30 39 45;
+      --cat-line: 53 67 76;
     }
   }
 }
@@ -321,7 +417,9 @@
   }
 
   // Without blur support translucency just reads as a rendering bug.
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
     .glass {
       background: rgb(255 255 255 / 0.96);
     }

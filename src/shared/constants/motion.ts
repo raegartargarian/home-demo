@@ -13,9 +13,6 @@
  */
 export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
-/** The same curve for CSS, matching `--ease-ui` in `main.scss`. */
-export const EASE_OUT_CSS = "cubic-bezier(0.22, 1, 0.36, 1)";
-
 /**
  * Durations, in seconds, named for what they are rather than how long.
  *
@@ -29,8 +26,6 @@ export const DURATION = {
   swap: 0.15,
   /** A panel or a row disclosing. */
   reveal: 0.2,
-  /** A photograph arriving. Larger area, so it earns a little longer. */
-  image: 0.3,
 } as const;
 
 /** What every animation here collapses to when motion is turned down. */

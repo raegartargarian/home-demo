@@ -46,7 +46,22 @@ const NavItems: React.FC<{ layoutId: string }> = ({ layoutId }) => {
     <ul className="flex items-center gap-1">
       {NAV_ITEMS.map(({ to, label, icon: Icon, end, state }) => (
         <li key={to}>
-          <NavLink to={to} end={end} state={state} className="block">
+          <NavLink
+            to={to}
+            end={end}
+            state={state}
+            // Before the route changes, not after.
+            //
+            // `ScrollToTop` resets the scroll in an effect once the navigation
+            // has committed. By then the sliding indicator has already been
+            // measured at the old scroll offset and is drawn at the new one,
+            // so it launches down the page and flies back — measured at ~870px
+            // of travel from a scroll position of 1200. Scrolling first costs
+            // nothing (the later reset becomes a no-op) and keeps the slide,
+            // because both measurements now happen at the same offset.
+            onClick={() => window.scrollTo(0, 0)}
+            className="block"
+          >
             {({ isActive }) => (
               <span
                 className={[

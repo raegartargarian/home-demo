@@ -15,6 +15,8 @@ const NOT_LOADED: ParentProjects = {
 export const projectVaultsSelectors = {
   forParent: (state: RootState, parentVaultId: string): ParentProjects =>
     selectState(state).byParent[parentVaultId] ?? NOT_LOADED,
+  /** The whole map, for the structure sidebar, which reads many parents. */
+  byParent: createSelector(selectState, (state) => state.byParent),
   createModal: createSelector(selectState, (state) => state.createModal),
   creation: createSelector(selectState, (state) => state.creation),
 };

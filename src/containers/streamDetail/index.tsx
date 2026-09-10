@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { motion, useReducedMotion } from "framer-motion";
+import { REDUCED } from "@/shared/constants/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { uploadSelectors } from "@/containers/upload/selectors";
@@ -65,7 +67,9 @@ const withFreshFiles = (
   const byId = new Map(fresh.map((record) => [record.id, record]));
   return current.map((record) => {
     const updated = byId.get(record.id);
-    return updated ? { ...record, files: updated.files, status: updated.status } : record;
+    return updated
+      ? { ...record, files: updated.files, status: updated.status }
+      : record;
   });
 };
 
@@ -232,6 +236,7 @@ const StreamDetail = () => {
   // remember about a whole piece of work, and its paperwork is otherwise
   // scattered down as many headings as the work took months.
   const [grouping, setGrouping] = useState<StreamGrouping>("date");
+  const reduceMotion = useReducedMotion();
 
   const visible = useMemo(
     () => filterRecords(attachments, filter),
@@ -273,7 +278,9 @@ const StreamDetail = () => {
             console.error("Failed to refresh pinned files:", error);
             setPinPolls(MAX_PIN_POLLS);
           })
-          .finally(() => setPinPolls((spent) => Math.min(spent + 1, MAX_PIN_POLLS)));
+          .finally(() =>
+            setPinPolls((spent) => Math.min(spent + 1, MAX_PIN_POLLS)),
+          );
       },
       PIN_POLL_MS * 2 ** pinPolls,
     );
@@ -297,7 +304,7 @@ const StreamDetail = () => {
     setReloadKey((key) => key + 1);
   };
   return (
-    <PageContainer measure="wide">
+    <PageContainer measure="inherit">
       {/* The section's own heading line: what is in it, and how much. The
           house, the way out, the provenance and the Add-record button all
           belong to `VaultShell`, which stays mounted while you move between
@@ -323,22 +330,43 @@ const StreamDetail = () => {
               aria-label="Group records by"
               className="flex items-center gap-0.5 rounded-full border border-line bg-surface-raised p-0.5"
             >
-              {GROUPINGS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setGrouping(option.value)}
-                  aria-pressed={grouping === option.value}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                    grouping === option.value
-                      ? "bg-surface-inset text-ink"
-                      : "text-ink-subtle hover:text-ink-muted",
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
+              {GROUPINGS.map((option) => {
+                const isActive = grouping === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setGrouping(option.value)}
+                    aria-pressed={isActive}
+                    className={cn(
+                      "relative rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                      isActive
+                        ? "text-ink"
+                        : "text-ink-subtle hover:text-ink-muted",
+                    )}
+                  >
+                    {/* The fill is one element that moves, not two that
+                        cross-fade. The same shared-layout pill the header nav
+                        uses for the same job, so the app has one idea of what
+                        "the selected one of these" looks like — and a spring
+                        rather than a curve because this is reversible: click
+                        back before it settles and it carries its velocity
+                        through instead of restarting. */}
+                    {isActive && (
+                      <motion.span
+                        layoutId="grouping-pill"
+                        className="absolute inset-0 rounded-full bg-surface-inset"
+                        transition={
+                          reduceMotion
+                            ? REDUCED
+                            : { type: "spring", stiffness: 400, damping: 32 }
+                        }
+                      />
+                    )}
+                    <span className="relative">{option.label}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
           {totalRecords != null && (

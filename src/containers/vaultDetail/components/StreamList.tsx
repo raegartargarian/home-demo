@@ -2,10 +2,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUploadedInto } from "@/containers/upload/useUploadedInto";
 import { StreamCard } from "@/shared/components/StreamCard";
 import { streamDetailPath } from "@/shared/constants/routes";
-import { categoryOrder, StreamCategory } from "@/shared/constants/streams";
 import { getStreamAttachments } from "@/shared/providers/api";
 import { VaultStreamDto } from "@/shared/types/vault";
-import { categoryForStream } from "@/shared/utils/streamHelpers";
+import { sortedSections } from "@/shared/utils/streamHelpers";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Attachment } from "../types";
@@ -49,17 +48,6 @@ const fetchPreview = async (
   }
 };
 
-/** Streams the backend returns in arbitrary order; the five-section
- *  architecture has a fixed reading order. Unrecognised streams sort last so an
- *  off-template stream is still reachable rather than hidden. */
-const withCategory = (streams: VaultStreamDto[]) =>
-  streams
-    .map((stream) => ({
-      stream,
-      category: categoryForStream(stream),
-    }))
-    .sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
-
 const StreamList: React.FC<StreamListProps> = ({ vaultId, streams }) => {
   const navigate = useNavigate();
   // streamId -> { first few records, true total }, loaded in parallel up front.
@@ -68,7 +56,7 @@ const StreamList: React.FC<StreamListProps> = ({ vaultId, streams }) => {
   >({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const sections = useMemo(() => withCategory(streams), [streams]);
+  const sections = useMemo(() => sortedSections(streams), [streams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,7 +119,7 @@ const StreamList: React.FC<StreamListProps> = ({ vaultId, streams }) => {
           <StreamCard
             key={stream.id}
             stream={stream}
-            category={category as StreamCategory | null}
+            category={category}
             total={total}
             onOpen={
               stream.asset_code

@@ -4,7 +4,7 @@ import { VaultDetailState } from "./types";
 
 const initialState: VaultDetailState = {
   vault: null,
-  parent: null,
+  ancestors: [],
   isLoading: false,
   error: null,
 };
@@ -17,15 +17,19 @@ const vaultDetailSlice = createSlice({
       state.isLoading = true;
       state.error = null;
       state.vault = null;
-      state.parent = null;
+      state.ancestors = [];
     },
     fetchVaultDetailSuccess(state, action: PayloadAction<VaultDto>) {
       state.isLoading = false;
       state.vault = action.payload;
     },
-    /** Non-null only for a project; resolved by the saga before success. */
-    setVaultParent(state, action: PayloadAction<VaultDto | null>) {
-      state.parent = action.payload;
+    /**
+     * Root-first, and empty for a home. Dispatched twice per vault: the
+     * immediate parent before success, because whether this is a home decides
+     * what the page mounts, then the rest of the chain as it arrives.
+     */
+    setVaultAncestors(state, action: PayloadAction<VaultDto[]>) {
+      state.ancestors = action.payload;
     },
     fetchVaultDetailFailure(state, action: PayloadAction<string>) {
       state.isLoading = false;
