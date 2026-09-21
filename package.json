@@ -23,7 +23,8 @@
     "uuid": "^11.1.1",
     "vitest": {
       "vite": "8.0.16"
-    }
+    },
+    "brace-expansion@^1": "^1.1.21"
   },
   "dependencies": {
     "@filedgr/web-core": "^0.10.1",
@@ -51,7 +52,7 @@
     "mammoth": "^1.12.1",
     "occt-import-js": "^0.0.23",
     "ox": "^0.11.3",
-    "pdfjs-dist": "^5.7.284",
+    "pdfjs-dist": "^6.3.289",
     "process": "^0.11.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -59,7 +60,7 @@
     "react-leaflet": "^4.2.1",
     "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^6.27.0",
+    "react-router-dom": "^7.18.4",
     "react-toastify": "^10.0.6",
     "recharts": "^3.0.2",
     "redux-saga": "^1.4.3",
