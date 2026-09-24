@@ -8,7 +8,7 @@ import {
   useAttachmentResolver,
   usePreviewSources,
 } from "@/shared/hooks/usePreview";
-import { formatFileSize } from "@/shared/utils/fileHelpers";
+import { formatFileSize } from "@filedgr/web-core/format";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import {
   FilePreview,

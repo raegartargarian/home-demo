@@ -3,8 +3,8 @@ import { DURATION, EASE_OUT } from "@/shared/constants/motion";
 import { cn } from "@/lib/utils";
 import { CopyableHash } from "@/shared/components/CopyableHash";
 import { VerificationBadge } from "@/shared/components/VerificationBadge";
-import { formatDate } from "@/shared/utils/dateFormatter";
-import { getLedgerNameFromServerName } from "@/shared/utils/networks";
+import { formatDate } from "@filedgr/web-core/format";
+import { ledgerName } from "@/shared/utils/ledger";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
@@ -22,7 +22,7 @@ export interface ProvenanceRow {
 
 interface ProvenanceDetailsProps {
   txHash?: string | null;
-  /** Backend ledger name; rendered through `getLedgerNameFromServerName`. */
+  /** Backend ledger name; rendered through `ledgerName`. */
   ledger?: string | null;
   createdAt?: string | null;
   /** "Registered" for a vault, "Created" for a stream. */
@@ -92,7 +92,7 @@ export const ProvenanceDetails: React.FC<ProvenanceDetailsProps> = ({
       ? [
           {
             label: "Network",
-            value: getLedgerNameFromServerName(ledger) || ledger,
+            value: ledgerName(ledger),
           },
         ]
       : []),

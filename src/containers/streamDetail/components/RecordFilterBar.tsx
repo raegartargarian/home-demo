@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Attachment } from "@/containers/vaultDetail/types";
 import { FilterChip } from "@/shared/components/FilterChip";
+import { FIELD_CLASS } from "@/shared/components/FormField";
 import { RECORD_FACETS } from "@/shared/constants/recordFacets";
+import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
 import React, { useMemo } from "react";
 import {
+  EMPTY_FILTER,
   facetOptions,
   isFilterActive,
   RecordFilter,
@@ -29,6 +33,10 @@ const MIN_OPTIONS = 2;
  * Both rows are built from the records actually on the page, so the bar never
  * offers a chip that empties it, and a section with one kind of document shows
  * no row at all rather than a single chip that does nothing.
+ *
+ * Above them, a box for the words a person remembers instead — the plumber's
+ * name, "leak", the model number they typed into the description. It follows
+ * the same rule as the rows: one record is not a choice, so it is not drawn.
  *
  * The rows scroll horizontally, which nothing else in the app does — but a
  * section can surface seven facets and a dozen rooms, and on a phone that is
@@ -60,14 +68,36 @@ export const RecordFilterBar: React.FC<RecordFilterBarProps> = ({
 
   const showFacets = facetChips.length >= MIN_OPTIONS;
   const showRooms = rooms.length >= MIN_OPTIONS;
+  // A query that arrived in a link keeps its box even over a single record, or
+  // there would be a filter on with nothing on the page to take it off.
+  const showSearch = records.length >= MIN_OPTIONS || filter.query !== "";
   const active = isFilterActive(filter);
 
-  if (!showFacets && !showRooms) return null;
+  if (!showFacets && !showRooms && !showSearch) return null;
 
   return (
     <div className={className}>
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1 space-y-2">
+          {showSearch && (
+            <div className="relative max-w-sm">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-subtle"
+                aria-hidden
+              />
+              <input
+                type="search"
+                value={filter.query}
+                onChange={(event) =>
+                  onChange({ ...filter, query: event.target.value })
+                }
+                placeholder="Search names and descriptions"
+                aria-label="Search this section's records"
+                className={cn(FIELD_CLASS, "pl-9")}
+              />
+            </div>
+          )}
+
           {showFacets && (
             <div
               role="group"
@@ -121,7 +151,7 @@ export const RecordFilterBar: React.FC<RecordFilterBarProps> = ({
             type="button"
             variant="link"
             size="sm"
-            onClick={() => onChange({ facets: [], rooms: [] })}
+            onClick={() => onChange(EMPTY_FILTER)}
             className="shrink-0"
           >
             Clear

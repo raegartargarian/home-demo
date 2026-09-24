@@ -43,9 +43,14 @@ export type GroupByAxis = "phase" | "collection" | "room" | "timeline";
 export interface HomeRecordManifest {
   recordInfo: {
     name: string; // "Left Wing Framing", "Kitchen Remodel 2026"
-    type: HomeRecordType;
+    /** The kind of work. Absent from a manifest the capture form wrote, which
+     *  knows what the *document* is (`docType`) and not what the job was. */
+    type?: HomeRecordType;
+    /** The Type segment of the record's name: "Invoice", "Manual", "Permit". */
+    docType?: string;
     collection?: string; // phase/project this record belongs to
     rooms?: string[]; // tags: ["Kitchen", "Dining"]
+    contains?: string[]; // facet labels: what else is in the bundle
     systems?: string[]; // tags: ["Electrical", "Plumbing"]
     trade?: string; // "General", "Electrical", "Roofing"
     date?: string; // ISO date of the work
@@ -83,4 +88,6 @@ export interface HomeRecordManifest {
     term?: string;
     expires?: string;
   };
+  /** The homeowner's own words about the record, as typed into the form. */
+  notes?: string;
 }

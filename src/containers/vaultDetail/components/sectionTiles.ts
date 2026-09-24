@@ -1,5 +1,6 @@
 import { recordMeta } from "@/shared/utils/recordLens";
 import { parseRecordName, readableDocName } from "@/shared/utils/recordNaming";
+import { stripTagLines } from "@/shared/utils/recordTags";
 import { Attachment } from "../types";
 import { previewableFiles, type RecordFile } from "./recordFiles";
 
@@ -21,6 +22,12 @@ export interface SectionTile {
   file: RecordFile;
   /** What the tile is called. See `labelFor`. */
   label: string;
+  /**
+   * The homeowner's note on the record, tag lines removed. The record's, not
+   * the file's — every tile from one upload carries the same one, because the
+   * note was written about the upload.
+   */
+  note: string;
   /**
    * Whether the record is archived. Only ever true on a shelf that asked for
    * archived records, and then the tile has to say so — an archived receipt
@@ -80,6 +87,8 @@ export const sectionTiles = (records: Attachment[]): SectionTile[] => {
   const tiles: SectionTile[] = [];
 
   for (const attachment of records) {
+    const note = stripTagLines(attachment.description);
+
     // A record whose only file is the bundle still has to appear: this app
     // packs an upload into one zip, so hiding bundles as packaging would hide
     // the whole record with them. Falling back to its own files gives it a
@@ -94,6 +103,7 @@ export const sectionTiles = (records: Attachment[]): SectionTile[] => {
         attachment,
         file,
         label: labelFor(attachment, file, files.length),
+        note,
         archived: !!attachment.archived,
         key: `${attachment.id}:${file.cid ?? index}`,
       });

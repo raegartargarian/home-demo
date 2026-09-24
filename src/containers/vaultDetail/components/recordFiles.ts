@@ -1,3 +1,4 @@
+import { isRecordManifest } from "@/shared/utils/recordManifest";
 import { Attachment } from "../types";
 
 /**
@@ -14,6 +15,13 @@ export type RecordFile = NonNullable<Attachment["files"]>[number];
 export const isZip = (file: RecordFile): boolean =>
   /\.zip$/i.test(file.filename ?? "");
 
-/** The files of a record that are worth showing: everything but the bundle. */
+/**
+ * The zip, and the `home_record.json` the capture form packs into it. Both
+ * describe the record rather than being one of its documents.
+ */
+const isPackaging = (file: RecordFile): boolean =>
+  isZip(file) || isRecordManifest(file.filename);
+
+/** The files of a record that are worth showing: everything but packaging. */
 export const previewableFiles = (attachment: Attachment): RecordFile[] =>
-  (attachment.files ?? []).filter((file) => !isZip(file));
+  (attachment.files ?? []).filter((file) => !isPackaging(file));

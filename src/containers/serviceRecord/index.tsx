@@ -5,9 +5,8 @@ import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import HomeRecordVisualization from "@/shared/components/HomeRecordVisualization";
-import { formatFileSize } from "@/shared/utils/fileHelpers";
+import { formatFileSize } from "@filedgr/web-core/format";
 import { cleanupHomeData } from "@/shared/utils/zipHandler";
-import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import {
@@ -20,7 +19,7 @@ import {
   MapPin,
   RotateCcw,
 } from "lucide-react";
-import { parseRoomTags } from "@/shared/utils/recordTags";
+import { parseRoomTags, stripTagLines } from "@/shared/utils/recordTags";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -47,7 +46,9 @@ const ServiceRecord = () => {
   const [isConfirmingArchive, setIsConfirmingArchive] = useState(false);
   const setArchived = (archived: boolean) => {
     if (!attachment?.id) return;
-    dispatch(serviceRecordActions.archiveStart({ id: attachment.id, archived }));
+    dispatch(
+      serviceRecordActions.archiveStart({ id: attachment.id, archived }),
+    );
   };
 
   // Close the question once the answer has landed — or failed, in which case
@@ -58,6 +59,12 @@ const ServiceRecord = () => {
 
   const rooms = useMemo(
     () => parseRoomTags(attachment?.description),
+    [attachment?.description],
+  );
+  // What the homeowner typed, with the tag lines taken back off — those are
+  // already on the page as chips.
+  const note = useMemo(
+    () => stripTagLines(attachment?.description),
     [attachment?.description],
   );
 
@@ -157,6 +164,13 @@ const ServiceRecord = () => {
                     ))}
                   </ul>
                 )}
+                {/* Line breaks kept: a note is often a short list — who came,
+                    what they replaced, what to watch for. */}
+                {note && (
+                  <p className="mt-3 max-w-prose whitespace-pre-line text-sm text-ink-muted">
+                    {note}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -202,7 +216,7 @@ const ServiceRecord = () => {
                     onClick={() =>
                       viewTXInExplorer(
                         attachment.tx_hash!,
-                        attachment.ledger as NETWORK_SERVER_NAMES,
+                        attachment.ledger,
                       )
                     }
                   >
@@ -271,7 +285,9 @@ const ServiceRecord = () => {
         )}
 
         {/* Home Record Visualization */}
-        {recordData && <HomeRecordVisualization data={recordData} />}
+        {recordData && (
+          <HomeRecordVisualization data={recordData} showNotes={!note} />
+        )}
 
         {/* Non-zip file viewer */}
         {!isProcessingZip && !recordData && attachment && (

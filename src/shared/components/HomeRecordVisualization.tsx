@@ -1,10 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toPreviewSource, useBlobResolver } from "@/shared/hooks/usePreview";
-import {
-  FilePreview,
-  type PreviewSource,
-} from "@filedgr/web-core/preview";
+import { FilePreview, type PreviewSource } from "@filedgr/web-core/preview";
 import { ProcessedHomeData } from "@/shared/utils/zipHandler";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -26,6 +23,11 @@ import React, { useMemo, useState } from "react";
 
 interface HomeRecordVisualizationProps {
   data: ProcessedHomeData;
+  /**
+   * False where the page has already printed the homeowner's note — the record
+   * page reads it off the description, and saying it twice is one too many.
+   */
+  showNotes?: boolean;
 }
 
 const fadeIn = {
@@ -55,6 +57,15 @@ const RECORD_TYPE_LABELS: Record<string, string> = {
 const money = (n?: number) =>
   n == null ? null : `$${n.toLocaleString("en-US")}`;
 
+/**
+ * Only what the manifest actually says. A manifest the capture form wrote
+ * holds a project, a document type, a date and a note — no cost, no
+ * contractor — and a page of "N/A" under it reads as a record with most of its
+ * paperwork missing rather than one nobody was asked those questions about.
+ */
+const filled = <T extends { value?: React.ReactNode }>(items: T[]): T[] =>
+  items.filter((item) => item.value != null && item.value !== "");
+
 type RecordDocument = ProcessedHomeData["documents"][number];
 
 type SelectedDoc = { source: PreviewSource; name: string; url: string };
@@ -78,8 +89,12 @@ const DocumentCard = ({
   // resolver short-circuits transport and web-core dispatches on filename/mime
   // like any other source.
   const source = useMemo(
-    () => toPreviewSource({ cid: doc.url, filename: doc.filename || doc.name }, doc.name),
-    [doc.url, doc.filename, doc.name]
+    () =>
+      toPreviewSource(
+        { cid: doc.url, filename: doc.filename || doc.name },
+        doc.name,
+      ),
+    [doc.url, doc.filename, doc.name],
   );
   const resolver = useBlobResolver(doc.url);
 
@@ -198,6 +213,7 @@ const DocumentLightbox = ({
 
 const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
   data,
+  showNotes = true,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<SelectedDoc | null>(null);
@@ -218,6 +234,33 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
   const record = data.recordData[0];
   const info = record?.recordInfo;
   const tags = [...(info?.rooms ?? []), ...(info?.systems ?? [])];
+  const typeLabel =
+    info?.docType ||
+    (info?.type && (RECORD_TYPE_LABELS[info.type] ?? info.type)) ||
+    info?.trade;
+  const notes = showNotes ? record?.notes?.trim() : undefined;
+
+  const contractorRows = filled([
+    { label: "Contractor", value: record?.contractor?.name },
+    { label: "License", value: record?.contractor?.license },
+    { label: "Phone", value: record?.contractor?.phone },
+    {
+      label: "Warranty",
+      value:
+        record?.warranty?.term || record?.contractor?.warranty
+          ? `${record?.warranty?.term || record?.contractor?.warranty}${
+              record?.warranty?.expires
+                ? ` (until ${record.warranty.expires})`
+                : ""
+            }`
+          : undefined,
+    },
+  ]);
+  const costRows = filled([
+    { label: "Labor", value: money(record?.cost?.labor) },
+    { label: "Materials", value: money(record?.cost?.materials) },
+    { label: "Permit", value: record?.cost?.permitNo },
+  ]);
 
   // Compute which tabs have data
   const availableTabs: Array<{
@@ -235,7 +278,11 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
     availableTabs.push({ value: "documents", label: "Docs", icon: FileText });
   }
   if (record?.materials && record.materials.length > 0) {
-    availableTabs.push({ value: "materials", label: "Materials", icon: Package });
+    availableTabs.push({
+      value: "materials",
+      label: "Materials",
+      icon: Package,
+    });
   }
   const defaultTab = availableTabs[0]?.value ?? "details";
   const gridCols =
@@ -257,31 +304,20 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
           animate="animate"
           className="grid grid-cols-2 lg:grid-cols-4 gap-3"
         >
-          {[
+          {filled([
             {
               icon: Home,
               label: "Project",
-              value: info?.collection || info?.name || "N/A",
+              value: info?.collection || info?.name,
             },
-            {
-              icon: Hammer,
-              label: "Type",
-              value:
-                (info?.type && RECORD_TYPE_LABELS[info.type]) ||
-                info?.trade ||
-                "General",
-            },
+            { icon: Hammer, label: "Type", value: typeLabel },
             {
               icon: DollarSign,
               label: "Total Cost",
-              value: money(record.cost?.total) || "N/A",
+              value: money(record.cost?.total),
             },
-            {
-              icon: Calendar,
-              label: "Date",
-              value: info?.date || "N/A",
-            },
-          ].map((card) => (
+            { icon: Calendar, label: "Date", value: info?.date },
+          ]).map((card) => (
             <motion.div key={card.label} variants={staggerItem}>
               <Card className="bg-surface-raised border border-line">
                 <CardContent className="p-4">
@@ -308,7 +344,9 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
       {/* Tabs */}
       <motion.div {...fadeIn} transition={{ duration: 0.4, delay: 0.2 }}>
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className={`grid w-full ${gridCols} bg-surface-inset gap-1 p-1 rounded-xl`}>
+          <TabsList
+            className={`grid w-full ${gridCols} bg-surface-inset gap-1 p-1 rounded-xl`}
+          >
             {availableTabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -354,7 +392,11 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                               <motion.div
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 20,
+                                }}
                                 className="relative cursor-pointer rounded-xl overflow-hidden border border-line bg-surface-sunken"
                                 onClick={() =>
                                   setSelectedImage(match.before!.url!)
@@ -387,7 +429,11 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                               <motion.div
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 20,
+                                }}
                                 className="relative cursor-pointer rounded-xl overflow-hidden border border-line bg-surface-sunken"
                                 onClick={() =>
                                   setSelectedImage(match.after!.url!)
@@ -435,28 +481,32 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                   </CardHeader>
                   <CardContent className="space-y-3 pt-2">
                     <div className="grid grid-cols-2 gap-3">
-                      {[
+                      {filled([
                         { label: "Name", value: info?.name },
-                        {
-                          label: "Type",
-                          value:
-                            info?.type && RECORD_TYPE_LABELS[info.type]
-                              ? RECORD_TYPE_LABELS[info.type]
-                              : info?.type,
-                        },
+                        { label: "Type", value: typeLabel },
                         { label: "Collection", value: info?.collection },
                         { label: "Trade", value: info?.trade },
-                      ].map((item) => (
+                      ]).map((item) => (
                         <div key={item.label}>
                           <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
                             {item.label}
                           </label>
                           <p className="text-sm text-ink font-medium">
-                            {item.value || "N/A"}
+                            {item.value}
                           </p>
                         </div>
                       ))}
                     </div>
+                    {notes && (
+                      <div>
+                        <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
+                          Notes
+                        </label>
+                        <p className="whitespace-pre-line text-sm text-ink">
+                          {notes}
+                        </p>
+                      </div>
+                    )}
                     {tags.length > 0 && (
                       <div>
                         <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
@@ -475,22 +525,15 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                         </div>
                       </div>
                     )}
-                    {record?.cost && (
+                    {costRows.length > 0 && (
                       <div className="grid grid-cols-3 gap-3 pt-1">
-                        {[
-                          { label: "Labor", value: money(record.cost.labor) },
-                          {
-                            label: "Materials",
-                            value: money(record.cost.materials),
-                          },
-                          { label: "Permit", value: record.cost.permitNo },
-                        ].map((item) => (
+                        {costRows.map((item) => (
                           <div key={item.label}>
                             <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
                               {item.label}
                             </label>
                             <p className="text-sm text-ink font-medium">
-                              {item.value || "N/A"}
+                              {item.value}
                             </p>
                           </div>
                         ))}
@@ -500,64 +543,49 @@ const HomeRecordVisualization: React.FC<HomeRecordVisualizationProps> = ({
                 </Card>
               </motion.div>
 
-              <motion.div variants={staggerItem}>
-                <Card className="bg-surface-raised border border-line">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-sm font-medium text-ink">
-                      <ShieldCheck className="w-4 h-4 text-verified" />
-                      Contractor &amp; Warranty
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-2">
-                    {[
-                      { label: "Contractor", value: record?.contractor?.name },
-                      { label: "License", value: record?.contractor?.license },
-                      { label: "Phone", value: record?.contractor?.phone },
-                    ].map((item) => (
-                      <div key={item.label}>
-                        <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
-                          {item.label}
-                        </label>
-                        <p className="text-sm text-ink font-medium">
-                          {item.value || "N/A"}
-                        </p>
-                      </div>
-                    ))}
-                    <div>
-                      <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
-                        Warranty
-                      </label>
-                      <p className="text-sm text-ink font-medium">
-                        {record?.warranty?.term ||
-                          record?.contractor?.warranty ||
-                          "N/A"}
-                        {record?.warranty?.expires
-                          ? ` (until ${record.warranty.expires})`
-                          : ""}
-                      </p>
-                    </div>
-                    {record?.inspection && (
-                      <div>
-                        <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
-                          Inspection
-                        </label>
-                        <p className="text-sm text-ink flex items-center gap-1.5 font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-ink-subtle" />
-                          {record.inspection.result
-                            ? record.inspection.result.toUpperCase()
-                            : "N/A"}
-                          {record.inspection.date
-                            ? ` · ${record.inspection.date}`
-                            : ""}
-                          {record.inspection.inspector
-                            ? ` · ${record.inspection.inspector}`
-                            : ""}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
+              {(contractorRows.length > 0 || record?.inspection) && (
+                <motion.div variants={staggerItem}>
+                  <Card className="bg-surface-raised border border-line">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm font-medium text-ink">
+                        <ShieldCheck className="w-4 h-4 text-verified" />
+                        Contractor &amp; Warranty
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 pt-2">
+                      {contractorRows.map((item) => (
+                        <div key={item.label}>
+                          <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
+                            {item.label}
+                          </label>
+                          <p className="text-sm text-ink font-medium">
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                      {record?.inspection && (
+                        <div>
+                          <label className="text-[11px] font-medium text-ink-subtle uppercase tracking-wider">
+                            Inspection
+                          </label>
+                          <p className="text-sm text-ink flex items-center gap-1.5 font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-ink-subtle" />
+                            {record.inspection.result
+                              ? record.inspection.result.toUpperCase()
+                              : "N/A"}
+                            {record.inspection.date
+                              ? ` · ${record.inspection.date}`
+                              : ""}
+                            {record.inspection.inspector
+                              ? ` · ${record.inspection.inspector}`
+                              : ""}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
             </motion.div>
           </TabsContent>
 

@@ -47,9 +47,14 @@ function parseHomeJSON(content: string): HomeRecordData[] {
       return {
         recordInfo: {
           name: info.name || info.title || r.name,
-          type: info.type || r.type || "renovation",
+          // No default. This used to fall back to "renovation", which put a
+          // kind of work on the page that nobody had claimed — and the capture
+          // form's manifest never carries one.
+          type: info.type || r.type,
+          docType: info.docType || r.docType,
           collection: info.collection || info.project || r.collection,
           rooms: info.rooms || info.room || r.rooms || [],
+          contains: info.contains || r.contains || [],
           systems: info.systems || info.system || r.systems || [],
           trade: info.trade || r.trade,
           date: info.date || r.date,
@@ -69,6 +74,7 @@ function parseHomeJSON(content: string): HomeRecordData[] {
         materials: r.materials || r.parts || r.items || [],
         inspection: r.inspection,
         warranty: r.warranty,
+        notes: r.notes || r.note || r.description,
       } as HomeRecordData;
     });
   } catch (e) {
@@ -175,7 +181,7 @@ function matchBeforeAfterImages(images: RecordImage[]): Array<{
 }
 
 export async function processHomeZipFile(
-  zipData: ArrayBuffer
+  zipData: ArrayBuffer,
 ): Promise<ProcessedHomeData> {
   const zip = new JSZip();
   const contents = await zip.loadAsync(zipData);
@@ -227,7 +233,7 @@ export interface IndividualFileInput {
 }
 
 export async function processIndividualHomeFiles(
-  files: IndividualFileInput[]
+  files: IndividualFileInput[],
 ): Promise<ProcessedHomeData> {
   let recordData: HomeRecordData[] = [];
   const images: RecordImage[] = [];

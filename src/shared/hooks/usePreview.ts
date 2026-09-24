@@ -2,7 +2,6 @@ import type { PreviewSource, SourceResolver } from "@filedgr/web-core/preview";
 import { useMemo } from "react";
 
 import { createPreviewResolver } from "../providers/previewResolver";
-import { NETWORK_SERVER_NAMES } from "../utils/networks";
 
 /**
  * The React side of the preview boundary.
@@ -61,7 +60,7 @@ export const useAttachmentResolver = (
       createPreviewResolver({
         isPublic: attachment.public_vault !== false,
         txHash: attachment.tx_hash ?? undefined,
-        ledger: attachment.ledger as NETWORK_SERVER_NAMES,
+        ledger: attachment.ledger,
       }),
     [attachment.public_vault, attachment.tx_hash, attachment.ledger]
   );

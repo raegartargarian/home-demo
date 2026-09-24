@@ -1,6 +1,7 @@
 import { OTHER_DOC_TYPE, RECORD_DOC_TYPES } from "@/shared/utils/recordNaming";
 import { describe, expect, it } from "vitest";
 import {
+  facetForLabel,
   facetForType,
   RECORD_FACETS,
   UNFACETED_DOC_TYPES,
@@ -29,6 +30,19 @@ describe("record facets", () => {
     for (const type of ["Invoice", "Receipt", "Estimate", "Statement", "Tax"]) {
       expect(facetForType(type)?.code).toBe("payments");
     }
+  });
+
+  it("says Manuals on the chip a Manual is filed under", () => {
+    // The chip used to read "Warranties", so a record filed as a Manual looked
+    // mislabelled the moment the filter bar drew it.
+    expect(facetForType("Manual")?.label).toBe("Manuals & Warranties");
+  });
+
+  it("still reads the label that chip used to carry", () => {
+    // Already written into the `Contains:` line of records filed before the
+    // rename; dropping it would take them out of the filter.
+    expect(facetForLabel("Warranties")?.code).toBe("warranties");
+    expect(facetForLabel("manuals & warranties")?.code).toBe("warranties");
   });
 
   it("has no facet for a type it does not know", () => {

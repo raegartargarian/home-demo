@@ -2,7 +2,7 @@ import { getStreamAttachments } from "@/shared/providers/api";
 import { VaultDto, VaultStreamDto } from "@/shared/types/vault";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { txUrl } from "@filedgr/web-core/explorer";
-import { getLedgerNameFromServerName } from "@/shared/utils/networks";
+import { ledgerName } from "@/shared/utils/ledger";
 import { formatStreamName } from "@/shared/utils/streamHelpers";
 import jsPDF from "jspdf";
 
@@ -152,8 +152,7 @@ export async function generateVaultProofPdf(vault: VaultDto) {
   ]);
   if (vault.created_at) overviewRows.push(["Registered", fmtDate(vault.created_at)]);
   if (vault.ledger) {
-    const ledgerName = getLedgerNameFromServerName(vault.ledger);
-    overviewRows.push(["Network", ledgerName || vault.ledger]);
+    overviewRows.push(["Network", ledgerName(vault.ledger)]);
   }
   if (vault.streams) overviewRows.push(["Record Streams", `${vault.streams.length}`]);
 
@@ -193,9 +192,8 @@ export async function generateVaultProofPdf(vault: VaultDto) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
-    const ledgerName = getLedgerNameFromServerName(vault.ledger);
     doc.text(
-      `Network: ${ledgerName || vault.ledger || "Unknown"}`,
+      `Network: ${ledgerName(vault.ledger) || "Unknown"}`,
       margin + 6,
       y
     );
