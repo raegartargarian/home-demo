@@ -1,4 +1,4 @@
-import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
+import type { LedgerId } from "@filedgr/web-core/ledger";
 import { IProvider } from "@web3auth/modal";
 export interface JSONNft {
   vault: Vault;
@@ -14,7 +14,7 @@ interface Data {
 
 interface Vault {
   nftId: string;
-  ledger: NETWORK_SERVER_NAMES;
+  ledger: LedgerId;
   streams: Stream[];
 }
 

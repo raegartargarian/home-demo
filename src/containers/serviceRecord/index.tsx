@@ -5,9 +5,8 @@ import { useWeb3Auth } from "@/containers/global/Web3AuthProvider";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { ProvenanceDetails } from "@/shared/components/ProvenanceDetails";
 import HomeRecordVisualization from "@/shared/components/HomeRecordVisualization";
-import { formatFileSize } from "@/shared/utils/fileHelpers";
+import { formatFileSize } from "@filedgr/web-core/format";
 import { cleanupHomeData } from "@/shared/utils/zipHandler";
-import { NETWORK_SERVER_NAMES } from "@/shared/utils/networks";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { viewTXInExplorer } from "@/shared/utils/viewVaultInExplorer";
 import {
@@ -217,7 +216,7 @@ const ServiceRecord = () => {
                     onClick={() =>
                       viewTXInExplorer(
                         attachment.tx_hash!,
-                        attachment.ledger as NETWORK_SERVER_NAMES,
+                        attachment.ledger,
                       )
                     }
                   >

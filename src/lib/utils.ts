@@ -1,6 +1,3 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+// The shadcn cn() helper lives in @filedgr/web-core/cn — re-exported here so
+// the conventional "@/lib/utils" import path keeps working.
+export { cn } from "@filedgr/web-core/cn";

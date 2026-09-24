@@ -1,6 +1,6 @@
 import { Chip } from "@/shared/components/Chip";
 import { appRoutes } from "@/shared/constants/routes";
-import { formatDate } from "@/shared/utils/dateFormatter";
+import { formatDate } from "@filedgr/web-core/format";
 import { recordMeta } from "@/shared/utils/recordLens";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { ArrowRight, Calendar, Package } from "lucide-react";

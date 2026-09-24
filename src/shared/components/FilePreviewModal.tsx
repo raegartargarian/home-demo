@@ -6,7 +6,7 @@ import {
   type PreviewAccess,
   type PreviewFile,
 } from "@/shared/hooks/usePreview";
-import { formatFileSize } from "@/shared/utils/fileHelpers";
+import { formatFileSize } from "@filedgr/web-core/format";
 import { FilePreview } from "@filedgr/web-core/preview";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Download, FileIcon, X } from "lucide-react";

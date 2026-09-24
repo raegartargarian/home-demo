@@ -29,10 +29,7 @@ import {
 } from "./components/VaultStructureSidebar";
 import { parseHomeFacts } from "@/shared/utils/homeFacts";
 import { VaultDto } from "@/shared/types/vault";
-import {
-  getLedgerNameFromServerName,
-  NETWORK_SERVER_NAMES,
-} from "@/shared/utils/networks";
+import { ledgerName } from "@/shared/utils/ledger";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import {
   categoryForStream,
@@ -391,12 +388,12 @@ const VaultShell = () => {
                     onClick={() =>
                       viewTXInExplorer(
                         subject.txHash!,
-                        subject.ledger as NETWORK_SERVER_NAMES,
+                        subject.ledger,
                       )
                     }
                     title={
                       subject.ledger
-                        ? `View on ${getLedgerNameFromServerName(subject.ledger) || subject.ledger}`
+                        ? `View on ${ledgerName(subject.ledger)}`
                         : undefined
                     }
                   >

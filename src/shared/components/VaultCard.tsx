@@ -1,7 +1,7 @@
 import { Chip } from "@/shared/components/Chip";
 import { VaultImage } from "@/shared/components/VaultImage";
 import { VaultDto } from "@/shared/types/vault";
-import { formatDate } from "@/shared/utils/dateFormatter";
+import { formatDate } from "@filedgr/web-core/format";
 import { formatLocation, parseHomeFacts } from "@/shared/utils/homeFacts";
 import { getStatusConfig } from "@/shared/utils/statusConfig";
 import { ArrowRight, Calendar, Layers, MapPin } from "lucide-react";

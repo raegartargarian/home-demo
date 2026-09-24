@@ -3,7 +3,6 @@ import axios, { AxiosRequestConfig } from "axios";
 
 import { getIPFSIMGAddr, getIPFSIMGAddrPrivate } from "../utils/getIPFSAddrs";
 import { LocalStorageKeys } from "../utils/localStorageHelpers";
-import { NETWORK_SERVER_NAMES } from "../utils/networks";
 
 /**
  * The coupling boundary between web-core's preview layer and this app's
@@ -28,7 +27,7 @@ const fileUrl = (cid: string, isPublic: boolean): string =>
 
 interface PrivateAccessContext {
   txHash?: string;
-  ledger?: NETWORK_SERVER_NAMES | string;
+  ledger?: string;
 }
 
 const privateRequestConfig = (

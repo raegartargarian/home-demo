@@ -1,8 +1,8 @@
 import { txUrl } from "@filedgr/web-core/explorer";
-import { NETWORK_SERVER_NAMES } from "./networks";
+import type { LedgerId } from "@filedgr/web-core/ledger";
 
-const DEFAULT_LEDGER: NETWORK_SERVER_NAMES = "POLYGON_ZKEVM";
+const DEFAULT_LEDGER: LedgerId = "POLYGON_ZKEVM";
 
-export const viewTXInExplorer = (tx: string, ledger?: NETWORK_SERVER_NAMES) => {
-  window.open(txUrl(tx, ledger ?? DEFAULT_LEDGER), "_blank");
+export const viewTXInExplorer = (tx: string, ledger?: string | null) => {
+  window.open(txUrl(tx, ledger || DEFAULT_LEDGER), "_blank");
 };
