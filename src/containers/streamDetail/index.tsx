@@ -18,7 +18,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { archivedCountOf } from "./components/archivedCount";
 import RecordFilterBar from "./components/RecordFilterBar";
-import { filterRecords, isFilterActive } from "./components/recordFilter";
+import {
+  EMPTY_FILTER,
+  filterRecords,
+  isFilterActive,
+} from "./components/recordFilter";
 import StreamTimeline, {
   type StreamGrouping,
 } from "./components/StreamTimeline";
@@ -248,11 +252,13 @@ const StreamDetail = () => {
     [attachments, filter],
   );
 
-  // Worth offering only where it would say something a date heading does not.
-  // One project — or none, in a section of legacy names — is one heading over
-  // everything, which is the same non-choice the filter bar declines to draw.
+  // Offered as soon as one record names a project. It used to wait for a second
+  // project, on the reasoning that one heading over everything says nothing —
+  // but the heading is the only place this page says the project's name, so a
+  // first project filed under "September 2026" read as the name having been
+  // lost, and then turned up the moment a second project was added.
   const hasProjects = useMemo(
-    () => groupByProject(attachments).filter((group) => group.key).length > 1,
+    () => groupByProject(attachments).some((group) => group.key),
     [attachments],
   );
 
@@ -265,7 +271,7 @@ const StreamDetail = () => {
   // heading that says "3 files" over a section still loading page two is a
   // count the next page disproves — worse than a date heading getting longer,
   // because the reader takes it as the whole job.
-  // One project — or none — is one heading over everything, so date leads
+  // A section of legacy names has no project to lead with, so date leads
   // there: the switch is not even drawn.
   const grouping: StreamGrouping = chosen ?? (hasProjects ? "project" : "date");
 
@@ -492,7 +498,7 @@ const StreamDetail = () => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setFilter({ facets: [], rooms: [] })}
+                onClick={() => setFilter(EMPTY_FILTER)}
                 className="mt-4"
               >
                 Clear the filter

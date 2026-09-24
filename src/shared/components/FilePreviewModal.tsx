@@ -35,6 +35,8 @@ export interface PreviewEntry {
   file: PreviewFile;
   /** Shown in the header — the tile's own label. */
   label: string;
+  /** The note on the record the file came in, shown under the header. */
+  note?: string;
 }
 
 interface FilePreviewModalProps {
@@ -53,7 +55,7 @@ const PreviewShell: React.FC<{
   onClose: () => void;
 }> = ({ entries, index, onNavigate, onClose }) => {
   const reduceMotion = useReducedMotion();
-  const { attachment, file, label } = entries[index];
+  const { attachment, file, label, note } = entries[index];
 
   const hasPrev = index > 0;
   const hasNext = index < entries.length - 1;
@@ -176,6 +178,14 @@ const PreviewShell: React.FC<{
             <X aria-hidden />
           </Button>
         </header>
+
+        {/* Capped and scrollable: the file is what the viewer is for, and a
+            long note must not push it off a phone screen. */}
+        {note && (
+          <p className="max-h-24 shrink-0 overflow-y-auto whitespace-pre-line border-b border-line px-4 py-2 text-xs text-ink-muted">
+            {note}
+          </p>
+        )}
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-surface-sunken p-4">
           {canPreview ? (

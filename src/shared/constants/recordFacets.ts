@@ -45,6 +45,12 @@ export interface RecordFacet {
   code: FacetCode;
   /** What the filter chip says. */
   label: string;
+  /**
+   * Labels this facet used to carry. A label is written into a record's
+   * `Contains:` line, so renaming a chip must not orphan what is already filed
+   * under the old wording.
+   */
+  aliases?: string[];
   icon: LucideIcon;
   types: RecordDocType[];
 }
@@ -66,7 +72,10 @@ export const RECORD_FACETS: RecordFacet[] = [
   },
   {
     code: "warranties",
-    label: "Warranties",
+    // Named for both halves: a chip reading "Warranties" over a record filed
+    // as a Manual looks like the manual was mislabelled.
+    label: "Manuals & Warranties",
+    aliases: ["Warranties"],
     icon: ShieldCheck,
     types: ["Warranty", "Manual"],
   },
@@ -92,7 +101,11 @@ const FACET_FOR_TYPE = new Map<RecordDocType, RecordFacet>(
 );
 
 const FACET_FOR_LABEL = new Map(
-  RECORD_FACETS.map((facet) => [facet.label.toLowerCase(), facet]),
+  RECORD_FACETS.flatMap((facet) =>
+    [facet.label, ...(facet.aliases ?? [])].map(
+      (label) => [label.toLowerCase(), facet] as const,
+    ),
+  ),
 );
 
 /** The facet a document type falls under, or null for an unrecognised type. */

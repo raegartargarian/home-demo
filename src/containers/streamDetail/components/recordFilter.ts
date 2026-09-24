@@ -1,7 +1,11 @@
 import { Attachment } from "@/containers/vaultDetail/types";
 import { FacetCode } from "@/shared/constants/recordFacets";
 import { Room, RoomCode } from "@/shared/constants/rooms";
-import { facetsForRecord, parseRoomTags } from "@/shared/utils/recordTags";
+import {
+  facetsForRecord,
+  parseRoomTags,
+  stripTagLines,
+} from "@/shared/utils/recordTags";
 
 /**
  * Filtering one section's records by what a document is and where the work was.
@@ -18,17 +22,25 @@ import { facetsForRecord, parseRoomTags } from "@/shared/utils/recordTags";
  *
  * The two axes intersect and the values within one axis union — "payments, in
  * the kitchen or the patio" is one question, and it is the one people ask.
+ *
+ * The typed query intersects with both. It reads the record's name and the
+ * homeowner's own note — the description with its tag lines taken off, so
+ * typing "kitchen" finds the note that mentions one rather than every record
+ * tagged with the room, which is what the chip beside it is for.
  */
 
 export interface RecordFilter {
   facets: FacetCode[];
   rooms: RoomCode[];
+  query: string;
 }
 
-export const EMPTY_FILTER: RecordFilter = { facets: [], rooms: [] };
+export const EMPTY_FILTER: RecordFilter = { facets: [], rooms: [], query: "" };
 
 export const isFilterActive = (filter: RecordFilter): boolean =>
-  filter.facets.length > 0 || filter.rooms.length > 0;
+  filter.facets.length > 0 ||
+  filter.rooms.length > 0 ||
+  filter.query.trim().length > 0;
 
 const matchesFacets = (record: Attachment, facets: FacetCode[]): boolean =>
   facets.length === 0 ||
@@ -37,6 +49,16 @@ const matchesFacets = (record: Attachment, facets: FacetCode[]): boolean =>
 const matchesRooms = (record: Attachment, rooms: RoomCode[]): boolean =>
   rooms.length === 0 ||
   parseRoomTags(record.description).some((room) => rooms.includes(room.code));
+
+/** Every typed word has to appear somewhere, in any order and any case. */
+const matchesQuery = (record: Attachment, query: string): boolean => {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+
+  const haystack =
+    `${record.name ?? ""}\n${stripTagLines(record.description)}`.toLowerCase();
+  return words.every((word) => haystack.includes(word));
+};
 
 export const filterRecords = (
   records: Attachment[],
@@ -47,7 +69,8 @@ export const filterRecords = (
     : records.filter(
         (record) =>
           matchesFacets(record, filter.facets) &&
-          matchesRooms(record, filter.rooms),
+          matchesRooms(record, filter.rooms) &&
+          matchesQuery(record, filter.query),
       );
 
 export interface FacetOption {
@@ -64,8 +87,8 @@ export interface RoomOption {
  * The chips worth offering, and what each would leave behind.
  *
  * Only values actually present are returned, so the bar never offers a filter
- * that empties the page. Counts are measured against the *other* axis' current
- * selection — with "Kitchen" on, the Payments chip says how many kitchen
+ * that empties the page. Counts are measured against everything *else* that is
+ * selected — with "Kitchen" on, the Payments chip says how many kitchen
  * payments there are, not how many payments the section holds. A count that
  * ignored the rest of the filter would be a number the next click disproves.
  */
@@ -77,6 +100,7 @@ export const facetOptions = (
 
   for (const record of records) {
     if (!matchesRooms(record, filter.rooms)) continue;
+    if (!matchesQuery(record, filter.query)) continue;
     for (const code of facetsForRecord(record)) {
       counts.set(code, (counts.get(code) ?? 0) + 1);
     }
@@ -93,6 +117,7 @@ export const roomOptions = (
 
   for (const record of records) {
     if (!matchesFacets(record, filter.facets)) continue;
+    if (!matchesQuery(record, filter.query)) continue;
     for (const room of parseRoomTags(record.description)) {
       const seen = counts.get(room.code);
       if (seen) seen.count += 1;

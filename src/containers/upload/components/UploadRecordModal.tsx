@@ -34,6 +34,7 @@ import {
   documentNameFrom,
   RecordDocType,
 } from "@/shared/utils/recordNaming";
+import { recordManifestFile } from "@/shared/utils/recordManifest";
 import { withRecordTags } from "@/shared/utils/recordTags";
 import { withFlatNames } from "@filedgr/web-core/browser";
 import { formatFileSize } from "@filedgr/web-core/format";
@@ -404,16 +405,38 @@ export const UploadRecordModal: React.FC = () => {
       // rather than colliding silently.
       const named = withFlatNames(namedFiles);
 
+      // A Type change can leave a selection that the Type now covers; drop it
+      // rather than writing the same facet down twice.
+      const alsoContains = contains.filter(
+        (facet) => facet.code !== typedFacet?.code,
+      );
+
       // A lone zip is already the package, so it is uploaded as it is — under
       // the canonical name, same as the one packed below. Anything else is
       // packed into one. Deterministic, not just any zip: the same files must
       // always produce the same bytes for an interrupted upload to be resumable.
+      //
+      // The packed one also carries `home_record.json`: the note and the tags
+      // as data, for whoever ends up holding the bundle without this app. A
+      // lone zip goes without — opening someone's archive to add a file to it
+      // would anchor bytes they never handed over.
       const file =
         files.length === 1 && files[0].name.toLowerCase().endsWith(".zip")
           ? named[0]
-          : await createDeterministicZip(named, {
-              name: `${slugify(recordDocName)}.zip`,
-            });
+          : await createDeterministicZip(
+              [
+                ...named,
+                recordManifestFile({
+                  project,
+                  docType,
+                  date,
+                  note: description,
+                  rooms,
+                  contains: alsoContains,
+                }),
+              ],
+              { name: `${slugify(recordDocName)}.zip` },
+            );
 
       dispatch(
         uploadActions.startUpload(
@@ -425,13 +448,9 @@ export const UploadRecordModal: React.FC = () => {
             // Rooms are appended to the description as a readable line: the
             // backend stores no tags, and this is the only field that comes back
             // on every row of the section list. See utils/recordTags.ts.
-            // A Type change can leave a selection that the Type now covers;
-            // drop it rather than writing the same facet down twice.
             description: withRecordTags(description.trim(), {
               rooms,
-              contains: contains.filter(
-                (facet) => facet.code !== typedFacet?.code,
-              ),
+              contains: alsoContains,
             }),
             file,
             filename: file.name,

@@ -1,6 +1,7 @@
 import { Attachment } from "@/containers/vaultDetail/types";
 import { describe, expect, it } from "vitest";
 import {
+  EMPTY_FILTER,
   facetOptions,
   filterRecords,
   roomOptions,
@@ -40,19 +41,58 @@ const ids = (records: Attachment[]) => records.map((r) => r.id);
 
 describe("filterRecords", () => {
   it("returns everything when nothing is selected", () => {
-    expect(filterRecords(ALL, { facets: [], rooms: [] })).toHaveLength(4);
+    expect(filterRecords(ALL, EMPTY_FILTER)).toHaveLength(4);
+  });
+
+  it("finds a record by a word in the homeowner's note", () => {
+    expect(ids(filterRecords(ALL, { ...EMPTY_FILTER, query: "paid" }))).toEqual(
+      ["2"],
+    );
+  });
+
+  it("finds a record by its name, whatever the case", () => {
+    expect(
+      ids(filterRecords(ALL, { ...EMPTY_FILTER, query: "PAVING invoice" })),
+    ).toEqual(["3"]);
+  });
+
+  it("does not read the tag lines as part of the note", () => {
+    // "Patio" is a room tag on record 3 and nowhere in its name or note: that
+    // is the room chip's question, and answering it here too would make the
+    // box and the chip disagree about what a tag is.
+    expect(
+      ids(filterRecords(ALL, { ...EMPTY_FILTER, query: "patio" })),
+    ).toEqual([]);
+  });
+
+  it("treats a query of spaces as no query", () => {
+    expect(filterRecords(ALL, { ...EMPTY_FILTER, query: "   " })).toHaveLength(
+      4,
+    );
+  });
+
+  it("intersects the query with the chips", () => {
+    expect(
+      ids(
+        filterRecords(ALL, {
+          ...EMPTY_FILTER,
+          facets: ["payments"],
+          query: "kitchen",
+        }),
+      ),
+    ).toEqual(["1"]);
   });
 
   it("unions within one axis", () => {
     // "kitchen or patio" — three of the four.
     expect(
-      ids(filterRecords(ALL, { facets: [], rooms: ["kitchen", "patio"] })),
+      ids(filterRecords(ALL, { ...EMPTY_FILTER, rooms: ["kitchen", "patio"] })),
     ).toEqual(["1", "2", "3"]);
   });
 
   it("groups six document types under one Payments chip", () => {
     expect(
-      ids(filterRecords(ALL, { facets: ["payments"], rooms: [] })),
+      ids(filterRecords(ALL, { ...EMPTY_FILTER, facets: ["payments"] })),
     ).toEqual(["1", "3"]);
   });
 
@@ -60,30 +100,34 @@ describe("filterRecords", () => {
     // Payments AND kitchen: the kitchen photo is a kitchen record but not a
     // payment, and the patio invoice is a payment but not a kitchen one.
     expect(
-      ids(filterRecords(ALL, { facets: ["payments"], rooms: ["kitchen"] })),
+      ids(
+        filterRecords(ALL, {
+          ...EMPTY_FILTER,
+          facets: ["payments"],
+          rooms: ["kitchen"],
+        }),
+      ),
     ).toEqual(["1"]);
   });
 
   it("drops untagged records from a room filter without hiding them otherwise", () => {
     expect(
-      ids(filterRecords(ALL, { facets: [], rooms: ["kitchen"] })),
+      ids(filterRecords(ALL, { ...EMPTY_FILTER, rooms: ["kitchen"] })),
     ).not.toContain("4");
-    expect(ids(filterRecords(ALL, { facets: ["legal"], rooms: [] }))).toEqual([
-      "4",
-    ]);
+    expect(
+      ids(filterRecords(ALL, { ...EMPTY_FILTER, facets: ["legal"] })),
+    ).toEqual(["4"]);
   });
 });
 
 describe("options", () => {
   it("offers only facets that are present", () => {
-    const codes = facetOptions(ALL, { facets: [], rooms: [] }).map(
-      (o) => o.code,
-    );
+    const codes = facetOptions(ALL, EMPTY_FILTER).map((o) => o.code);
     expect(codes.sort()).toEqual(["legal", "payments", "photos"]);
   });
 
   it("counts a room once per record, not once per tag", () => {
-    const kitchen = roomOptions(ALL, { facets: [], rooms: [] }).find(
+    const kitchen = roomOptions(ALL, EMPTY_FILTER).find(
       (o) => o.room.code === "kitchen",
     );
     expect(kitchen?.count).toBe(2);
@@ -92,9 +136,10 @@ describe("options", () => {
   it("measures each axis against the other's selection", () => {
     // With Payments on, the Kitchen chip should promise one record, not two —
     // the kitchen photo is not a payment.
-    const kitchen = roomOptions(ALL, { facets: ["payments"], rooms: [] }).find(
-      (o) => o.room.code === "kitchen",
-    );
+    const kitchen = roomOptions(ALL, {
+      ...EMPTY_FILTER,
+      facets: ["payments"],
+    }).find((o) => o.room.code === "kitchen");
     expect(kitchen?.count).toBe(1);
   });
 });
@@ -117,19 +162,19 @@ describe("records that hold more than one kind of document", () => {
 
   it("is found by the facet its type names", () => {
     expect(
-      ids(filterRecords(MIXED, { facets: ["payments"], rooms: [] })),
+      ids(filterRecords(MIXED, { ...EMPTY_FILTER, facets: ["payments"] })),
     ).toContain("5");
   });
 
   it("is also found by what its files contain", () => {
     expect(
-      ids(filterRecords(MIXED, { facets: ["photos"], rooms: [] })),
+      ids(filterRecords(MIXED, { ...EMPTY_FILTER, facets: ["photos"] })),
     ).toContain("5");
   });
 
   it("is counted under both chips, so the row can exceed the page", () => {
     const counts = new Map(
-      facetOptions(MIXED, { facets: [], rooms: [] }).map((option) => [
+      facetOptions(MIXED, EMPTY_FILTER).map((option) => [
         option.code,
         option.count,
       ]),
@@ -140,7 +185,7 @@ describe("records that hold more than one kind of document", () => {
 
   it("is returned once, not twice, when both its facets are selected", () => {
     const matched = ids(
-      filterRecords(MIXED, { facets: ["payments", "photos"], rooms: [] }),
+      filterRecords(MIXED, { ...EMPTY_FILTER, facets: ["payments", "photos"] }),
     );
     expect(matched.filter((id) => id === "5")).toHaveLength(1);
   });

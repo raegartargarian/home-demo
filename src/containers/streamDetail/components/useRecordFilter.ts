@@ -18,6 +18,7 @@ import { RecordFilter } from "./recordFilter";
 
 const FACET_PARAM = "facet";
 const ROOM_PARAM = "room";
+const QUERY_PARAM = "q";
 
 const read = <T>(
   param: string | null,
@@ -36,13 +37,15 @@ export const useRecordFilter = () => {
 
   const facetParam = searchParams.get(FACET_PARAM);
   const roomParam = searchParams.get(ROOM_PARAM);
+  const query = searchParams.get(QUERY_PARAM) ?? "";
 
   const filter: RecordFilter = useMemo(
     () => ({
       facets: read<FacetCode>(facetParam, isFacet),
       rooms: read<RoomCode>(roomParam, (value) => roomForCode(value) !== null),
+      query,
     }),
-    [facetParam, roomParam],
+    [facetParam, roomParam, query],
   );
 
   const setFilter = useCallback(
@@ -63,6 +66,11 @@ export const useRecordFilter = () => {
             if (values.length > 0) params.set(key, values.join(","));
             else params.delete(key);
           }
+
+          // Kept as typed, trailing space included, or the box would eat the
+          // space between two words as it is being typed.
+          if (next.query.trim()) params.set(QUERY_PARAM, next.query);
+          else params.delete(QUERY_PARAM);
 
           return params;
         },

@@ -28,6 +28,30 @@ describe("sectionTiles", () => {
     expect(tiles.map((t) => t.file.filename)).toEqual(["deed.pdf"]);
   });
 
+  it("never tiles the manifest the capture form packs in with the files", () => {
+    const tiles = sectionTiles([
+      record("r1", "Deed transfer", [
+        "deed.pdf",
+        "home_record.json",
+        "bundle.zip",
+      ]),
+    ]);
+    expect(tiles.map((t) => t.file.filename)).toEqual(["deed.pdf"]);
+  });
+
+  it("gives every tile of a record the record's note, without its tag lines", () => {
+    const tiles = sectionTiles([
+      {
+        ...record("r1", "Deed transfer", ["deed.pdf", "survey.pdf"]),
+        description: "Signed at the notary.\n\nRooms: Kitchen",
+      },
+    ]);
+    expect(tiles.map((t) => t.note)).toEqual([
+      "Signed at the notary.",
+      "Signed at the notary.",
+    ]);
+  });
+
   it("flattens records in order, so a card's slice takes whole records first", () => {
     const tiles = sectionTiles([
       record("r1", "A", ["a1.pdf", "a2.pdf"]),
